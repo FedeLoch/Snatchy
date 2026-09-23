@@ -5,7 +5,7 @@ import { barMetrics } from '../domain/bar-track';
 import { escapeHtml as e, icon } from './html';
 export function movementPhases(a: VisionAnalysis, canSeek: boolean): string {
   const lift = a.lift ?? estimatePhases(a);
-  return `<section class="real-phases" aria-label="Movement phases"><div class="section-title"><h2>Movement phases</h2><span class="micro">7 PHASES · ESTIMATED</span></div><div class="timeline measured-timeline">${lift.phases.map((p) => `<button data-cv-phase="${e(p.name)}" ${p.start === null ? '' : `data-cv-time="${p.start}"`} ${p.start === null || !canSeek ? 'disabled' : ''} aria-pressed="false"><span class="phase-line ${p.start === null ? 'unresolved' : ''}"></span><b>${p.start === null ? '—' : p.start.toFixed(2) + ' s'}</b><span>${e(p.name)}</span></button>`).join('')}</div><p class="footnote">${!a.lift && !a.frames.length ? 'This older summary has no phase data. Re-import the clip to analyze its phases.' : 'Pose-based estimates, not confirmed barbell events. Unresolved phases stay blank; no demo timings or scores are used.'} Timing resolution: approximately ${(1 / a.sampleRate).toFixed(2)} s.</p><div id="cv-phase-reading" class="selected-reading" aria-live="polite">Select an available phase to inspect that moment in your video.</div><details><summary>Phase evidence and timing</summary><dl class="phase-evidence">${lift.phases.map((p) => `<div><dt>${e(p.name)} · ${p.start === null ? 'Unresolved' : p.start.toFixed(2) + ' s'}</dt><dd>${e(p.evidence)}${p.end !== null && p.start !== null ? ` Duration: ${(p.end - p.start).toFixed(2)} s.` : ''}${p.coverage !== null ? ` Usable pose frames: ${Math.round(p.coverage * 100)}%.` : ''}</dd></div>`).join('')}</dl></details></section>`;
+  return `<section class="real-phases" aria-label="Movement phases"><div class="section-title"><h2>Movement phases</h2><span class="micro">7 PHASES · ESTIMATED</span></div><div class="timeline measured-timeline">${lift.phases.map((p) => `<button data-cv-phase="${e(p.name)}" ${p.start === null ? '' : `data-cv-time="${p.start}"`} ${p.start === null || !canSeek ? 'disabled' : ''} aria-pressed="false"><span class="phase-line ${p.start === null ? 'unresolved' : ''}"></span><b>${p.start === null ? '—' : p.start.toFixed(2) + ' s'}</b><span>${e(p.name)}${p.estimated ? '<small class="phase-estimate">Timing estimate</small>' : ''}</span></button>`).join('')}</div><p class="footnote">${!a.lift && !a.frames.length ? 'This older summary has no phase data. Re-import the clip to analyze its phases.' : 'Pose-based estimates, not confirmed barbell events. A blank phase means insufficient evidence, not a missing action. Open the phase evidence below for its explanation. No demo timings or scores are used.'} Timing resolution: approximately ${(1 / a.sampleRate).toFixed(2)} s.</p><div id="cv-phase-reading" class="selected-reading" aria-live="polite">Select an available phase to inspect that moment in your video.</div><details><summary>Phase evidence and missing-phase explanations</summary><dl class="phase-evidence">${lift.phases.map((p) => `<div><dt>${e(p.name)} · ${p.start === null ? 'Unresolved' : p.start.toFixed(2) + ' s'}</dt><dd>${e(p.evidence)}${p.end !== null && p.start !== null ? ` Duration: ${(p.end - p.start).toFixed(2)} s.` : ''}${p.coverage !== null ? ` Usable pose frames: ${Math.round(p.coverage * 100)}%.` : ''}</dd></div>`).join('')}</dl></details></section>`;
 }
 export function techniqueScore(a: VisionAnalysis): string {
   const lift = a.lift ?? estimatePhases(a);
@@ -13,8 +13,24 @@ export function techniqueScore(a: VisionAnalysis): string {
     .filter((p) => p.start === null)
     .map((p) => p.name);
   const partial =
-    lift.score !== null && (missing.length > 0 || lift.checks.length < 5);
-  return `<aside class="measured-score" aria-label="Experimental movement check score"><div class="score" data-measured-score>${lift.score ?? '—'}${partial ? '<sup class="partial-score-mark" aria-label="Partial analysis">*</sup>' : ''}<small>/ 100</small></div><span class="micro">EXPERIMENTAL MOVEMENT SCORE</span><p class="footnote">${lift.score === null ? 'Not enough phase evidence' : `${lift.checks.filter((c) => c.passed).length} of ${lift.checks.length} measured checks met`}</p>${partial ? `<details class="partial-score-note"><summary>ⓘ Partial analysis</summary><p>${7 - missing.length} of 7 phases recognized · ${lift.checks.length} of 5 checks available.</p><p>${missing.length ? `Phases not recognized: ${e(missing.join(', '))}.` : 'Some recognized phases lack enough evidence for their measurement checks.'}</p><p>Score uses available checks only. Missing phases are not penalized. Even 100/100 is not a complete assessment or a measure of accuracy.</p></details>` : ''}</aside>`;
+    lift.score !== null &&
+    (missing.length > 0 ||
+      lift.checks.length < 5 ||
+      lift.phases.some((p) => p.estimated));
+  return `<aside class="measured-score" aria-label="Experimental movement check score"><div class="score" data-measured-score>${lift.score ?? '—'}${partial ? '<sup class="partial-score-mark" aria-label="Partial analysis">*</sup>' : ''}<small>/ 100</small></div><span class="micro">EXPERIMENTAL MOVEMENT SCORE</span><p class="footnote">${lift.score === null ? 'Not enough phase evidence' : `${lift.checks.filter((c) => c.passed).length} of ${lift.checks.length} measured checks met`}</p>${
+    partial
+      ? `<details class="partial-score-note"><summary>ⓘ Partial analysis</summary><p>${7 - missing.length} of 7 phases recognized · ${lift.checks.length} of 5 checks available.</p><p>${missing.length ? `Phases not recognized: ${e(missing.join(', '))}.` : 'Some recognized phases lack enough evidence for their measurement checks.'}</p><p>${
+          lift.phases.some((p) => p.estimated)
+            ? `Estimated phase timing: ${e(
+                lift.phases
+                  .filter((p) => p.estimated)
+                  .map((p) => p.name)
+                  .join(', '),
+              )}. `
+            : ''
+        }Score uses available checks only. Missing phases are not penalized. Even 100/100 is not a complete assessment or a measure of accuracy.</p></details>`
+      : ''
+  }</aside>`;
 }
 export function measuredSummary(a: VisionAnalysis): string {
   const lift = a.lift ?? estimatePhases(a);

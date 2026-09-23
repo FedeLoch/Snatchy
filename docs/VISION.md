@@ -61,3 +61,11 @@ Tests cover controlled joint trajectories, moving textured pixels, missing/ambig
 The analysis service performs the pixel pass after rep isolation, downscaled to a maximum 320-pixel edge. Both passes are cancellable. Two-minute videos may take substantial time on phones. No athlete-video benchmark is included; synthetic positive/negative tests check mechanics, not accuracy on real lifts. Validate with consented recordings and manually annotated rep boundaries, phases and plate centers before making accuracy claims.
 
 Pixel reads wait for both seek completion and, where available, [video-frame presentation](https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/requestVideoFrameCallback). A 100 ms fallback prevents paused/hidden decoders from stalling if they omit callbacks. The calibrated moving-pixel browser fixture checks displacement and velocity, including WebKit; this is not a guarantee of timing accuracy on every device.
+
+## Phase fixes verified with recorded movement traces
+
+The setup rule accepts a hip hinge with relatively straight knees, so a hang start does not suppress the entire pull sequence. Extension can be supported by hip or knee change, rather than requiring both to change by the same amount. Second-pull timing can use independent hip extension and hand-height cues when a knee rebend is unresolved; these timestamps are explicitly marked **Timing estimate**, and Transition stays unresolved. These rules do not establish floor contact, bar contact, or exercise variant.
+
+Phase detection no longer discards a frame merely because an unrelated joint angle is unavailable. It can bridge one missing sample (at most 2.1 sample periods), but not a longer gap or a multiple-person interval. Measurements are never interpolated into score checks. Incomplete phase coverage is disclosed and marks the timing as estimated. Aggregate joint-range coverage remains a separate requirement.
+
+Two recorded-video regressions reproduced the previous failures: an oblique hang-start clip (previously only Catch/Recovery), and a front-view dowel drill (previously missing Transition/Second pull). Both now expose six phase entries, including an explicitly estimated Second pull. Neither trace establishes a distinct knee-rebend Transition. This is a targeted regression result, not an all-angle accuracy benchmark.

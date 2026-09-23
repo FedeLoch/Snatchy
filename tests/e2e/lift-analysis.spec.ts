@@ -1,3 +1,5 @@
+import { recordedTraces, recordedFrames } from '../fixtures/recorded-pose';
+import { analyzePoseSamples } from '../../src/domain/vision';
 import { test, expect } from '@playwright/test';
 import { resolve } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
@@ -236,3 +238,61 @@ test('automatically detects and follows real plate pixels without calibration', 
   await page.reload();
   await expect(panel).toContainText('AUTOMATIC · VERIFY PLATE');
 });
+
+for (const trace of recordedTraces) {
+  test(`recorded ${trace.name} summary explains missing transition and estimated upper pull`, async ({
+    page,
+  }) => {
+    const analysis = analyzePoseSamples(
+      recordedFrames(trace),
+      trace.width,
+      trace.height,
+      trace.duration,
+    );
+    await page.addInitScript(
+      (record) => {
+        localStorage.setItem(
+          'snatchy-vision-history-v1',
+          JSON.stringify([record]),
+        );
+      },
+      {
+        id: 'recorded-phase-case',
+        createdAt: 1234,
+        analysis: { ...analysis, frames: [] },
+      },
+    );
+    await page.goto('/#vision/recorded-phase-case');
+    await expect(page.locator('[data-cv-phase="Setup"]')).not.toContainText(
+      '—',
+    );
+    await expect(page.locator('[data-cv-phase="Second pull"]')).toContainText(
+      'Timing estimate',
+    );
+    await expect(page.locator('[data-cv-phase="Transition"]')).toContainText(
+      '—',
+    );
+    await page
+      .getByText('Phase evidence and missing-phase explanations', {
+        exact: true,
+      })
+      .click();
+    await expect(page.locator('.phase-evidence')).toContainText(
+      'No distinct knee rebend',
+    );
+    await page.locator('.partial-score-note summary').click();
+    await expect(page.locator('.partial-score-note')).toContainText(
+      'Estimated phase timing:',
+    );
+    await expect(page.locator('.partial-score-note')).toContainText(
+      '6 of 7 phases recognized',
+    );
+    expect(
+      (
+        await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+          .analyze()
+      ).violations,
+    ).toEqual([]);
+  });
+}

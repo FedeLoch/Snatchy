@@ -50,15 +50,14 @@ describe('real phase estimation', () => {
       ),
     ).toBe(true);
   });
-  it('does not bridge a pose dropout into a full lift', () => {
+  it('tolerates one missing sample while flagging the affected phase timing', () => {
     const frames = liftFrames();
     frames[10] = { ...frames[10], people: 0, landmarks: [] };
     const lift = analyzePoseSamples(frames, 100, 100, 2).lift!;
-    expect(lift.phases[4].start).toBeNull();
-    expect(lift.checks.map((c) => c.name)).toEqual([
-      'Receiving arm extension',
-      'Standing recovery',
-    ]);
+    expect(lift.phases[4].start).toBe(12 / 15);
+    expect(lift.phases[3].estimated).toBe(true);
+    expect(lift.phases[3].evidence).toContain('unavailable');
+    expect(lift.checks).toHaveLength(5);
     expect(lift.score).toBe(100);
   });
 });
@@ -109,4 +108,39 @@ it('keeps missing transition phases unresolved while scoring other measurements'
   expect(lift.phases[3].start).toBeNull();
   expect(lift.score).not.toBeNull();
   expect(lift.checks).toHaveLength(5);
+});
+
+it('does not bridge prolonged occlusion or multiple-person ambiguity', () => {
+  for (const people of [0, 2]) {
+    const frames = liftFrames();
+    for (const i of people === 2 ? [10] : [9, 10, 11])
+      frames[i] = {
+        ...frames[i],
+        people,
+        landmarks: people === 2 ? frames[i].landmarks : [],
+      };
+    const lift = analyzePoseSamples(frames, 100, 100, 2).lift!;
+    expect(lift.phases[4].start).toBeNull();
+    expect(lift.checks.map((c) => c.name)).toEqual([
+      'Receiving arm extension',
+      'Standing recovery',
+    ]);
+  }
+});
+it('uses phase-specific joints instead of discarding the pull when elbows are obscured', () => {
+  const frames = liftFrames();
+  for (let i = 0; i < 15; i++)
+    for (const joint of [13, 14])
+      frames[i].landmarks[joint] = {
+        ...frames[i].landmarks[joint],
+        visibility: 0.1,
+      };
+  const a = analyzePoseSamples(frames, 100, 100, 2);
+  expect(a.status).toBe('insufficient');
+  expect(a.lift!.phases[1].start).not.toBeNull();
+  expect(a.lift!.phases[4].start).not.toBeNull();
+  expect(a.lift!.checks.map((c) => c.name)).not.toContain(
+    'Arms through the pull',
+  );
+  expect(a.lift!.checks).toHaveLength(4);
 });

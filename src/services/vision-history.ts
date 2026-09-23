@@ -97,7 +97,8 @@ export function isVisionRecord(value: unknown): value is VisionRecord {
       if (
         !phase ||
         phase.name !== PHASE_NAMES[index] ||
-        typeof phase.evidence !== 'string'
+        typeof phase.evidence !== 'string' ||
+        (phase.estimated !== undefined && typeof phase.estimated !== 'boolean')
       )
         return false;
       if (

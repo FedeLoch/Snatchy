@@ -1990,3 +1990,10 @@ dialog blockquote {
   border-color: var(--accent);
   color: var(--accent);
 }
+
+.phase-estimate {
+  display: block;
+  font-size: 10px;
+  color: var(--accent);
+  margin-top: 4px;
+}

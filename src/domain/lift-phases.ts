@@ -14,6 +14,7 @@ export interface MeasuredPhase {
   end: number | null;
   evidence: string;
   coverage: number | null;
+  estimated?: boolean;
 }
 export interface MovementCheck {
   name: string;
@@ -36,7 +37,10 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     name,
     start: null,
     end: null,
-    evidence: 'Not resolved from the available pose evidence.',
+    evidence:
+      name === 'Transition'
+        ? 'No distinct knee rebend was resolved. It may be obscured by the view or absent as a separate phase in this variation.'
+        : 'Not resolved from the available pose evidence.',
     coverage: null,
   }));
   const result: LiftPhases = {
@@ -46,13 +50,13 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     checks: [],
     score: null,
   };
-  if (a.status !== 'tracked') return result;
   const [shoulder, , wrist, hip] = SIDES[a.side];
   const data = a.frames
     .map((f) => {
       const angles = anglesAt(f, a.side, a.width, a.height);
       return {
         time: f.time,
+        people: f.people,
         ...angles,
         wrist: f.landmarks[wrist],
         shoulder: f.landmarks[shoulder],
@@ -61,9 +65,7 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     })
     .filter(
       (v) =>
-        v.elbow !== null &&
-        v.hip !== null &&
-        v.knee !== null &&
+        v.people === 1 &&
         visible(v.wrist) &&
         visible(v.shoulder) &&
         visible(v.hipPoint),
@@ -72,7 +74,11 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
   const continuous = (start: number, end: number) =>
     data
       .slice(start + 1, end + 1)
-      .every((v, i) => v.time - data[start + i].time <= 1.6 / a.sampleRate);
+      .every((v, i) => v.time - data[start + i].time <= 2.1 / a.sampleRate) &&
+    !a.frames.some(
+      (f) =>
+        f.people > 1 && f.time > data[start].time && f.time < data[end].time,
+    );
   const sustained = (
     i: number,
     predicate: (v: (typeof data)[number]) => boolean,
@@ -82,13 +88,20 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     data.slice(i, i + 3).every(predicate);
   const overhead = (v: (typeof data)[number]) =>
     v.elbow! >= 155 && v.wrist.y < v.shoulder.y - 0.06;
-  const set = (index: number, frame: number, evidence: string) => {
+  const set = (
+    index: number,
+    frame: number,
+    evidence: string,
+    estimated = false,
+  ) => {
     phases[index].start = data[frame].time;
     phases[index].evidence = evidence;
+    if (estimated) phases[index].estimated = true;
   };
   const setup = data.findIndex(
     (v, i) =>
-      sustained(i, (x) => x.wrist.y > x.hipPoint.y + 0.03) && v.knee! < 155,
+      sustained(i, (x) => x.wrist.y > x.hipPoint.y + 0.03) &&
+      ((v.knee !== null && v.knee < 155) || (v.hip !== null && v.hip < 165)),
   );
   const pull =
     setup < 0
@@ -104,7 +117,8 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     (v, i) =>
       (pull < 0 || i > pull) &&
       sustained(i, overhead) &&
-      v.knee! < 150 &&
+      v.knee !== null &&
+      v.knee < 150 &&
       // Require movement into the receiving position or a later overhead rise;
       // a static overhead pose must not earn a movement score.
       (data.slice(0, i).some((x) => x.wrist.y - v.wrist.y > 0.15) ||
@@ -118,11 +132,15 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
   );
   if (pull < 0 && catchIndex < 0) return result;
   if (pull >= 0) {
-    set(0, setup, 'Hands below hips before sustained upward movement.');
+    set(
+      0,
+      setup,
+      'Hands below hips with flexed knees or a hip hinge before upward movement. A hang start is allowed; floor contact is not established.',
+    );
     set(
       1,
       pull,
-      'Wrist rises from the starting position for three consecutive samples. Lift-off is a pose estimate, not bar contact detection.',
+      'Wrist rises from the starting position for three observed samples. Lift-off is a pose estimate, not bar contact detection.',
     );
   }
   if (catchIndex >= 0)
@@ -136,6 +154,7 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     const limit = catchIndex >= 0 ? catchIndex : data.length;
     for (let i = pull + 1; i < limit; i++) {
       if (!continuous(pull, i)) break;
+      if (data[i].hip === null || data[i].knee === null) continue;
       if (
         extension < 0 ||
         data[i].hip! + data[i].knee! >
@@ -147,7 +166,12 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
       extension >= 0 &&
       (data[extension].hip! < 155 ||
         data[extension].knee! < 155 ||
-        data[extension].knee! - data[pull].knee! < 10)
+        !(
+          (data[pull].knee !== null &&
+            data[extension].knee! - data[pull].knee! >= 10) ||
+          (data[pull].hip !== null &&
+            data[extension].hip! - data[pull].hip! >= 10)
+        ))
     )
       extension = -1;
   }
@@ -167,11 +191,15 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     pull >= 0 && extension >= 0 && i < extension - 2;
     i++
   ) {
+    if (
+      [data[i].knee, data[i - 1].knee, data[i + 1].knee].some((v) => v === null)
+    )
+      continue;
     if (data[i].knee! < data[i - 1].knee! || data[i].knee! <= data[i + 1].knee!)
       continue;
     let dip = i + 1;
     for (let j = i + 1; j < extension; j++)
-      if (data[j].knee! < data[dip].knee!) dip = j;
+      if (data[j].knee !== null && data[j].knee! < data[dip].knee!) dip = j;
     if (
       data[i].knee! - data[dip].knee! >= 6 &&
       data[extension].knee! - data[dip].knee! >= 10
@@ -185,11 +213,36 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
       break;
     }
   }
+  // A visible knee rebend is not required to identify an upper pull. Use
+  // independent hip-level hand position and measured extension, and disclose
+  // that this is a timing estimate rather than a confirmed rebend boundary.
+  if (phases[3].start === null && pull >= 0 && extension > pull + 1) {
+    const upperPull = data.findIndex(
+      (v, i) =>
+        i > pull &&
+        i < extension &&
+        continuous(pull, i) &&
+        v.hip !== null &&
+        data[pull].hip !== null &&
+        v.hip >= data[pull].hip! + 5 &&
+        v.wrist.y <= v.hipPoint.y + 0.03 &&
+        v.wrist.y > v.shoulder.y &&
+        data[extension].wrist.y < v.wrist.y - 0.015,
+    );
+    if (upperPull >= 0)
+      set(
+        3,
+        upperPull,
+        'Timing estimate: hands approach hip level during measured hip extension before turnover. A separate knee rebend was not resolved; this is not a bar-contact measurement.',
+        true,
+      );
+  }
   let bottom = catchIndex;
   if (catchIndex >= 0)
     for (let i = catchIndex; i < data.length && overhead(data[i]); i++) {
       if (!continuous(catchIndex, i)) break;
-      if (data[i].knee! < data[bottom].knee!) bottom = i;
+      if (data[i].knee !== null && data[i].knee! < data[bottom].knee!)
+        bottom = i;
     }
   const recovery =
     bottom < 0
@@ -225,6 +278,11 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
             ),
           ).length / frames.length
         : null;
+      if (phase.coverage !== null && phase.coverage < 1) {
+        phase.estimated = true;
+        phase.evidence +=
+          ' Some joint measurements are unavailable in this interval; timing uses the remaining observed samples.';
+      }
     }
   }
   const addCheck = (
@@ -254,17 +312,21 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
         ? -1
         : data.findIndex((v) => v.time === phases[2].start);
   if (pull >= 0 && pullEnd - pull >= 2 && continuous(pull, pullEnd)) {
-    const pullFrames = data.slice(pull, pullEnd + 1);
-    const armFrame = pullFrames.reduce((min, v) =>
-      v.elbow! < min.elbow! ? v : min,
-    );
-    addCheck(
-      'Arms through the pull',
-      armFrame.elbow!,
-      160,
-      armFrame.time,
-      'Minimum visible elbow angle over the recognized pull interval. Unrecognized portions of the pull are excluded.',
-    );
+    const pullFrames = data
+      .slice(pull, pullEnd + 1)
+      .filter((v) => v.elbow !== null);
+    if (pullFrames.length >= 3) {
+      const armFrame = pullFrames.reduce((min, v) =>
+        v.elbow! < min.elbow! ? v : min,
+      );
+      addCheck(
+        'Arms through the pull',
+        armFrame.elbow!,
+        160,
+        armFrame.time,
+        'Minimum visible elbow angle over the recognized pull interval. Unrecognized portions of the pull are excluded.',
+      );
+    }
   }
   if (
     extension >= 0 &&

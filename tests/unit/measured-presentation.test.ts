@@ -63,3 +63,20 @@ it('renders only supplied calibrated bar values and leaves missing values unavai
   expect(barPanel(a, true)).toContain('0.40<small> m');
   expect(barPanel(a, true)).toContain('4.0<small> cm');
 });
+
+it('marks even a 100 score as partial and names missing phases', () => {
+  const a = analyzePoseSamples(liftFrames().slice(0, 20), 100, 100, 2);
+  const dom = document.createElement('div');
+  dom.innerHTML = techniqueScore(a);
+  expect(dom.querySelector('[data-measured-score]')?.textContent).toContain(
+    '100',
+  );
+  expect(dom.querySelector('summary')?.textContent).toContain(
+    'Partial analysis',
+  );
+  expect(dom.textContent).toContain('Phases not recognized: Recovery');
+  expect(dom.textContent).toContain('4 of 5 checks available');
+  expect(
+    techniqueScore(analyzePoseSamples(liftFrames(), 100, 100, 2)),
+  ).not.toContain('partial-score-note');
+});

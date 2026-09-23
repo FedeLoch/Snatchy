@@ -136,7 +136,7 @@ it('persists phase evidence and rejects corrupted optional measurements', async 
     v.analysis.lift!.checks[0].value = NaN;
   });
   corrupt((v) => {
-    v.analysis.lift!.checks.pop();
+    v.analysis.lift!.checks[1] = { ...v.analysis.lift!.checks[0] };
   });
   corrupt((v) => {
     v.analysis.lift!.phases[1].start = null;
@@ -173,4 +173,20 @@ it('persists phase evidence and rejects corrupted optional measurements', async 
   corrupt((v) => {
     v.analysis.bar!.end = 0.25;
   });
+});
+
+it('round-trips a partial score without turning omitted phases into failures', async () => {
+  const { liftFrames } = await import('../fixtures/lift-pose');
+  const r = {
+    ...record(),
+    analysis: analyzePoseSamples(liftFrames().slice(0, 20), 100, 100, 2),
+  };
+  expect(r.analysis.lift?.score).toBe(100);
+  expect(r.analysis.lift?.checks).toHaveLength(4);
+  expect(isVisionRecord(r)).toBe(true);
+  saveVisionHistory(localStorage, [r]);
+  const stored = loadVisionHistory(localStorage)[0];
+  expect(stored.analysis.lift?.score).toBe(100);
+  expect(stored.analysis.lift?.phases[6].start).toBeNull();
+  expect(stored.analysis.frames).toEqual([]);
 });

@@ -3,11 +3,14 @@ import { resolve } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import { liftFrames } from '../fixtures/lift-pose';
 test.setTimeout(120000);
-async function poseFixture(page: import('@playwright/test').Page) {
+async function poseFixture(
+  page: import('@playwright/test').Page,
+  frames = liftFrames(),
+) {
   await page.route('**/assets/pose.worker-*.js', (route) =>
     route.fulfill({
       contentType: 'application/javascript',
-      body: `const frames=${JSON.stringify(liftFrames())};self.onmessage=event=>{const m=event.data;if(m.type==='init'){self.postMessage({id:m.id,people:0,landmarks:[]});return;}const f=frames[Math.min(frames.length-1,Math.round(m.time*15))];m.bitmap.close();self.postMessage({id:m.id,people:1,landmarks:f.landmarks});};`,
+      body: `const frames=${JSON.stringify(frames)};self.onmessage=event=>{const m=event.data;if(m.type==='init'){self.postMessage({id:m.id,people:0,landmarks:[]});return;}const f=frames[Math.min(frames.length-1,Math.round(m.time*15))];m.bitmap.close();self.postMessage({id:m.id,people:1,landmarks:f.landmarks});};`,
     }),
   );
   await page.goto('/#capture');
@@ -131,4 +134,40 @@ test('demo retains its original score, phase numbers, feedback and bar values', 
   await expect(page.locator('.bar-metrics')).toContainText('6.4');
   await expect(page.locator('.bar-metrics')).toContainText('1.24');
   await expect(page.locator('.bar-metrics')).toContainText('1.82');
+});
+
+test('partial scores list missing phases, remain accessible and survive reload', async ({
+  page,
+}) => {
+  await poseFixture(page, liftFrames().slice(0, 20));
+  await expect(page.locator('[data-measured-score]')).toContainText('100');
+  await expect(
+    page.getByLabel('Partial analysis', { exact: true }),
+  ).toBeVisible();
+  await page.locator('.partial-score-note summary').click();
+  await expect(page.locator('.partial-score-note')).toContainText(
+    'Phases not recognized: Recovery',
+  );
+  await expect(page.locator('.partial-score-note')).toContainText(
+    '4 of 5 checks available',
+  );
+  await expect(page.locator('[data-cv-phase="Recovery"]')).toBeDisabled();
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+        .analyze()
+    ).violations,
+  ).toEqual([]);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page.reload();
+  await expect(page.locator('[data-measured-score]')).toContainText('100');
+  await page.locator('.partial-score-note summary').click();
+  await expect(page.locator('.partial-score-note')).toContainText(
+    'Phases not recognized: Recovery',
+  );
 });

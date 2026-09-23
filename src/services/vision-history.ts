@@ -100,7 +100,11 @@ export function isVisionRecord(value: unknown): value is VisionRecord {
       )
         return false;
     }
-    if (lift.checks.length !== 0 && lift.checks.length !== 5) return false;
+    if (
+      lift.checks.length > 5 ||
+      new Set(lift.checks.map((c) => c.name)).size !== lift.checks.length
+    )
+      return false;
     if (
       !lift.checks.every(
         (c) =>
@@ -129,8 +133,16 @@ export function isVisionRecord(value: unknown): value is VisionRecord {
         : null)
     )
       return false;
-    if (lift.score !== null && lift.phases.some((p) => p.start === null))
-      return false;
+    const supports: Record<string, boolean> = {
+      'Arms through the pull': lift.phases[1].start !== null,
+      'Hip extension':
+        lift.phases[3].start !== null || lift.phases[4].start !== null,
+      'Knee extension':
+        lift.phases[3].start !== null || lift.phases[4].start !== null,
+      'Receiving arm extension': lift.phases[5].start !== null,
+      'Standing recovery': lift.phases[6].start !== null,
+    };
+    if (lift.checks.some((c) => supports[c.name] !== true)) return false;
   }
   if (a.bar !== undefined) {
     const b = a.bar;

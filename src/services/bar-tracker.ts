@@ -60,7 +60,9 @@ export async function trackBar(
       signal.throwIfAborted();
       if (Math.abs(video.currentTime - time) > 0.001)
         await mediaEvent(video, 'seeked', signal, () => {
-          video.currentTime = time;
+          // Stay just inside the sample boundary. Exact fractional seeks can
+          // decode the preceding frame after codec timestamp rounding.
+          video.currentTime = Math.min(time + 0.001, source.duration - 0.001);
         });
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       return grayscale(
@@ -69,6 +71,11 @@ export async function trackBar(
         canvas.height,
       );
     };
+    // Force a decoded seek before sampling the first frame: loadeddata can precede
+    // presentation of the initial video texture in a hidden decoder.
+    await mediaEvent(video, 'seeked', signal, () => {
+      video.currentTime = Math.min(seed.time + 0.001, source.duration - 0.01);
+    });
     const template = createTemplate(await read(seed.time), x, y, radius);
     const track: BarTrack = {
       version: 1,

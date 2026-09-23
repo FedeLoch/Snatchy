@@ -17,7 +17,7 @@ Resources are served from this app's own origin. Video frames, landmarks and mea
 - Report meaningful flexion/extension changes (at least 15°) as measured motion events. An arm-above-shoulder event requires three adjacent high-quality samples with elbow angle above 155° and wrist above the shoulder.
 - A possible-early-bend hypothesis additionally requires substantial hip-angle excursion, later overhead evidence, and sustained elbow/hip flexion before the largest observed hip angle. It is marked experimental; it does not prove a technique fault.
 
-No result includes an overall technique score. Tracking coverage is explicitly labeled as data availability. The model is a human-pose detector, not a Snatch recognizer or barbell detector. No metric uses a wrist proxy while calling it a bar path. No physical distances or velocities are reported without camera calibration and actual object tracking.
+The original analysis never substitutes demo scores. The new optional movement-check score is a transparent experimental checklist, not a validated overall technique score. Tracking coverage is explicitly labeled as data availability. The model is a human-pose detector, not a Snatch recognizer or barbell detector. No metric uses a wrist proxy while calling it a bar path. No physical distances or velocities are reported without camera calibration and actual object tracking.
 
 Replay uses only the closest actual sample within roughly one sampling interval. Gaps remain gaps, and multiple-person frames display no skeleton. The diagram is positioned within the video's actual aspect ratio, not a differently letterboxed viewport.
 
@@ -37,3 +37,17 @@ Before stronger coaching claims, validate against consented, diverse athlete vid
 - [MediaPipe source and license](https://github.com/google-ai-edge/mediapipe) — the runtime npm package is Apache-2.0.
 - [Versioned Lite model](https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task) — local `public/models/pose_landmarker_lite.task`; SHA-256 `59929e1d1ee95287735ddd833b19cf4ac46d29bc7afddbbf6753c459690d574a`.
 - [Public MediaPipe pose test image](https://storage.googleapis.com/mediapipe-assets/pose.jpg) — local `tests/fixtures/person.jpg`; SHA-256 `c8a830ed683c0276d713dd5aeda28f415f10cd6291972084a40d0d8b934ed62b`. The test MP4 repeats this static image, not a real lifting performance.
+
+## Estimated phases and movement checks
+
+The seven-phase UI is present for real results. The `pose-heuristic` estimator uses low hands, sustained wrist rise, an extend–rebend–extend knee pattern, pre-catch extension, an overhead receiving position and recovery. It requires continuous usable evidence and leaves unresolved phases blank; it never assigns evenly spaced or demo timestamps. These are pose proxies for phase boundaries, not detected barbell contact events. The full Snatch pattern and finish are required before scoring five angle checks; each contributes 20 points. All thresholds and limitations appear in the UI. No expert-annotated athlete dataset has validated these thresholds or phase accuracy.
+
+Phase concepts are informed by [published Snatch kinematic analysis](https://pmc.ncbi.nlm.nih.gov/articles/PMC6076374/) and [pull-phase research](https://pmc.ncbi.nlm.nih.gov/articles/PMC7281229/). Those papers do not validate this implementation or its score thresholds.
+
+## Guided plate tracking
+
+A separate tracker uses a user-marked plate center/radius, an entered real diameter, and stationary-camera confirmation. At 15 Hz, frames are reduced to 320 pixels on the long edge. Fixed-template normalized correlation searches a local neighborhood; weak or ambiguous matches stop the track. This is seeded image tracking, not automatic barbell recognition. Plate rotation, occlusion, background matches, camera movement and scale changes can invalidate results. Users must inspect the path on actual frames and explicitly confirm it before publishing measurements.
+
+Meters per pixel = entered diameter in meters / marked diameter in pixels. Horizontal displacement is maximum absolute deviation from the first center; vertical displacement is maximum rise from it. Peak upward velocity uses central differences over two sample intervals and does not bridge gaps beyond 0.2 seconds. It is a sampled image-plane estimate, not calibrated 3D velocity. Partial tracks are labeled and never extrapolated. Reviewed tracks, calibration and phase/check summaries persist; video and body-landmark frames do not.
+
+Tests cover controlled joint trajectories, moving textured pixels, missing/ambiguous texture, invalid calibration, cancellation, persistence and browser interaction. `plate.mp4` is a generated textured disk moving upward at a known rate, not an athlete validation set. UI phase tests inject known pose samples; the separate vision suite continues to run the real MediaPipe model.

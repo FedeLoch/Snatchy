@@ -55,3 +55,7 @@ The synthetic Snatch is tested throughout the 3.6-second cycle for fixed project
 `tests/unit/vision*.test.ts` checks pixel-aspect-correct angles, missing/occluded/multiple-person data, stable side choice, non-invented output, robust ranges, event thresholds, summary validation, metadata/frame decoding, worker errors, timeouts and cleanup. Worker internals are exercised through the real-model browser tests, not the unit mocks.
 
 The positive fixture `person.mp4` repeats Google's public MediaPipe `pose.jpg` test image for 1.2 seconds. Its purpose is to verify real human detection and a no-motion case; it is **not** a Snatch and is not used as evidence of coaching accuracy. Source and model metadata are documented in [VISION.md](VISION.md).
+
+## Phase, score and bar regression tests
+
+`lift-analysis.spec.ts` verifies real-result phase seeking and saved summaries using deterministic pose samples, and tracks an actual generated moving-plate video through the browser decoder. Its known displacement and velocity catch frame-boundary errors. The demo regression locks in 83/100, all seven original phase numbers and the original bar values. Unit tests cover incomplete phases, detection gaps, explicit scoring rules, template ambiguity, tracking loss, calibration, cancellation and persisted-data validation. These tests validate mechanics, not performance on a representative athlete dataset. Android packaging steps in README require a separate physical-phone verification; CI does not build an APK.

@@ -1477,3 +1477,129 @@ dialog blockquote {
   display: block;
   margin-bottom: 5px;
 }
+
+.vision-progress {
+  margin: 36px 0;
+}
+.vision-progress progress {
+  width: 100%;
+  height: 7px;
+  accent-color: var(--accent);
+}
+.vision-progress p {
+  margin-top: 16px;
+}
+.cv-stage {
+  position: relative;
+  background: #090d07;
+}
+.cv-stage video {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+#cv-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.cv-controls {
+  display: flex;
+  gap: 10px;
+}
+.cv-controls button {
+  font-size: 11px;
+  padding: 12px;
+}
+.live-angles {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 18px 0;
+}
+.live-angles span {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: capitalize;
+}
+.live-angles b {
+  display: block;
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--text);
+  margin-top: 7px;
+}
+.quality-summary {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background: var(--panel);
+  padding: 20px;
+}
+.quality-summary > b {
+  font-weight: 400;
+  font-size: 44px;
+  color: var(--accent);
+}
+.quality-summary small {
+  font-size: 16px;
+}
+.quality-summary strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+.quality-summary p {
+  font-size: 11px;
+  margin-top: 6px;
+}
+.measured-ranges > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+.measured-ranges span {
+  text-transform: capitalize;
+  color: var(--muted);
+  font-size: 13px;
+}
+.measured-ranges b {
+  font-weight: 400;
+  font-size: 19px;
+}
+.measured-event {
+  border-top: 1px solid var(--line);
+  padding: 16px 0;
+}
+.measured-event button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  min-height: 44px;
+  text-align: left;
+  font-size: 13px;
+}
+.measured-event b {
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--accent);
+  font-weight: 400;
+}
+.measured-event .icon {
+  width: 13px;
+}
+.measured-event p {
+  font-size: 12px;
+  margin-top: 10px;
+}
+.event-kind {
+  display: block;
+  font-size: 8px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  margin-top: 13px;
+}

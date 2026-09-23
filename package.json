@@ -17,7 +17,11 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build",
-    "check:all": "npm run check && npm run test:e2e"
+    "check:all": "npm run check && npm run test:e2e",
+    "prepare:vision": "node scripts/prepare-vision.mjs",
+    "postinstall": "npm run prepare:vision",
+    "predev": "npm run prepare:vision",
+    "prebuild": "npm run prepare:vision"
   },
   "engines": {
     "node": ">=22.12"
@@ -36,5 +40,8 @@
     "typescript-eslint": "^8.70.1",
     "vite": "^7.3.6",
     "vitest": "^4.1.11"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "1.0.1"
   }
 }

@@ -168,9 +168,7 @@ test('uploaded footage stays in review without demo scores or skeletons', async 
   await capture(page);
   await page.locator('#import').setInputFiles(videoPath);
   await expect(page.getByLabel('Review your lift video')).toBeVisible();
-  await expect(
-    page.getByText('Technique analysis is not available yet.'),
-  ).toBeVisible();
+  await expect(page.getByText('Ready for real pose analysis.')).toBeVisible();
   await expect(page.locator('.score, .issue, .athlete, .timeline')).toHaveCount(
     0,
   );

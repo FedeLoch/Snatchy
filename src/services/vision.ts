@@ -1,0 +1,184 @@
+import {
+  analyzePoseSamples,
+  type Landmark,
+  type PoseSample,
+  type VisionAnalysis,
+} from '../domain/vision';
+import type { VideoSource } from '../domain/types';
+export const MAX_ANALYSIS_SECONDS = 30;
+export const SAMPLE_RATE = 15;
+interface Reply {
+  id: number;
+  error?: string;
+  people: number;
+  landmarks: Landmark[];
+}
+function mediaEvent(
+  video: HTMLVideoElement,
+  event: string,
+  signal: AbortSignal,
+  action?: () => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    signal.throwIfAborted();
+    const cleanup = () => {
+      clearTimeout(timer);
+      video.removeEventListener(event, done);
+      video.removeEventListener('error', failed);
+      signal.removeEventListener('abort', aborted);
+    };
+    const done = () => {
+      cleanup();
+      resolve();
+    };
+    const failed = () => {
+      cleanup();
+      reject(new Error('This video could not be decoded. Try an MP4 clip.'));
+    };
+    const aborted = () => {
+      cleanup();
+      reject(new DOMException('Analysis cancelled', 'AbortError'));
+    };
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('Video decoding timed out. Try a shorter clip.'));
+    }, 15000);
+    video.addEventListener(event, done, { once: true });
+    video.addEventListener('error', failed, { once: true });
+    signal.addEventListener('abort', aborted, { once: true });
+    action?.();
+  });
+}
+export async function analyzeVideo(
+  source: VideoSource,
+  options: {
+    signal: AbortSignal;
+    onProgress: (progress: number, label: string) => void;
+  },
+): Promise<VisionAnalysis> {
+  const { signal, onProgress } = options;
+  signal.throwIfAborted();
+  if (source.duration > MAX_ANALYSIS_SECONDS)
+    throw new Error(
+      'Use a clip of one lift, no longer than 30 seconds. Trim your video and import it again.',
+    );
+  if (source.duration < 0.8)
+    throw new Error(
+      'Use a clip at least 0.8 seconds long so enough frames can be measured.',
+    );
+  const worker = new Worker(
+    new URL('../workers/pose.worker.ts', import.meta.url),
+    { type: 'module' },
+  );
+  const video = document.createElement('video');
+  video.muted = true;
+  video.playsInline = true;
+  video.preload = 'auto';
+  let id = 0;
+  function request(
+    message: Record<string, unknown>,
+    transfer: Transferable[] = [],
+  ): Promise<Reply> {
+    return new Promise((resolve, reject) => {
+      signal.throwIfAborted();
+      const current = ++id;
+      const cleanup = () => {
+        clearTimeout(timer);
+        worker.removeEventListener('message', receive);
+        worker.removeEventListener('error', fail);
+        signal.removeEventListener('abort', abort);
+      };
+      const receive = (event: MessageEvent<Reply>) => {
+        if (event.data.id !== current) return;
+        cleanup();
+        if (event.data.error) reject(new Error(event.data.error));
+        else resolve(event.data);
+      };
+      const fail = () => {
+        cleanup();
+        reject(
+          new Error(
+            'The local pose model could not start. Try a current Chrome or Safari browser.',
+          ),
+        );
+      };
+      const abort = () => {
+        cleanup();
+        reject(new DOMException('Analysis cancelled', 'AbortError'));
+      };
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(
+          new Error(
+            'Pose analysis timed out. Try a shorter clip or a faster device.',
+          ),
+        );
+      }, 45000);
+      worker.addEventListener('message', receive);
+      worker.addEventListener('error', fail, { once: true });
+      signal.addEventListener('abort', abort, { once: true });
+      worker.postMessage({ ...message, id: current }, transfer);
+    });
+  }
+  try {
+    onProgress(0, 'Loading the local pose model');
+    await request({ type: 'init', origin: location.origin });
+    await mediaEvent(video, 'loadeddata', signal, () => {
+      video.src = source.url;
+      video.load();
+    });
+    const width = video.videoWidth,
+      height = video.videoHeight;
+    if (!width || !height)
+      throw new Error('Video dimensions are unavailable. Try another clip.');
+    const canvas = document.createElement('canvas');
+    const scale = Math.min(1, 640 / Math.max(width, height));
+    canvas.width = Math.round(width * scale);
+    canvas.height = Math.round(height * scale);
+    const context = canvas.getContext('2d');
+    if (!context)
+      throw new Error('This browser cannot decode video frames for analysis.');
+    const frames: PoseSample[] = [];
+    const count = Math.ceil(source.duration * SAMPLE_RATE);
+    for (let index = 0; index < count; index++) {
+      signal.throwIfAborted();
+      const target = Math.min(index / SAMPLE_RATE, source.duration - 0.01);
+      if (Math.abs(video.currentTime - target) > 0.001)
+        await mediaEvent(video, 'seeked', signal, () => {
+          video.currentTime = target;
+        });
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const bitmap = await createImageBitmap(canvas);
+      if (signal.aborted) {
+        bitmap.close();
+        signal.throwIfAborted();
+      }
+      const reply = await request(
+        { type: 'frame', bitmap, time: video.currentTime },
+        [bitmap],
+      );
+      frames.push({
+        time: video.currentTime,
+        people: reply.people,
+        landmarks: reply.landmarks,
+      });
+      onProgress(
+        (index + 1) / count,
+        `Tracking frame ${index + 1} of ${count}`,
+      );
+    }
+    signal.throwIfAborted();
+    return analyzePoseSamples(
+      frames,
+      width,
+      height,
+      source.duration,
+      SAMPLE_RATE,
+    );
+  } finally {
+    worker.terminate();
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+  }
+}

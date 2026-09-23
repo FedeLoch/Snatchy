@@ -24,12 +24,12 @@ src/
 ## Data flow
 
 1. Select an available `Movement`. Validate imported media and read metadata locally.
-2. Imported clips stay in playback-only review. Only the explicit demo action starts the `AnalysisProvider`, which reports progress and accepts an `AbortSignal`.
-3. Store a versioned `LiftRecord` for demo results only. Uploaded videos remain temporary review sources and never pass through the demo provider.
-4. Render demo result components from the snapshot and movement. Historical upload records are intercepted and shown as not analyzed.
-5. `LiftPlayer` owns demo playback, seeking, speed, loops and animation cleanup. Upload review uses the actual HTML video and separate speed controls.
+2. Imported clips invoke `services/vision.ts`, which decodes real frames and sends them to a MediaPipe worker. The explicit demo action alone invokes the simulated `AnalysisProvider`. Both paths support cancellation.
+3. Store a `VisionRecord` for measured results and a separate `LiftRecord` for demo results. The types, storage keys and routes stay separate. Real video/landmark data is session-only; only measurement summaries persist.
+4. Render measured results with `ui/vision.ts` and actual footage. Demo results use their separate templates and illustrations. Old fabricated upload records are intercepted and shown as not analyzed.
+5. `LiftPlayer` owns demo playback. Real replay uses native video controls and draws the closest actual landmark sample only within a bounded time gap. Missing tracking never falls back to an illustration.
 
-Navigation uses hash routes: `#home`, `#capture`, `#history`, `#result/<id>`. Deep-linked results reopen from local storage. Missing results recover to history. Changing screens aborts pending work and disposes playback. Imported object URLs are released on replacement or page exit. Object URLs, filenames and video bytes never enter persistent history.
+Navigation uses hash routes: `#home`, `#capture`, `#history`, `#result/<id>` (demo) and `#vision/<id>` (measured). Deep-linked results reopen from local storage. Missing results recover to history. Changing screens aborts pending work and disposes playback. Imported object URLs are released on replacement or page exit. Object URLs, filenames and video bytes never enter persistent history.
 
 ## Add a movement
 
@@ -58,6 +58,13 @@ The demo starts at setup, holds a grounded bar until the first pull, moves throu
 
 This is a simplified side-view illustration, not motion capture. Choreography was checked against the floor-to-overhead / pull-under / stable-receive / stand sequence in [Catalyst Athletics’ Snatch exercise reference](https://catalystathletics.com/exercise/58/Snatch/).
 
-## Uploaded-video scoring correction
+## Measured vision modules
 
-Uploaded clips now stay in a playback-only review with slow-motion controls. They do not invoke the demo provider, create a scored result, show a skeleton, or receive demo observations. Only the explicit demo action produces simulated analysis. Historical upload records are shown as “Not analyzed”; their previous fixed scores are suppressed. Automatic technique analysis and scoring from video have not been implemented.
+- `domain/vision.ts`: measured-only contracts, visibility gates, aspect-correct angles, robust ranges, event rules and sample lookup.
+- `services/vision.ts`: video decoding, sampling, worker request lifecycle, progress, timeouts and cancellation.
+- `workers/pose.worker.ts`: actual MediaPipe CPU/WASM inference; returns detected landmarks, not measurements or scores.
+- `services/vision-history.ts`: validates and saves summary-only real history, with explicit `simulated: false`.
+- `ui/vision.ts`: actual-video overlay, live angles, confidence report, measured observations and history entries.
+- `scripts/prepare-vision.mjs`: local runtime asset preparation and model checksum verification.
+
+A future real movement implementation should supply movement-specific evidence rules over measured landmarks. Do not reuse Snatch rules for another exercise, and do not turn the tracking-coverage percentage into a technique score. See [VISION.md](VISION.md) for the current measured pipeline and limits.

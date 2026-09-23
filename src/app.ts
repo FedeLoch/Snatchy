@@ -1,3 +1,15 @@
+import { analyzeVideo } from './services/vision';
+import {
+  loadVisionHistory,
+  saveVisionHistory,
+} from './services/vision-history';
+import type { VisionRecord } from './domain/vision';
+import {
+  visionRows,
+  visionProcessing,
+  visionResult,
+  bindVisionPlayback,
+} from './ui/vision';
 import './style.css';
 import { requireMovement } from './domain/movements';
 import { phaseAt } from './domain/analysis';
@@ -21,6 +33,9 @@ const storage: StoragePort = {
   setItem: (key, value) => localStorage.setItem(key, value),
 };
 const saved = loadHistory(storage);
+let visionRecords = loadVisionHistory(storage);
+const visionVideos = new Map<string, VideoSource>();
+let visionCleanup: (() => void) | null = null;
 let records = saved.records,
   warning = saved.warning;
 let movement = requireMovement('snatch');
@@ -41,6 +56,8 @@ function go(destination: string) {
   else location.hash = destination;
 }
 function dispose() {
+  visionCleanup?.();
+  visionCleanup = null;
   work?.abort();
   work = null;
   loadingVideo = false;
@@ -62,6 +79,25 @@ function route() {
     return;
   }
   dispose();
+  if (route.startsWith('vision/')) {
+    const record = visionRecords.find((r) => r.id === route.slice(7));
+    if (!record) {
+      page = 'history';
+      draw(
+        views.history(
+          records,
+          'That analysis is no longer available.',
+          visionRows(visionRecords),
+        ),
+      );
+      return;
+    }
+    page = 'result';
+    active = null;
+    draw(visionResult(record, visionVideos.get(record.id) ?? null, warning));
+    visionCleanup = bindVisionPlayback(root, record.analysis);
+    return;
+  }
   if (route.startsWith('result/')) {
     active = records.find((r) => r.id === route.slice(7)) ?? null;
     if (!active) {
@@ -82,8 +118,10 @@ function route() {
     releaseVideo(pendingVideo);
     pendingVideo = null;
   }
-  if (page === 'home') draw(views.home(records, warning));
-  else if (page === 'history') draw(views.history(records, warning));
+  if (page === 'home')
+    draw(views.home(records, warning, visionRows(visionRecords.slice(0, 3))));
+  else if (page === 'history')
+    draw(views.history(records, warning, visionRows(visionRecords)));
   else draw(views.capture(movement, pendingVideo));
 }
 function renderResult() {
@@ -241,6 +279,51 @@ async function analyzeDemo() {
         : 'Analysis could not complete. Please try again.';
   }
 }
+async function analyzeUpload() {
+  if (!pendingVideo) return;
+  dispose();
+  const source = pendingVideo;
+  const controller = new AbortController();
+  work = controller;
+  draw(visionProcessing());
+  try {
+    const analysis = await analyzeVideo(source, {
+      signal: controller.signal,
+      onProgress: (progress, label) => {
+        const bar = root.querySelector<HTMLProgressElement>('progress');
+        if (bar) bar.value = progress;
+        const status = root.querySelector('#vision-progress-label');
+        if (status) status.textContent = label;
+      },
+    });
+    if (controller.signal.aborted) return;
+    const record: VisionRecord = {
+      id: crypto.randomUUID(),
+      createdAt: Date.now(),
+      analysis,
+    };
+    visionVideos.set(record.id, source);
+    pendingVideo = null;
+    visionRecords = [record, ...visionRecords].slice(0, 10);
+    for (const [id, video] of visionVideos) {
+      if (!visionRecords.some((r) => r.id === id)) {
+        releaseVideo(video);
+        visionVideos.delete(id);
+      }
+    }
+    warning = saveVisionHistory(storage, visionRecords);
+    work = null;
+    go('vision/' + record.id);
+  } catch (error) {
+    if (controller.signal.aborted) return;
+    work = null;
+    draw(views.capture(movement, pendingVideo));
+    root.querySelector('#capture-error')!.textContent =
+      error instanceof Error
+        ? error.message
+        : 'Video analysis failed. Try another clip.';
+  }
+}
 async function importFile(file: File) {
   if (loadingVideo) return;
   work?.abort();
@@ -306,6 +389,7 @@ root.addEventListener('click', (event) => {
   const action = target.dataset.action,
     id = target.dataset.id ?? '';
   if (action === 'demo') void analyzeDemo();
+  else if (action === 'analyze-video') void analyzeUpload();
   else if (action === 'review-speed') {
     const video = document.querySelector<HTMLVideoElement>(
       '.review-video video',
@@ -394,5 +478,7 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('pagehide', () => {
   dispose();
   releaseVideo(pendingVideo);
+  visionVideos.forEach(releaseVideo);
+  visionVideos.clear();
 });
 route();

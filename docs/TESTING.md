@@ -42,12 +42,16 @@ The workflow is configured locally; a hosted GitHub run is only possible after p
 
 ## Manual device checks
 
-Automated mobile emulation does not replace testing on a real phone. Before a release, verify iOS/Android camera permissions, the native gallery/recording flow, orientation, safe-area behavior, device-specific codecs, VoiceOver/TalkBack and long-session memory use. Axe cannot prove complete accessibility or technique accuracy. There is no actual CV model to validate in this prototype.
+Automated mobile emulation does not replace testing on a real phone. Before a release, verify iOS/Android camera permissions, the native gallery/recording flow, orientation, safe-area behavior, device-specific codecs, VoiceOver/TalkBack and long-session memory use. Axe cannot prove complete accessibility or technique accuracy. The CV smoke tests verify model execution, not athlete-level biomechanical or coaching accuracy.
 
 ## Motion regression checks
 
 The synthetic Snatch is tested throughout the 3.6-second cycle for fixed projected limb lengths, bar/hand contact, ground clearance, continuity at every keyframe, straight arms in the first pull, the 153-degree demo elbow at 1.34 seconds, an overhead squat catch, locked elbows through recovery, and a trajectory containing only elapsed frames. These geometric checks prevent rendering regressions; they are not a validation of a real athlete or a coaching model.
 
-## Uploaded-video scoring correction
+## Real model tests
 
-Uploaded clips now stay in a playback-only review with slow-motion controls. They do not invoke the demo provider, create a scored result, show a skeleton, or receive demo observations. Only the explicit demo action produces simulated analysis. Historical upload records are shown as “Not analyzed”; their previous fixed scores are suppressed. Automatic technique analysis and scoring from video have not been implemented.
+`tests/e2e/vision.spec.ts` executes the bundled MediaPipe model without mocking it. It checks a positive human-pose fixture, a blank negative clip, real-overlay playback, confidence behavior, local-only network requests, summary persistence, cancellation, and model-load failure. These tests run on desktop Chromium, mobile Chromium and mobile WebKit alongside the application suite.
+
+`tests/unit/vision*.test.ts` checks pixel-aspect-correct angles, missing/occluded/multiple-person data, stable side choice, non-invented output, robust ranges, event thresholds, summary validation, metadata/frame decoding, worker errors, timeouts and cleanup. Worker internals are exercised through the real-model browser tests, not the unit mocks.
+
+The positive fixture `person.mp4` repeats Google's public MediaPipe `pose.jpg` test image for 1.2 seconds. Its purpose is to verify real human detection and a no-motion case; it is **not** a Snatch and is not used as evidence of coaching accuracy. Source and model metadata are documented in [VISION.md](VISION.md).

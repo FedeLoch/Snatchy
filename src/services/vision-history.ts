@@ -1,3 +1,4 @@
+import { PHASE_NAMES } from '../domain/lift-phases';
 import type { VisionRecord, VisionAnalysis } from '../domain/vision';
 import type { StoragePort } from './history';
 export const VISION_HISTORY_KEY = 'snatchy-vision-history-v1';
@@ -55,6 +56,125 @@ export function isVisionRecord(value: unknown): value is VisionRecord {
     })
   )
     return false;
+  if (a.lift !== undefined) {
+    const lift = a.lift;
+    if (
+      !lift ||
+      lift.version !== 1 ||
+      lift.method !== 'pose-heuristic' ||
+      !Array.isArray(lift.phases) ||
+      lift.phases.length !== 7 ||
+      !Array.isArray(lift.checks)
+    )
+      return false;
+    let previous = -1;
+    for (const [index, phase] of lift.phases.entries()) {
+      if (
+        !phase ||
+        phase.name !== PHASE_NAMES[index] ||
+        typeof phase.evidence !== 'string'
+      )
+        return false;
+      if (
+        phase.start !== null &&
+        (!Number.isFinite(phase.start) ||
+          phase.start < 0 ||
+          phase.start > a.duration ||
+          phase.start <= previous)
+      )
+        return false;
+      if (phase.start !== null) previous = phase.start;
+      if (
+        phase.end !== null &&
+        (phase.start === null ||
+          !Number.isFinite(phase.end) ||
+          phase.end <= phase.start ||
+          phase.end > a.duration)
+      )
+        return false;
+      if (
+        phase.coverage !== null &&
+        (!Number.isFinite(phase.coverage) ||
+          phase.coverage < 0 ||
+          phase.coverage > 1)
+      )
+        return false;
+    }
+    if (lift.checks.length !== 0 && lift.checks.length !== 5) return false;
+    if (
+      !lift.checks.every(
+        (c) =>
+          !!c &&
+          typeof c.name === 'string' &&
+          typeof c.detail === 'string' &&
+          c.unit === '°' &&
+          typeof c.passed === 'boolean' &&
+          [c.value, c.target].every(
+            (v) => Number.isFinite(v) && v >= 0 && v <= 180,
+          ) &&
+          c.passed === c.value >= c.target &&
+          Number.isFinite(c.time) &&
+          c.time >= 0 &&
+          c.time <= a.duration,
+      )
+    )
+      return false;
+    if (
+      lift.score !==
+      (lift.checks.length
+        ? Math.round(
+            (lift.checks.filter((c) => c.passed).length / lift.checks.length) *
+              100,
+          )
+        : null)
+    )
+      return false;
+    if (lift.score !== null && lift.phases.some((p) => p.start === null))
+      return false;
+  }
+  if (a.bar !== undefined) {
+    const b = a.bar;
+    if (
+      !b ||
+      b.version !== 1 ||
+      b.method !== 'seeded-template' ||
+      b.reviewed !== true ||
+      typeof b.stoppedEarly !== 'boolean' ||
+      ![b.width, b.height, b.metersPerPixel, b.diameterCm].every(
+        (v) => Number.isFinite(v) && v > 0,
+      ) ||
+      b.diameterCm < 5 ||
+      b.diameterCm > 100 ||
+      ![b.start, b.end, b.requestedEnd].every(
+        (v) => Number.isFinite(v) && v >= 0 && v <= a.duration,
+      ) ||
+      b.start >= b.end ||
+      b.end > b.requestedEnd ||
+      !Array.isArray(b.points) ||
+      b.points.length < 3 ||
+      b.points.length > 451
+    )
+      return false;
+    if (
+      !b.points.every(
+        (p, i) =>
+          !!p &&
+          [p.x, p.y, p.time, p.confidence].every(Number.isFinite) &&
+          p.x >= 0 &&
+          p.x < b.width &&
+          p.y >= 0 &&
+          p.y < b.height &&
+          p.confidence >= 0.8 &&
+          p.confidence <= 1.000001 &&
+          p.time >= b.start &&
+          p.time <= b.end &&
+          (i === 0 || p.time > b.points[i - 1].time),
+      )
+    )
+      return false;
+    if (b.points[0].time !== b.start || b.points.at(-1)!.time !== b.end)
+      return false;
+  }
   return (
     Array.isArray(a.frames) &&
     Array.isArray(a.events) &&

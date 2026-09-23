@@ -29,6 +29,10 @@ test('real local model detects a person, overlays actual frames, and saves measu
     page.getByRole('heading', { name: 'Your movement.', exact: true }),
   ).toBeVisible();
   await expect(page.getByLabel('Your analyzed lift video')).toBeVisible();
+  // The model can legitimately miss its first sample. Inspect a later decoded frame.
+  await page.locator('#cv-video').evaluate((element) => {
+    (element as HTMLVideoElement).currentTime = 0.5;
+  });
   await expect
     .poll(() => page.locator('#cv-overlay circle').count())
     .toBeGreaterThan(0);

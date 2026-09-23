@@ -1,3 +1,5 @@
+import { estimatePhases, type LiftPhases } from './lift-phases';
+import type { BarTrack } from './bar-track';
 export interface Landmark {
   x: number;
   y: number;
@@ -47,6 +49,8 @@ export interface VisionAnalysis {
   };
   events: MotionEvent[];
   frames: PoseSample[];
+  lift?: LiftPhases;
+  bar?: BarTrack;
 }
 export interface VisionRecord {
   id: string;
@@ -258,7 +262,7 @@ export function analyzePoseSamples(
         });
     }
   }
-  return {
+  const analysis: VisionAnalysis = {
     version: 1,
     kind: 'measured-pose',
     simulated: false,
@@ -276,4 +280,6 @@ export function analyzePoseSamples(
     events: events.sort((a, b) => a.time - b.time),
     frames,
   };
+  analysis.lift = estimatePhases(analysis);
+  return analysis;
 }

@@ -1,4 +1,12 @@
 import {
+  movementPhases,
+  techniqueScore,
+  techniqueFeedback,
+  barPanel,
+} from './lift-analysis';
+import { estimatePhases } from '../domain/lift-phases';
+import { visionRadar } from './radar';
+import {
   anglesAt,
   nearestSample,
   visible,
@@ -26,7 +34,7 @@ const links = [
 ];
 export function visionRows(records: VisionRecord[]): string {
   return records.length
-    ? `<div class="lift-list">${records.map((r) => `<a class="lift-row" href="#vision/${r.id}" aria-label="Open measured pose analysis"><span class="lift-icon">${icon('eye')}</span><span class="lift-description"><strong>SNATCH · YOUR VIDEO</strong><small>${e(new Date(r.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}</small></span><span class="upload-status">${r.analysis.status === 'tracked' ? 'Pose tracked' : 'Limited tracking'}</span>${icon('arrow')}</a>`).join('')}</div>`
+    ? `<div class="lift-list">${records.map((r) => `<div class="history-entry"><a class="lift-row" href="#vision/${r.id}" aria-label="Open measured pose analysis"><span class="lift-icon">${icon('eye')}</span><span class="lift-description"><strong>SNATCH · YOUR VIDEO</strong><small>${e(new Date(r.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}</small></span><span class="upload-status">${r.analysis.status === 'tracked' ? 'Pose tracked' : 'Limited tracking'}</span>${icon('arrow')}</a><button class="history-remove" data-action="remove-history" data-kind="vision" data-id="${r.id}" aria-label="Remove video analysis from history">Remove</button></div>`).join('')}</div>`
     : '';
 }
 export function visionProcessing(): string {
@@ -55,7 +63,7 @@ export function visionResult(
   warning: string,
 ): string {
   const a = record.analysis;
-  return `<div class="result-heading"><div><a class="back" href="#history">${icon('back')} Your lifts</a><div class="eyebrow">SNATCH <span class="tag">MEASURED POSE</span></div><h1>${a.status === 'tracked' ? 'Your movement' : 'Limited tracking'}<span class="accent">.</span></h1><p>Body landmarks measured from your video. No demo data.</p></div></div>${warning ? `<p class="notice">${e(warning)}</p>` : ''}<div class="analysis-layout"><section aria-label="Your analyzed video">${source ? `<div class="cv-stage"><video id="cv-video" src="${e(source.url)}" controls playsinline preload="metadata" aria-label="Your analyzed lift video"></video><svg id="cv-overlay" viewBox="0 0 ${a.width} ${a.height}" aria-hidden="true"></svg></div><div class="cv-controls"><button id="cv-pose" class="secondary" aria-pressed="true">Tracked pose on</button><button id="cv-speed" class="secondary">Playback speed: 1×</button></div><p id="cv-frame-status" class="footnote">Move through the video to inspect measured joints.</p><div id="cv-angles" class="live-angles"></div><p id="cv-media-error" class="error" role="alert"></p>` : '<div class="notice"><strong>Saved measurement summary</strong><p>The video and frame landmarks were kept only in the original session. Import the clip again to view a tracked replay.</p><a href="#capture" class="text-link">Import the clip again ↗</a></div>'}<div class="section-title"><h2>Tracking quality</h2><span class="micro">${a.sampleRate} SAMPLES / SECOND</span></div><div class="quality-summary"><b>${Math.round(a.coverage * 100)}<small>%</small></b><div><strong>Usable frames</strong><p>${a.usableFrames} of ${a.sampledFrames} samples · ${a.side} side</p></div></div><p class="footnote">This percentage measures landmark availability, not technique quality.</p>${a.status === 'insufficient' ? '<div class="notice"><strong>Not enough reliable evidence</strong><p>No technique conclusions were generated. Film one athlete from the side, keep wrists, hips, knees and ankles visible, and use a well-lit, steady shot.</p></div>' : ''}${a.frames.length && a.status === 'tracked' ? `<div class="section-title"><h2>Elbow motion</h2><span class="micro">2D PROJECTED ANGLE</span></div>${angleChart(a)}` : ''}</section><section><div class="section-title"><h2>Measured joint ranges</h2></div><div class="measured-ranges">${(['elbow', 'hip', 'knee'] as const).map((key) => `<div><span>${key}</span><b>${a.ranges[key] ? `${a.ranges[key]!.min}–${a.ranges[key]!.max}°` : 'Unavailable'}</b></div>`).join('')}</div><p class="footnote">5th–95th percentile of high-visibility frames. Image-plane angles are perspective-dependent, not calibrated 3D biomechanics.</p><div class="section-title"><h2>Moments to inspect</h2></div>${a.events.length ? a.events.map((event) => `<article class="measured-event"><button data-cv-time="${event.time}" ${source ? '' : 'disabled'}><span>${e(event.title)}</span><b>${event.time.toFixed(2)} s ${icon('arrow')}</b></button><p>${e(event.detail)}</p><span class="event-kind">${event.kind === 'hypothesis' ? 'EXPERIMENTAL TECHNIQUE HYPOTHESIS' : 'MEASURED MOTION EVENT'}</span></article>`).join('') : `<p class="notice">${a.status === 'tracked' ? 'No distinct motion events met the evidence thresholds. The clip may be static or may not contain a complete lift.' : 'Motion events are withheld because tracking quality is too low.'}</p>`}<div class="notice"><strong>No technique score assigned</strong><p>This implementation measures body pose. It does not verify that the movement is a Snatch, detect the barbell, or produce a validated coaching score. Wrist landmarks are not barbell measurements.</p></div><p class="footnote">${e(a.engine)} · ${a.duration.toFixed(1)} s sampled · all processing on this device</p></section></div><a class="primary compact" href="#capture">Analyze another video ${icon('arrow')}</a>`;
+  return `<div class="result-heading"><div><a class="back" href="#history">${icon('back')} Your lifts</a><div class="eyebrow">SNATCH <span class="tag">MEASURED POSE</span></div><h1>${a.status === 'tracked' ? 'Your movement' : 'Limited tracking'}<span class="accent">.</span></h1><p>Body landmarks measured from your video. No demo data.</p></div>${techniqueScore(a)}</div>${warning ? `<p class="notice">${e(warning)}</p>` : ''}<div class="analysis-layout"><section aria-label="Your analyzed video">${source ? `<div class="cv-stage"><video id="cv-video" src="${e(source.url)}" controls playsinline preload="metadata" aria-label="Your analyzed lift video"></video><svg id="cv-overlay" viewBox="0 0 ${a.width} ${a.height}" aria-hidden="true"></svg></div><div class="cv-controls"><button id="cv-pose" class="secondary" aria-pressed="true">Tracked pose on</button><button id="cv-speed" class="secondary">Playback speed: 1×</button></div><p id="cv-frame-status" class="footnote">Move through the video to inspect measured joints.</p><div id="cv-angles" class="live-angles"></div><p id="cv-media-error" class="error" role="alert"></p>` : '<div class="notice"><strong>Saved measurement summary</strong><p>The video and frame landmarks were kept only in the original session. Import the clip again to view a tracked replay.</p><a href="#capture" class="text-link">Import the clip again ↗</a></div>'}${movementPhases(a, !!source)}<div class="section-title"><h2>Tracking quality</h2><span class="micro">${a.sampleRate} SAMPLES / SECOND</span></div><div class="quality-summary"><b>${Math.round(a.coverage * 100)}<small>%</small></b><div><strong>Usable frames</strong><p>${a.usableFrames} of ${a.sampledFrames} samples · ${a.side} side</p></div></div><p class="footnote">This percentage measures landmark availability, not technique quality.</p>${a.status === 'insufficient' ? '<div class="notice"><strong>Not enough reliable evidence</strong><p>No technique conclusions were generated. Film one athlete from the side, keep wrists, hips, knees and ankles visible, and use a well-lit, steady shot.</p></div>' : ''}${a.frames.length && a.status === 'tracked' ? `<div class="section-title"><h2>Elbow motion</h2><span class="micro">2D PROJECTED ANGLE</span></div>${angleChart(a)}` : ''}</section><section><div class="section-title"><h2>Measured joint ranges</h2></div><div class="measured-ranges">${(['elbow', 'hip', 'knee'] as const).map((key) => `<div><span>${key}</span><b>${a.ranges[key] ? `${a.ranges[key]!.min}–${a.ranges[key]!.max}°` : 'Unavailable'}</b></div>`).join('')}</div><p class="footnote">5th–95th percentile of high-visibility frames. Image-plane angles are perspective-dependent, not calibrated 3D biomechanics.</p>${visionRadar(a)}${techniqueFeedback(a, !!source)}${barPanel(a, !!source)}<div class="section-title"><h2>Moments to inspect</h2></div>${a.events.length ? a.events.map((event) => `<article class="measured-event"><button data-cv-time="${event.time}" ${source ? '' : 'disabled'}><span>${e(event.title)}</span><b>${event.time.toFixed(2)} s ${icon('arrow')}</b></button><p>${e(event.detail)}</p><span class="event-kind">${event.kind === 'hypothesis' ? 'EXPERIMENTAL TECHNIQUE HYPOTHESIS' : 'MEASURED MOTION EVENT'}</span></article>`).join('') : `<p class="notice">${a.status === 'tracked' ? 'No distinct motion events met the evidence thresholds. The clip may be static or may not contain a complete lift.' : 'Motion events are withheld because tracking quality is too low.'}</p>`}<p class="footnote">${e(a.engine)} · ${a.duration.toFixed(1)} s sampled · all processing on this device</p></section></div><a class="primary compact" href="#capture">Analyze another video ${icon('arrow')}</a>`;
 }
 export function bindVisionPlayback(
   root: HTMLElement,
@@ -72,6 +80,24 @@ export function bindVisionPlayback(
     disposed = false;
   function draw() {
     if (!video || disposed) return;
+    const lift = a.lift ?? estimatePhases(a);
+    root
+      .querySelectorAll<HTMLButtonElement>('[data-cv-phase]')
+      .forEach((button) => {
+        const phase = lift.phases.find(
+          (p) => p.name === button.dataset.cvPhase,
+        );
+        button.setAttribute(
+          'aria-pressed',
+          String(
+            phase?.start !== null &&
+              phase?.start !== undefined &&
+              phase.end !== null &&
+              video.currentTime >= phase.start &&
+              video.currentTime < phase.end,
+          ),
+        );
+      });
     const f = nearestSample(
       a.frames,
       video.currentTime,
@@ -157,6 +183,12 @@ export function bindVisionPlayback(
     (button) =>
       (button.onclick = () => {
         video.pause();
+        const phase = (a.lift ?? estimatePhases(a)).phases.find(
+          (p) => p.name === button.dataset.cvPhase,
+        );
+        const reading = root.querySelector('#cv-phase-reading');
+        if (phase && reading)
+          reading.textContent = `${phase.name} · ${phase.start?.toFixed(2)} s — ${phase.evidence}`;
         video.currentTime = Number(button.dataset.cvTime);
         video.scrollIntoView({
           block: 'center',

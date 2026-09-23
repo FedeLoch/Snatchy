@@ -13,7 +13,7 @@ interface Reply {
   people: number;
   landmarks: Landmark[];
 }
-function mediaEvent(
+export function mediaEvent(
   video: HTMLVideoElement,
   event: string,
   signal: AbortSignal,

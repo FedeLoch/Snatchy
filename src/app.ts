@@ -1,3 +1,4 @@
+import { openBarCalibration } from './ui/bar-calibration';
 import { analyzeVideo } from './services/vision';
 import {
   loadVisionHistory,
@@ -35,9 +36,11 @@ const storage: StoragePort = {
 const saved = loadHistory(storage);
 let visionRecords = loadVisionHistory(storage);
 const visionVideos = new Map<string, VideoSource>();
+let barCleanup: (() => void) | null = null;
 let visionCleanup: (() => void) | null = null;
 let records = saved.records,
   warning = saved.warning;
+let removed: { kind: string; record: LiftRecord | VisionRecord } | null = null;
 let movement = requireMovement('snatch');
 let page: Page = 'home';
 let pendingVideo: VideoSource | null = null;
@@ -56,6 +59,8 @@ function go(destination: string) {
   else location.hash = destination;
 }
 function dispose() {
+  barCleanup?.();
+  barCleanup = null;
   visionCleanup?.();
   visionCleanup = null;
   work?.abort();
@@ -67,6 +72,13 @@ function dispose() {
 }
 function draw(content: string, focus = true) {
   root.innerHTML = views.shell(content, page);
+  if (removed)
+    root
+      .querySelector('main')
+      ?.insertAdjacentHTML(
+        'afterbegin',
+        '<div class="history-undo" role="status">Lift removed from history.<button data-action="undo-history">Undo removal</button></div>',
+      );
   if (focus) {
     document.querySelector<HTMLElement>('main')?.focus({ preventScroll: true });
     window.scrollTo(0, 0);
@@ -388,7 +400,76 @@ root.addEventListener('click', (event) => {
   if (!target) return;
   const action = target.dataset.action,
     id = target.dataset.id ?? '';
-  if (action === 'demo') void analyzeDemo();
+  if (action === 'track-bar') {
+    const record = visionRecords.find(
+      (r) => 'vision/' + r.id === location.hash.slice(1),
+    );
+    const source = record ? visionVideos.get(record.id) : null;
+    if (!record || !source) return;
+    root.querySelector<HTMLVideoElement>('#cv-video')?.pause();
+    barCleanup = openBarCalibration(source, (bar) => {
+      record.analysis.bar = bar;
+      warning = saveVisionHistory(storage, visionRecords);
+      route();
+    });
+  } else if (action === 'remove-history') {
+    const kind = target.dataset.kind;
+    const record =
+      kind === 'vision'
+        ? visionRecords.find((r) => r.id === id)
+        : records.find((r) => r.id === id);
+    if (!record) return;
+    const nextVision = visionRecords.filter((r) => r.id !== id);
+    const nextDemo = records.filter((r) => r.id !== id);
+    const failure =
+      kind === 'vision'
+        ? saveVisionHistory(storage, nextVision)
+        : saveHistory(storage, nextDemo);
+    if (failure) {
+      warning =
+        'Could not remove this lift from device storage. Please try again.';
+      route();
+      return;
+    }
+    if (removed?.kind === 'vision') {
+      releaseVideo(visionVideos.get(removed.record.id) ?? null);
+      visionVideos.delete(removed.record.id);
+    }
+    removed = { kind: kind!, record };
+    if (kind === 'vision') visionRecords = nextVision;
+    else records = nextDemo;
+    warning = '';
+    route();
+    root
+      .querySelector<HTMLButtonElement>('[data-action="undo-history"]')
+      ?.focus();
+  } else if (action === 'undo-history' && removed) {
+    const nextVision =
+      removed.kind === 'vision'
+        ? [removed.record as VisionRecord, ...visionRecords]
+            .sort((a, b) => b.createdAt - a.createdAt)
+            .slice(0, 10)
+        : visionRecords;
+    const nextDemo =
+      removed.kind === 'demo'
+        ? addRecord(records, removed.record as LiftRecord).sort(
+            (a, b) => b.createdAt - a.createdAt,
+          )
+        : records;
+    const failure =
+      removed.kind === 'vision'
+        ? saveVisionHistory(storage, nextVision)
+        : saveHistory(storage, nextDemo);
+    if (failure)
+      warning = 'Could not restore this lift. Please try Undo again.';
+    else {
+      visionRecords = nextVision;
+      records = nextDemo;
+      removed = null;
+      warning = '';
+    }
+    route();
+  } else if (action === 'demo') void analyzeDemo();
   else if (action === 'analyze-video') void analyzeUpload();
   else if (action === 'review-speed') {
     const video = document.querySelector<HTMLVideoElement>(

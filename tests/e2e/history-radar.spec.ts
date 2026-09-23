@@ -144,3 +144,23 @@ test('insufficient tracking withholds radar and provides recording improvements'
     'Improve the recording first',
   );
 });
+
+test('deleting preserves nearby focus and dismisses the undo notification', async ({
+  page,
+}) => {
+  await page.goto('/#history');
+  await page
+    .getByRole('button', { name: 'Remove video analysis from history' })
+    .click();
+  await expect(
+    page.getByRole('button', { name: 'Remove demo lift from history' }),
+  ).toBeFocused();
+  await expect(page.locator('main')).not.toBeFocused();
+  await expect(page.locator('.history-undo')).toBeVisible();
+  await expect(page.locator('.history-undo')).toHaveCount(0, {
+    timeout: 10000,
+  });
+  await expect(
+    page.getByRole('button', { name: 'Remove demo lift from history' }),
+  ).toBeFocused();
+});

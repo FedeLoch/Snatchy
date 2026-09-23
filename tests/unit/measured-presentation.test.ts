@@ -35,33 +35,14 @@ it('changes the score and feedback when the recorded joint trajectory changes', 
     'details class="issue measured-issue" open',
   );
 });
-it('renders only supplied calibrated bar values and leaves missing values unavailable', () => {
-  const a = analyzePoseSamples([], 100, 100, 2);
-  expect(techniqueScore(a)).toContain('data-measured-score>—');
-  expect(barPanel(a, true)).not.toContain('1.82');
-  a.bar = {
-    version: 1,
-    method: 'seeded-template',
-    width: 100,
-    height: 100,
-    metersPerPixel: 0.01,
-    diameterCm: 40,
-    start: 0,
-    end: 0.2,
-    requestedEnd: 0.2,
-    reviewed: true,
-    stoppedEarly: false,
-    points: [
-      { time: 0, x: 40, y: 80, confidence: 1 },
-      { time: 0.1, x: 42, y: 70, confidence: 1 },
-      { time: 0.2, x: 41, y: 60, confidence: 1 },
-    ],
-  };
-  expect(barPanel(a, true)).toContain('0.20<small> m');
-  a.bar.metersPerPixel = 0.02;
-  a.bar.diameterCm = 80;
-  expect(barPanel(a, true)).toContain('0.40<small> m');
-  expect(barPanel(a, true)).toContain('4.0<small> cm');
+it('renders automatic wrist estimates without calibration controls or physical units', () => {
+  const a = analyzePoseSamples(liftFrames(), 100, 100, 2);
+  expect(barPanel(a, true)).toContain('WRIST-LINE ESTIMATE');
+  expect(barPanel(a, true)).toContain('% frame height / s');
+  expect(barPanel(a, true)).not.toContain('data-action="track-bar"');
+  expect(barPanel(analyzePoseSamples([], 100, 100, 2), true)).toContain(
+    'Both wrists must be visible',
+  );
 });
 
 it('marks even a 100 score as partial and names missing phases', () => {

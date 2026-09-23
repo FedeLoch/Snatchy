@@ -1,4 +1,5 @@
-import { openBarCalibration } from './ui/bar-calibration';
+import { analyzePoseSamples } from './domain/vision';
+import { exerciseById } from './domain/exercises';
 import { analyzeVideo } from './services/vision';
 import {
   loadVisionHistory,
@@ -43,7 +44,10 @@ function selectedAnalysis(record: VisionRecord) {
     record.analysis
   );
 }
-let barCleanup: (() => void) | null = null;
+let exerciseChoice = 'auto';
+let suppressFocus = false;
+let noticeTimer: ReturnType<typeof setTimeout> | undefined;
+let removedUntil = 0;
 let visionCleanup: (() => void) | null = null;
 let records = saved.records,
   warning = saved.warning;
@@ -57,17 +61,22 @@ let active: LiftRecord | null = null;
 let selected: string | null = 'arms';
 let overlay = true;
 let loadingVideo = false;
+let announceTimer: ReturnType<typeof setTimeout> | undefined;
 function announce(message: string) {
+  clearTimeout(announceTimer);
   const region = document.querySelector('#announcer');
-  if (region) region.textContent = message;
+  if (region) {
+    region.textContent = message;
+    announceTimer = setTimeout(() => {
+      region.textContent = '';
+    }, 5000);
+  }
 }
 function go(destination: string) {
   if (location.hash === '#' + destination) route();
   else location.hash = destination;
 }
 function dispose() {
-  barCleanup?.();
-  barCleanup = null;
   visionCleanup?.();
   visionCleanup = null;
   work?.abort();
@@ -86,10 +95,48 @@ function draw(content: string, focus = true) {
         'afterbegin',
         '<div class="history-undo" role="status">Lift removed from history.<button data-action="undo-history">Undo removal</button></div>',
       );
-  if (focus) {
+  if (focus && !suppressFocus) {
     document.querySelector<HTMLElement>('main')?.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   }
+  clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(
+    () => {
+      root
+        .querySelectorAll('.notice[role="status"]')
+        .forEach((n) => n.remove());
+      warning = '';
+      const toast = root.querySelector('.history-undo');
+      if (toast?.contains(document.activeElement)) {
+        toast.addEventListener('focusout', () => setTimeout(expireUndo, 2000), {
+          once: true,
+        });
+      } else expireUndo();
+    },
+    removed ? Math.max(0, removedUntil - Date.now()) : 7000,
+  );
+}
+function expireUndo() {
+  if (removed && Date.now() >= removedUntil) {
+    if (removed.kind === 'vision') {
+      releaseVideo(visionVideos.get(removed.record.id) ?? null);
+      visionVideos.delete(removed.record.id);
+    }
+    removed = null;
+    root.querySelector('.history-undo')?.remove();
+  }
+}
+function refreshInPlace(index = 0) {
+  const y = window.scrollY;
+  suppressFocus = true;
+  route();
+  suppressFocus = false;
+  const buttons = root.querySelectorAll<HTMLButtonElement>('.history-remove');
+  (
+    buttons[Math.min(index, buttons.length - 1)] ??
+    root.querySelector<HTMLElement>('a[href="#capture"]')
+  )?.focus({ preventScroll: true });
+  window.scrollTo(0, y);
 }
 function route() {
   const route = location.hash.slice(1) || 'home';
@@ -160,7 +207,7 @@ function route() {
     draw(views.home(records, warning, visionRows(visionRecords.slice(0, 3))));
   else if (page === 'history')
     draw(views.history(records, warning, visionRows(visionRecords)));
-  else draw(views.capture(movement, pendingVideo));
+  else draw(views.capture(movement, pendingVideo, exerciseChoice));
 }
 function renderResult() {
   if (!active) return;
@@ -275,6 +322,7 @@ function selectIssue(id: string, toggle = true) {
   );
 }
 async function analyzeDemo() {
+  movement = requireMovement('snatch');
   dispose();
   releaseVideo(pendingVideo);
   pendingVideo = null;
@@ -310,7 +358,7 @@ async function analyzeDemo() {
     go('result/' + record.id);
   } catch (error) {
     if (controller.signal.aborted) return;
-    draw(views.capture(movement, pendingVideo));
+    draw(views.capture(movement, pendingVideo, exerciseChoice));
     document.querySelector('#capture-error')!.textContent =
       error instanceof Error
         ? error.message
@@ -327,6 +375,7 @@ async function analyzeUpload() {
   try {
     const analysis = await analyzeVideo(source, {
       signal: controller.signal,
+      exerciseId: exerciseChoice,
       onProgress: (progress, label) => {
         const bar = root.querySelector<HTMLProgressElement>('progress');
         if (bar) bar.value = progress;
@@ -355,7 +404,7 @@ async function analyzeUpload() {
   } catch (error) {
     if (controller.signal.aborted) return;
     work = null;
-    draw(views.capture(movement, pendingVideo));
+    draw(views.capture(movement, pendingVideo, exerciseChoice));
     root.querySelector('#capture-error')!.textContent =
       error instanceof Error
         ? error.message
@@ -384,7 +433,7 @@ async function importFile(file: File) {
     }
     releaseVideo(pendingVideo);
     pendingVideo = source;
-    draw(views.capture(movement, pendingVideo));
+    draw(views.capture(movement, pendingVideo, exerciseChoice));
   } catch (error) {
     if (controller.signal.aborted) return;
     document.querySelector('#capture-error')!.textContent =
@@ -429,23 +478,10 @@ root.addEventListener('click', (event) => {
   if (action === 'select-rep') {
     selectedReps.set(id, Number(target.dataset.rep));
     route();
-  } else if (action === 'track-bar') {
-    const record = visionRecords.find(
-      (r) => 'vision/' + r.id === location.hash.slice(1),
-    );
-    const source = record ? visionVideos.get(record.id) : null;
-    if (!record || !source) return;
-    root.querySelector<HTMLVideoElement>('#cv-video')?.pause();
-    barCleanup = openBarCalibration(
-      source,
-      (bar) => {
-        selectedAnalysis(record).bar = bar;
-        warning = saveVisionHistory(storage, visionRecords);
-        route();
-      },
-      selectedAnalysis(record),
-    );
   } else if (action === 'remove-history') {
+    const rowIndex = Array.from(
+      root.querySelectorAll('.history-remove'),
+    ).indexOf(target);
     const kind = target.dataset.kind;
     const record =
       kind === 'vision'
@@ -461,7 +497,7 @@ root.addEventListener('click', (event) => {
     if (failure) {
       warning =
         'Could not remove this lift from device storage. Please try again.';
-      route();
+      refreshInPlace(rowIndex);
       return;
     }
     if (removed?.kind === 'vision') {
@@ -469,13 +505,11 @@ root.addEventListener('click', (event) => {
       visionVideos.delete(removed.record.id);
     }
     removed = { kind: kind!, record };
+    removedUntil = Date.now() + 8000;
     if (kind === 'vision') visionRecords = nextVision;
     else records = nextDemo;
     warning = '';
-    route();
-    root
-      .querySelector<HTMLButtonElement>('[data-action="undo-history"]')
-      ?.focus();
+    refreshInPlace(rowIndex);
   } else if (action === 'undo-history' && removed) {
     const nextVision =
       removed.kind === 'vision'
@@ -501,7 +535,7 @@ root.addEventListener('click', (event) => {
       removed = null;
       warning = '';
     }
-    route();
+    refreshInPlace();
   } else if (action === 'demo') void analyzeDemo();
   else if (action === 'analyze-video') void analyzeUpload();
   else if (action === 'review-speed') {
@@ -562,7 +596,39 @@ root.addEventListener('change', (event) => {
   const input = event.target as HTMLInputElement;
   if (input.type === 'file' && input.files?.[0])
     void importFile(input.files[0]);
-  if (input.id === 'movement') movement = requireMovement(input.value);
+  if (input.id === 'movement') {
+    exerciseChoice = input.value;
+    if (input.value !== 'auto') movement = requireMovement(input.value);
+  }
+  if (input.id === 'result-exercise') {
+    const record = visionRecords.find(
+      (r) => '#vision/' + r.id === location.hash,
+    );
+    if (!record || (input.value !== 'auto' && !exerciseById(input.value)))
+      return;
+    const previous = selectedAnalysis(record);
+    if (!previous.frames.length) return;
+    const updated = analyzePoseSamples(
+      previous.frames,
+      previous.width,
+      previous.height,
+      previous.duration,
+      previous.sampleRate,
+      input.value,
+    );
+    updated.interval = previous.interval;
+    if (record.analysis.repetitions?.length)
+      record.analysis.repetitions[selectedReps.get(record.id) ?? 0] = updated;
+    else record.analysis = updated;
+    warning = saveVisionHistory(storage, visionRecords);
+    suppressFocus = true;
+    route();
+    suppressFocus = false;
+    root
+      .querySelector<HTMLElement>('#result-exercise')
+      ?.focus({ preventScroll: true });
+    announce('Exercise updated. Phases and score recalculated.');
+  }
 });
 root.addEventListener('input', (event) => {
   const input = event.target as HTMLInputElement;

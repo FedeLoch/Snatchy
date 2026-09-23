@@ -1,3 +1,4 @@
+import { exerciseById } from './exercises';
 import { anglesAt, SIDES, visible, type VisionAnalysis } from './vision';
 export const PHASE_NAMES = [
   'Setup',
@@ -15,6 +16,7 @@ export interface MeasuredPhase {
   evidence: string;
   coverage: number | null;
   estimated?: boolean;
+  applicable?: boolean;
 }
 export interface MovementCheck {
   name: string;
@@ -50,6 +52,18 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     checks: [],
     score: null,
   };
+  if (a.exercise && a.exercise.id === null) return result;
+  const exercise = exerciseById(a.exercise?.id ?? 'snatch');
+  const clean = exercise?.family === 'clean';
+  const highHang = exercise?.start === 'high-hang';
+  const power = exercise?.receiving === 'power';
+  const muscle = exercise?.receiving === 'muscle';
+  if (highHang)
+    for (const i of [1, 2]) {
+      phases[i].applicable = false;
+      phases[i].evidence =
+        'Not applicable to a high-hang start. Analysis begins with the upper pull.';
+    }
   const [shoulder, , wrist, hip] = SIDES[a.side];
   const data = a.frames
     .map((f) => {
@@ -87,7 +101,11 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     continuous(i, i + 2) &&
     data.slice(i, i + 3).every(predicate);
   const overhead = (v: (typeof data)[number]) =>
-    v.elbow! >= 155 && v.wrist.y < v.shoulder.y - 0.06;
+    clean
+      ? v.elbow !== null &&
+        v.elbow < 120 &&
+        Math.abs(v.wrist.y - v.shoulder.y) < 0.1
+      : v.elbow! >= 155 && v.wrist.y < v.shoulder.y - 0.06;
   const set = (
     index: number,
     frame: number,
@@ -100,7 +118,10 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
   };
   const setup = data.findIndex(
     (v, i) =>
-      sustained(i, (x) => x.wrist.y > x.hipPoint.y + 0.03) &&
+      sustained(
+        i,
+        (x) => x.wrist.y > x.hipPoint.y + (highHang ? -0.04 : 0.03),
+      ) &&
       ((v.knee !== null && v.knee < 155) || (v.hip !== null && v.hip < 165)),
   );
   const pull =
@@ -118,7 +139,7 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
       (pull < 0 || i > pull) &&
       sustained(i, overhead) &&
       v.knee !== null &&
-      v.knee < 150 &&
+      (muscle || v.knee < (power ? 178 : 150)) &&
       // Require movement into the receiving position or a later overhead rise;
       // a static overhead pose must not earn a movement score.
       (data.slice(0, i).some((x) => x.wrist.y - v.wrist.y > 0.15) ||
@@ -147,7 +168,9 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     set(
       5,
       catchIndex,
-      'Extended arm above shoulder for three samples with flexed knees. Estimated receiving position.',
+      clean
+        ? 'Hands near shoulders with flexed elbows for three observed samples. Estimated front-rack receiving position.'
+        : 'Extended arm above shoulder for three samples with flexed knees. Estimated receiving position.',
     );
   let extension = -1;
   if (pull >= 0) {
@@ -183,12 +206,12 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     set(
       4,
       extension,
-      'Largest combined hip/knee extension before the overhead receiving position.',
+      'Largest combined hip/knee extension before the receiving position.',
     );
   // Preserve independently recognizable phases; do not invent a missing knee rebend.
   for (
     let i = pull + 1;
-    pull >= 0 && extension >= 0 && i < extension - 2;
+    !highHang && pull >= 0 && extension >= 0 && i < extension - 2;
     i++
   ) {
     if (
@@ -253,16 +276,32 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
             continuous(bottom, i) &&
             sustained(
               i,
-              (x) => overhead(x) && x.knee! > data[bottom].knee! + 12,
+              (x) =>
+                overhead(x) &&
+                x.knee! >
+                  (muscle ? 159 : data[bottom].knee! + (power ? 5 : 12)),
             ) &&
-            v.knee! > data[bottom].knee! + 12,
+            v.knee! > (muscle ? 159 : data[bottom].knee! + (power ? 5 : 12)),
         );
   if (recovery >= 0)
     set(
       6,
       recovery,
-      'Knees extend from the receiving position while the arm remains overhead.',
+      clean
+        ? 'Standing recovery while the hands remain in the front-rack region.'
+        : 'Knees extend from the receiving position while the arm remains overhead.',
     );
+  if (highHang && pull >= 0) {
+    phases[1].start = null;
+    phases[1].evidence =
+      'Not applicable to a high-hang start; no floor-to-knee first pull is assumed.';
+    set(
+      3,
+      pull,
+      'Upper-pull onset from the selected high-hang starting position.',
+      true,
+    );
+  }
   for (let i = 0; i < phases.length; i++) {
     const phase = phases[i];
     if (phase.start === null) continue;
@@ -349,11 +388,13 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
   }
   if (catchIndex >= 0)
     addCheck(
-      'Receiving arm extension',
-      data[catchIndex].elbow!,
-      165,
+      clean ? 'Front-rack arm flexion' : 'Receiving arm extension',
+      clean ? 180 - data[catchIndex].elbow! : data[catchIndex].elbow!,
+      clean ? 60 : 165,
       data[catchIndex].time,
-      'Visible elbow angle at the estimated catch. Inspect the overlay before interpreting a shortfall as a fault.',
+      clean
+        ? 'Elbow flexion (180° minus elbow angle) at the estimated front rack. This checks a receiving-position cue, not shoulder contact or competition validity.'
+        : 'Visible elbow angle at the estimated catch. Inspect the overlay before interpreting a shortfall as a fault.',
     );
   const finish =
     recovery < 0
@@ -372,7 +413,7 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
       finish.knee!,
       165,
       finish.time,
-      'Knee angle in the recognized overhead recovery. This does not establish a competition-valid lift.',
+      'Knee angle in the recognized receiving-position recovery. This does not establish a competition-valid lift.',
     );
   result.score = result.checks.length
     ? Math.round(

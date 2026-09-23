@@ -1997,3 +1997,81 @@ dialog blockquote {
   color: var(--accent);
   margin-top: 4px;
 }
+
+.exercise-review {
+  margin: 20px 0 30px;
+  max-width: 620px;
+}
+.exercise-review label {
+  display: block;
+  margin-bottom: 8px;
+}
+.exercise-review select {
+  width: 100%;
+  min-height: 44px;
+  background: var(--surface, #202719);
+  color: var(--text);
+  border: 1px solid #566445;
+  padding: 10px;
+  border-radius: 6px;
+}
+.history-undo {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  z-index: 20;
+  box-shadow: 0 8px 30px #0008;
+}
+.lift-score > small {
+  display: block;
+}
+.lift-score > small:last-child {
+  font-size: 9px;
+  letter-spacing: 0;
+}
+.result-heading:has(.measured-score) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(100px, 26%);
+  align-items: start;
+  gap: 24px;
+}
+.result-heading:has(.measured-score) h1 {
+  margin-top: 0;
+}
+@media (max-width: 600px) {
+  .result-heading:has(.measured-score) {
+    grid-template-columns: minmax(0, 1fr) 105px;
+    gap: 12px;
+  }
+  .result-heading:has(.measured-score) h1 {
+    font-size: 34px;
+  }
+  .measured-score {
+    margin: 0;
+    min-width: 0;
+  }
+  .measured-score .score {
+    font-size: 64px;
+    line-height: 1;
+  }
+  .measured-score > .micro {
+    font-size: 8px;
+    letter-spacing: 0.6px;
+    overflow-wrap: anywhere;
+  }
+  .measured-score .partial-score-note {
+    font-size: 10px;
+  }
+  .history-entry .upload-status {
+    display: none;
+  }
+  .history-entry .lift-description {
+    min-width: 0;
+  }
+  .history-entry .lift-description strong {
+    white-space: normal;
+  }
+}

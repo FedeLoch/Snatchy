@@ -37,8 +37,8 @@ test('home → capture → processing → result → history survives reload', a
     page.getByRole('heading', { name: 'Every lift. A little better.' }),
   ).toBeVisible();
   await page.getByRole('link', { name: 'Analyze a lift', exact: true }).click();
-  await expect(page.getByLabel('Movement')).toHaveValue('snatch');
-  await expect(page.getByLabel('Movement').locator('option')).toHaveCount(1);
+  await expect(page.getByLabel('Movement')).toHaveValue('auto');
+  await expect(page.getByLabel('Movement').locator('option')).toHaveCount(12);
   await page.getByRole('button', { name: 'Try the demo lift' }).click();
   await expect(
     page.getByRole('heading', { name: 'Analyzing your snatch.' }),

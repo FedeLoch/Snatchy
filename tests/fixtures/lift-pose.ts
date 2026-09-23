@@ -1,7 +1,7 @@
 import type { Landmark, PoseSample } from '../../src/domain/vision';
 const point = (x: number, y: number): Landmark => ({ x, y, visibility: 0.99 });
-export function liftFrames(): PoseSample[] {
-  const knees = [
+export function liftFrames(kneeOverride?: number[]): PoseSample[] {
+  const knees = kneeOverride ?? [
     110, 110, 110, 120, 130, 145, 160, 155, 145, 140, 145, 160, 175, 170, 150,
     120, 95, 85, 85, 95, 115, 140, 165, 175, 175, 175,
   ];

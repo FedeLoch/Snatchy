@@ -1,3 +1,4 @@
+import { exerciseById } from '../domain/exercises';
 import { PHASE_NAMES } from '../domain/lift-phases';
 import type { VisionRecord, VisionAnalysis } from '../domain/vision';
 import type { StoragePort } from './history';
@@ -81,6 +82,60 @@ export function isVisionRecord(value: unknown): value is VisionRecord {
       ))
   )
     return false;
+  if (
+    a.exercise !== undefined &&
+    (!a.exercise ||
+      !['manual', 'automatic'].includes(a.exercise.source) ||
+      typeof a.exercise.reason !== 'string' ||
+      (a.exercise.id !== null && !exerciseById(a.exercise.id)) ||
+      (a.exercise.source === 'manual' && a.exercise.id === null))
+  )
+    return false;
+  if (
+    a.body !== undefined &&
+    (!a.body ||
+      !Number.isFinite(a.body.meanVisible) ||
+      a.body.meanVisible < 0 ||
+      a.body.meanVisible > 33 ||
+      ![a.body.handSpan, a.body.footSpan, a.body.shoulderTilt].every(
+        (v) => v === null || (Number.isFinite(v) && v >= 0),
+      ))
+  )
+    return false;
+  if (a.wristBar !== undefined) {
+    const b = a.wristBar;
+    if (
+      !b ||
+      b.method !== 'wrist-midpoint' ||
+      ![b.width, b.height].every((v) => Number.isFinite(v) && v > 0) ||
+      !Number.isFinite(b.coverage) ||
+      b.coverage < 0 ||
+      b.coverage > 1 ||
+      !Array.isArray(b.points) ||
+      b.points.length > 1801 ||
+      !b.points.every(
+        (p, i) =>
+          p &&
+          Number.isFinite(p.time) &&
+          p.time >= 0 &&
+          p.time <= a.duration &&
+          (i === 0 || p.time > b.points[i - 1].time) &&
+          [p, p.left, p.right].every(
+            (v) =>
+              v &&
+              Number.isFinite(v.x) &&
+              Number.isFinite(v.y) &&
+              v.x >= 0 &&
+              v.x <= b.width &&
+              v.y >= 0 &&
+              v.y <= b.height,
+          ) &&
+          Math.abs(p.x - (p.left.x + p.right.x) / 2) < 0.00001 &&
+          Math.abs(p.y - (p.left.y + p.right.y) / 2) < 0.00001,
+      )
+    )
+      return false;
+  }
   if (a.lift !== undefined) {
     const lift = a.lift;
     if (
@@ -98,7 +153,15 @@ export function isVisionRecord(value: unknown): value is VisionRecord {
         !phase ||
         phase.name !== PHASE_NAMES[index] ||
         typeof phase.evidence !== 'string' ||
-        (phase.estimated !== undefined && typeof phase.estimated !== 'boolean')
+        (phase.estimated !== undefined &&
+          typeof phase.estimated !== 'boolean') ||
+        (phase.applicable !== undefined &&
+          typeof phase.applicable !== 'boolean') ||
+        (phase.applicable === false &&
+          (exerciseById(a.exercise?.id ?? '')?.start !== 'high-hang' ||
+            ![1, 2].includes(index) ||
+            phase.start !== null ||
+            phase.end !== null))
       )
         return false;
       if (
@@ -160,12 +223,20 @@ export function isVisionRecord(value: unknown): value is VisionRecord {
     )
       return false;
     const supports: Record<string, boolean> = {
-      'Arms through the pull': lift.phases[1].start !== null,
+      'Arms through the pull':
+        lift.phases[1].start !== null ||
+        (exerciseById(a.exercise?.id ?? '')?.start === 'high-hang' &&
+          lift.phases[3].start !== null),
       'Hip extension':
         lift.phases[3].start !== null || lift.phases[4].start !== null,
       'Knee extension':
         lift.phases[3].start !== null || lift.phases[4].start !== null,
-      'Receiving arm extension': lift.phases[5].start !== null,
+      'Receiving arm extension':
+        lift.phases[5].start !== null &&
+        exerciseById(a.exercise?.id ?? 'snatch')?.family !== 'clean',
+      'Front-rack arm flexion':
+        lift.phases[5].start !== null &&
+        exerciseById(a.exercise?.id ?? '')?.family === 'clean',
       'Standing recovery': lift.phases[6].start !== null,
     };
     if (lift.checks.some((c) => supports[c.name] !== true)) return false;

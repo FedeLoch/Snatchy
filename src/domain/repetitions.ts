@@ -1,3 +1,4 @@
+import { anglesAt } from './vision';
 import {
   analyzePoseSamples,
   SIDES,
@@ -21,7 +22,11 @@ export function detectRepetitions(a: VisionAnalysis): RepWindow[] {
       time: f.time,
       y: valid ? w.y : null,
       low: valid && w.y > h.y + 0.03,
-      high: valid && w.y < s.y - 0.06,
+      high:
+        valid &&
+        (w.y < s.y - 0.06 ||
+          (Math.abs(w.y - s.y) < 0.1 &&
+            (anglesAt(f, a.side, a.width, a.height).elbow ?? 180) < 120)),
     };
   });
   const windows: RepWindow[] = [];
@@ -78,6 +83,7 @@ export function analyzeRepetitions(a: VisionAnalysis): VisionAnalysis[] {
         a.height,
         interval.end,
         a.sampleRate,
+        a.exercise?.source === 'manual' ? (a.exercise.id ?? 'snatch') : 'auto',
       ),
       interval,
     };

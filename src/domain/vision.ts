@@ -1,3 +1,6 @@
+import { bodyMeasurements, type BodyMeasurements } from './body-measurements';
+import { estimateWristBar, type WristBar } from './wrist-bar';
+import { detectExercise, type ExerciseSelection } from './exercises';
 import type { AutomaticBar } from './automatic-bar';
 import { estimatePhases, type LiftPhases } from './lift-phases';
 import type { BarTrack } from './bar-track';
@@ -50,6 +53,9 @@ export interface VisionAnalysis {
   };
   events: MotionEvent[];
   frames: PoseSample[];
+  exercise?: ExerciseSelection;
+  wristBar?: WristBar;
+  body?: BodyMeasurements;
   lift?: LiftPhases;
   bar?: BarTrack;
   automaticBar?: AutomaticBar;
@@ -151,6 +157,7 @@ export function analyzePoseSamples(
   height: number,
   duration: number,
   sampleRate = 15,
+  exerciseId = 'snatch',
 ): VisionAnalysis {
   const sideScores = (side: 'left' | 'right') =>
     frames.reduce(
@@ -284,6 +291,17 @@ export function analyzePoseSamples(
     events: events.sort((a, b) => a.time - b.time),
     frames,
   };
+  analysis.exercise =
+    exerciseId !== 'auto'
+      ? {
+          id: exerciseId,
+          source: 'manual',
+          reason:
+            'Selected manually. Change it if this recording contains a different exercise.',
+        }
+      : detectExercise(analysis);
+  analysis.wristBar = estimateWristBar(analysis);
+  analysis.body = bodyMeasurements(analysis);
   analysis.lift = estimatePhases(analysis);
   return analysis;
 }

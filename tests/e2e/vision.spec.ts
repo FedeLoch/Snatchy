@@ -26,7 +26,7 @@ test('real local model detects a person, overlays actual frames, and saves measu
   ).toHaveCount(1, { timeout: 90000 });
   await expect(page.locator('#capture-error')).toHaveCount(0);
   await expect(
-    page.getByRole('heading', { name: 'Your movement.', exact: true }),
+    page.getByRole('heading', { name: 'More evidence needed.', exact: true }),
   ).toBeVisible();
   await expect(page.getByLabel('Your analyzed lift video')).toBeVisible();
   // The model can legitimately miss its first sample. Inspect a later decoded frame.
@@ -50,7 +50,7 @@ test('real local model detects a person, overlays actual frames, and saves measu
       .evaluate((v) => (v as HTMLVideoElement).playbackRate),
   ).toBe(0.5);
   await page.getByRole('button', { name: 'Tracked pose on' }).click();
-  await expect(page.locator('#cv-overlay circle')).toHaveCount(0);
+  await expect(page.locator('#cv-overlay g circle')).toHaveCount(0);
   await page.getByRole('button', { name: 'Tracked pose off' }).click();
   await expect
     .poll(() => page.locator('#cv-overlay circle').count())
@@ -92,7 +92,7 @@ test('blank video receives no pose, technique score or invented observations', a
   ).toHaveCount(1, { timeout: 90000 });
   await expect(page.locator('#capture-error')).toHaveCount(0);
   await expect(
-    page.getByRole('heading', { name: 'Limited tracking.', exact: true }),
+    page.getByRole('heading', { name: 'More evidence needed.', exact: true }),
   ).toBeVisible();
   await expect(page.getByText('Not enough reliable evidence')).toBeVisible();
   await expect(

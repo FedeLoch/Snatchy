@@ -14,14 +14,22 @@ import {
 } from '../../src/domain/movements';
 import { escapeHtml } from '../../src/ui/html';
 describe('movement registry', () => {
-  it('only enables the complete Snatch experience', () => {
-    expect(availableMovements().map((m) => m.id)).toEqual(['snatch']);
-    expect(movements).toHaveLength(6);
+  it('enables supported recorded movements while retaining the Snatch demo', () => {
+    expect(availableMovements().map((m) => m.id)).toEqual(
+      expect.arrayContaining([
+        'snatch',
+        'high-hang-snatch',
+        'clean',
+        'power-clean',
+        'hang-clean',
+      ]),
+    );
+    expect(movements).toHaveLength(15);
     expect(requireMovement('snatch').drills).toHaveLength(3);
   });
   it('rejects unknown and planned movements', () => {
     expect(getMovement('unknown')).toBeUndefined();
-    expect(() => requireMovement('clean')).toThrow('not available');
+    expect(() => requireMovement('jerk')).toThrow('not available');
     expect(() => requireMovement('unknown')).toThrow();
   });
   it('has unique ids and all demo drill references resolve', () => {

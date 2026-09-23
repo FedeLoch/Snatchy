@@ -45,11 +45,11 @@ it('rejects an already cancelled request', async () => {
     }),
   ).rejects.toMatchObject({ name: 'AbortError' });
 });
-it('does not send planned movements through Snatch analysis', async () => {
+it('does not send cleans through the Snatch demo', async () => {
   await expect(
     demoProvider.analyze('clean', {
       signal: new AbortController().signal,
       onProgress: vi.fn(),
     }),
-  ).rejects.toThrow('not available');
+  ).rejects.toThrow('No analysis provider');
 });

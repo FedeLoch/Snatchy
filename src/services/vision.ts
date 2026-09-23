@@ -1,9 +1,6 @@
-import { AutomaticBarTracker } from '../domain/automatic-bar';
-import { grayscale } from '../domain/bar-track';
 import { analyzeRepetitions } from '../domain/repetitions';
 import {
   analyzePoseSamples,
-  visible,
   type Landmark,
   type PoseSample,
   type VisionAnalysis,
@@ -89,6 +86,7 @@ export async function analyzeVideo(
   source: VideoSource,
   options: {
     signal: AbortSignal;
+    exerciseId?: string;
     onProgress: (progress: number, label: string) => void;
   },
 ): Promise<VisionAnalysis> {
@@ -208,52 +206,9 @@ export async function analyzeVideo(
       height,
       source.duration,
       SAMPLE_RATE,
+      options.exerciseId ?? 'auto',
     );
     analysis.repetitions = analyzeRepetitions(analysis);
-    const targets = analysis.repetitions.length
-      ? analysis.repetitions
-      : [analysis];
-    const barCanvas = document.createElement('canvas');
-    const barScale = Math.min(1, 320 / Math.max(width, height));
-    barCanvas.width = Math.round(width * barScale);
-    barCanvas.height = Math.round(height * barScale);
-    const barContext = barCanvas.getContext('2d', { willReadFrequently: true });
-    if (barContext) {
-      let processed = 0;
-      const total = targets.reduce((sum, rep) => sum + rep.frames.length, 0);
-      for (const rep of targets) {
-        const tracker = new AutomaticBarTracker();
-        for (const pose of rep.frames) {
-          signal.throwIfAborted();
-          if (
-            pose.people !== 1 ||
-            ![pose.landmarks[15], pose.landmarks[16]].some(visible)
-          ) {
-            processed++;
-            continue;
-          }
-          const target = Math.min(pose.time + 0.001, source.duration - 0.001);
-          if (Math.abs(video.currentTime - target) > 0.0001)
-            await seekVideoFrame(video, target, signal);
-          barContext.drawImage(video, 0, 0, barCanvas.width, barCanvas.height);
-          tracker.push(
-            grayscale(
-              barContext.getImageData(0, 0, barCanvas.width, barCanvas.height)
-                .data,
-              barCanvas.width,
-              barCanvas.height,
-            ),
-            pose,
-          );
-          onProgress(
-            0.8 + 0.2 * (++processed / total),
-            'Looking for a visible plate and tracking its path',
-          );
-          await new Promise((resolve) => setTimeout(resolve, 0));
-        }
-        rep.automaticBar = tracker.result();
-      }
-    }
     onProgress(1, 'Analysis complete');
     return analysis;
   } finally {

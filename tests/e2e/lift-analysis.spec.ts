@@ -1,3 +1,4 @@
+import { cleanFrames } from '../fixtures/clean-pose';
 import { recordedTraces, recordedFrames } from '../fixtures/recorded-pose';
 import { analyzePoseSamples } from '../../src/domain/vision';
 import { test, expect } from '@playwright/test';
@@ -9,6 +10,7 @@ async function poseFixture(
   page: import('@playwright/test').Page,
   frames = liftFrames(),
   file = 'plate.mp4',
+  exercise = 'auto',
 ) {
   await page.route('**/assets/pose.worker-*.js', (route) =>
     route.fulfill({
@@ -20,12 +22,11 @@ async function poseFixture(
   await page
     .locator('#import')
     .setInputFiles(resolve('tests/fixtures/' + file));
+  await page.getByLabel('Movement', { exact: true }).selectOption(exercise);
   await page
     .getByRole('button', { name: 'Analyze this video', exact: true })
     .click();
-  await expect(
-    page.getByRole('heading', { name: 'Your movement.', exact: true }),
-  ).toBeVisible();
+  await expect(page.locator('.result-heading h1')).toBeVisible();
 }
 test('real result exposes measured phases, seeking, checks and saved summaries', async ({
   page,
@@ -74,47 +75,33 @@ test('real result exposes measured phases, seeking, checks and saved summaries',
     page.getByLabel('Experimental movement check score'),
   ).toContainText('100');
 });
-test('calibrates and tracks actual moving pixels, requires review, and persists bar measurements', async ({
+test('automatic wrist metrics appear first, mobile score aligns with title, and history retains scores', async ({
   page,
 }) => {
   await poseFixture(page);
-  await page.getByRole('button', { name: 'Calibrate and track bar' }).click();
+  const bar = page.getByRole('region', { name: 'Estimated bar path' });
+  await expect(bar).toContainText('WRIST-LINE ESTIMATE');
   await expect(
-    page.getByRole('button', { name: 'Track marked plate' }),
-  ).toBeEnabled();
-  await page.getByLabel('Center X (%)', { exact: true }).fill('50');
-  await page.getByLabel('Center Y (%)', { exact: true }).fill('75');
+    page.getByRole('button', { name: 'Calibrate and track bar' }),
+  ).toHaveCount(0);
+  const b = await bar.boundingBox(),
+    details = await page
+      .getByRole('region', { name: 'Technique observations' })
+      .boundingBox();
+  expect(b!.y).toBeLessThan(details!.y);
+  const title = await page.locator('.result-heading h1').boundingBox(),
+    score = await page.locator('[data-measured-score]').boundingBox();
+  expect(Math.abs(title!.y - score!.y)).toBeLessThan(8);
+  await expect(page.locator('.result-heading h1')).toHaveText('Strong lift.');
+  await page.getByRole('link', { name: 'Your lifts', exact: true }).click();
+  await expect(page.locator('.lift-score')).toContainText('100');
   await page
-    .getByLabel('Plate radius (% of frame width)', { exact: true })
-    .fill('6.25');
-  await page
-    .getByLabel('Actual plate diameter (cm)', { exact: true })
-    .fill('40');
-  await page.getByLabel('Track until (seconds)', { exact: true }).fill('1.8');
-  await page.locator('#bar-static').check();
-  expect(
-    (
-      await new AxeBuilder({ page })
-        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
-        .analyze()
-    ).violations,
-  ).toEqual([]);
-  await page.getByRole('button', { name: 'Track marked plate' }).click();
-  await expect(page.locator('#bar-review')).toBeVisible({ timeout: 30000 });
-  await expect(
-    page.getByRole('button', { name: 'Use reviewed measurements' }),
-  ).toBeDisabled();
-  await page.locator('#bar-scrub').press('ArrowRight');
-  await expect(page.locator('#bar-time')).not.toHaveText('0.00 s');
-  await page.locator('#bar-verified').check();
-  await page.getByRole('button', { name: 'Use reviewed measurements' }).click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  const bar = page.getByRole('region', { name: 'Measured bar path' });
-  await expect(bar).toContainText('0.54');
-  await expect(bar).toContainText('0.30');
-  await expect(bar.locator('svg')).toBeVisible();
-  await page.reload();
-  await expect(bar).toContainText('0.54');
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('link', { name: 'Home' })
+    .click();
+  await expect(page.locator('.recent-section .lift-score')).toContainText(
+    '100',
+  );
 });
 test('demo retains its original score, phase numbers, feedback and bar values', async ({
   page,
@@ -213,30 +200,29 @@ test('isolates multiple repetitions, switches measured results, and preserves pe
   await expect(page.locator('[data-cv-phase="Catch"]')).toBeDisabled();
 });
 
-test('automatically detects and follows real plate pixels without calibration', async ({
+test('auto-detects cleans and recalculates the selected variant without uploading again', async ({
   page,
 }) => {
-  const frames = Array.from({ length: 30 }, (_, i) => {
-    const f = structuredClone(liftFrames()[0]);
-    f.time = i / 15;
-    for (const index of [15, 16])
-      f.landmarks[index] = { x: 0.5, y: (180 - 2 * i) / 240, visibility: 1 };
-    return f;
-  });
-  await poseFixture(page, frames);
-  const panel = page.getByRole('region', { name: 'Measured bar path' });
-  await expect(panel).toContainText('AUTOMATIC · VERIFY PLATE');
-  await expect(panel).toContainText('% frame height');
-  await expect(panel).toContainText('size calibration needed');
-  await expect(panel.getByRole('img')).toBeVisible();
-  await page.locator('#cv-video').evaluate((v) => {
-    (v as HTMLVideoElement).currentTime = 0.5;
-  });
+  await poseFixture(page, cleanFrames());
+  await expect(page.locator('#result-exercise option:checked')).toContainText(
+    'Clean',
+  );
   await expect(
-    page.locator('#cv-overlay circle[stroke="#73c9ff"]'),
-  ).toHaveCount(1);
+    page.getByRole('region', { name: 'Technique observations' }),
+  ).toContainText('Front-rack arm flexion');
+  await page.locator('#result-exercise').selectOption('high-hang-clean');
+  await expect(page.locator('[data-cv-phase="First pull"]')).toContainText(
+    'N/A',
+  );
+  await expect(page.locator('[data-cv-phase="Transition"]')).toContainText(
+    'N/A',
+  );
+  await expect(page.locator('#result-exercise')).toBeFocused();
   await page.reload();
-  await expect(panel).toContainText('AUTOMATIC · VERIFY PLATE');
+  await expect(page.locator('#result-exercise')).toHaveValue('high-hang-clean');
+  await expect(page.locator('[data-cv-phase="First pull"]')).toContainText(
+    'N/A',
+  );
 });
 
 for (const trace of recordedTraces) {

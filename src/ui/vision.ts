@@ -1,3 +1,5 @@
+import { exercises, exerciseById } from '../domain/exercises';
+import { historyScore, scoreVerdict } from '../domain/score-summary';
 import {
   movementPhases,
   measuredSummary,
@@ -11,13 +13,33 @@ import {
   anglesAt,
   nearestSample,
   visible,
-  SIDES,
   type VisionRecord,
   type VisionAnalysis,
 } from '../domain/vision';
 import type { VideoSource } from '../domain/types';
 import { escapeHtml as e, icon } from './html';
 const links = [
+  [0, 1],
+  [1, 2],
+  [2, 3],
+  [3, 7],
+  [0, 4],
+  [4, 5],
+  [5, 6],
+  [6, 8],
+  [9, 10],
+  [15, 17],
+  [15, 19],
+  [15, 21],
+  [17, 19],
+  [16, 18],
+  [16, 20],
+  [16, 22],
+  [18, 20],
+  [27, 29],
+  [29, 31],
+  [28, 30],
+  [30, 32],
   [11, 12],
   [11, 13],
   [13, 15],
@@ -35,7 +57,7 @@ const links = [
 ];
 export function visionRows(records: VisionRecord[]): string {
   return records.length
-    ? `<div class="lift-list">${records.map((r) => `<div class="history-entry"><a class="lift-row" href="#vision/${r.id}" aria-label="Open measured pose analysis"><span class="lift-icon">${icon('eye')}</span><span class="lift-description"><strong>SNATCH · YOUR VIDEO</strong><small>${e(new Date(r.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}</small></span><span class="upload-status">${r.analysis.repetitions?.length ? r.analysis.repetitions.length + ' reps detected' : r.analysis.status === 'tracked' ? 'Pose tracked' : 'Limited tracking'}</span>${icon('arrow')}</a><button class="history-remove" data-action="remove-history" data-kind="vision" data-id="${r.id}" aria-label="Remove video analysis from history">Remove</button></div>`).join('')}</div>`
+    ? `<div class="lift-list">${records.map((r) => `<div class="history-entry"><a class="lift-row" href="#vision/${r.id}" aria-label="Open measured pose analysis"><span class="lift-icon">${icon('eye')}</span><span class="lift-description"><strong>${e(exerciseById(r.analysis.repetitions?.[0]?.exercise?.id ?? r.analysis.exercise?.id ?? 'snatch')?.name ?? 'Movement')} · YOUR VIDEO</strong><small>${e(new Date(r.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}</small></span><span class="lift-score" aria-label="${historyScore(r.analysis).partial ? 'Partial ' : ''}score">${historyScore(r.analysis).value ?? '—'}${historyScore(r.analysis).partial && historyScore(r.analysis).value !== null ? '<sup>*</sup>' : ''}<small>/100${historyScore(r.analysis).count > 1 ? ' avg' : ''}</small><small>${historyScore(r.analysis).partial ? 'Partial analysis' : ''}</small></span><span class="upload-status">${r.analysis.repetitions?.length ? r.analysis.repetitions.length + ' reps detected' : r.analysis.status === 'tracked' ? 'Pose tracked' : 'Limited tracking'}</span>${icon('arrow')}</a><button class="history-remove" data-action="remove-history" data-kind="vision" data-id="${r.id}" aria-label="Remove video analysis from history">Remove</button></div>`).join('')}</div>`
     : '';
 }
 export function visionProcessing(): string {
@@ -66,7 +88,7 @@ export function visionResult(
   warning: string,
 ): string {
   const a = record.analysis;
-  return `<div class="result-heading"><div><a class="back" href="#history">${icon('back')} Your lifts</a><div class="eyebrow">SNATCH <span class="tag">MEASURED POSE</span></div><h1>${a.status === 'tracked' ? 'Your movement' : 'Limited tracking'}<span class="accent">.</span></h1><p>${e(measuredSummary(a))}</p></div>${techniqueScore(a)}</div>${warning ? `<p class="notice">${e(warning)}</p>` : ''}<div class="analysis-layout"><section aria-label="Your analyzed video">${source ? `<div class="cv-stage"><video id="cv-video" src="${e(source.url)}" controls playsinline preload="metadata" aria-label="Your analyzed lift video"></video><svg id="cv-overlay" viewBox="0 0 ${a.width} ${a.height}" aria-hidden="true"></svg></div><div class="cv-controls"><button id="cv-pose" class="secondary" aria-pressed="true">Tracked pose on</button><button id="cv-speed" class="secondary">Playback speed: 1×</button></div><p id="cv-frame-status" class="footnote">Move through the video to inspect measured joints.</p><div id="cv-angles" class="live-angles"></div><p id="cv-media-error" class="error" role="alert"></p>` : '<div class="notice"><strong>Saved measurement summary</strong><p>The video and frame landmarks were kept only in the original session. Import the clip again to view a tracked replay.</p><a href="#capture" class="text-link">Import the clip again ↗</a></div>'}${a.interval ? `<p class="notice">Auto-selected exercise · ${a.interval.start.toFixed(1)}–${a.interval.end.toFixed(1)} s. Playback and measurements focus on this candidate rep. The original recording is unchanged.</p>` : `<p class="footnote">No low-to-overhead repetition was isolated. Showing the available recording evidence.</p>`}${movementPhases(a, !!source)}<div class="section-title"><h2>Tracking quality</h2><span class="micro">${a.sampleRate} SAMPLES / SECOND</span></div><div class="quality-summary"><b>${Math.round(a.coverage * 100)}<small>%</small></b><div><strong>Usable frames</strong><p>${a.usableFrames} of ${a.sampledFrames} samples · ${a.side} side</p></div></div><p class="footnote">This percentage measures landmark availability, not technique quality.</p>${a.status === 'insufficient' ? '<div class="notice"><strong>Not enough reliable evidence</strong><p>Some joint measurements are unavailable. Independently supported phases and checks can still be shown. Film one athlete from the side, keep wrists, hips, knees and ankles visible, and use a well-lit, steady shot.</p></div>' : ''}${a.frames.length && a.status === 'tracked' ? `<div class="section-title"><h2>Elbow motion</h2><span class="micro">2D PROJECTED ANGLE</span></div>${angleChart(a)}` : ''}</section><section class="feedback-column">${techniqueFeedback(a, !!source)}${barPanel(a, !!source)}<div class="section-title"><h2>Measured joint ranges</h2></div><div class="measured-ranges">${(['elbow', 'hip', 'knee'] as const).map((key) => `<div><span>${key}</span><b>${a.ranges[key] ? `${a.ranges[key]!.min}–${a.ranges[key]!.max}°` : 'Unavailable'}</b></div>`).join('')}</div><p class="footnote">5th–95th percentile of high-visibility frames. Image-plane angles are perspective-dependent, not calibrated 3D biomechanics.</p><div class="section-title"><h2>Moments to inspect</h2></div>${a.events.length ? a.events.map((event) => `<article class="measured-event"><button data-cv-time="${event.time}" ${source ? '' : 'disabled'}><span>${e(event.title)}</span><b>${event.time.toFixed(2)} s ${icon('arrow')}</b></button><p>${e(event.detail)}</p><span class="event-kind">${event.kind === 'hypothesis' ? 'EXPERIMENTAL TECHNIQUE HYPOTHESIS' : 'MEASURED MOTION EVENT'}</span></article>`).join('') : `<p class="notice">${a.status === 'tracked' ? 'No distinct motion events met the evidence thresholds. The clip may be static or may not contain a complete lift.' : 'Motion events are withheld because tracking quality is too low.'}</p>`}${visionRadar(a)}<p class="footnote">${e(a.engine)} · ${(a.duration - (a.interval?.start ?? 0)).toFixed(1)} s sampled · all processing on this device</p></section></div><a class="primary compact" href="#capture">Analyze another video ${icon('arrow')}</a>`;
+  return `<a class="back" href="#history">${icon('back')} Your lifts</a><div class="eyebrow">${e((a.exercise?.id === null ? undefined : exerciseById(a.exercise?.id ?? 'snatch')?.name) ?? 'Exercise not resolved')} <span class="tag">MEASURED POSE</span></div><div class="result-heading"><div><h1>${e(scoreVerdict(a.lift?.score))}<span class="accent">.</span></h1><p>${e(measuredSummary(a))}</p></div>${techniqueScore(a)}</div>${warning ? `<p class="notice" role="status">${e(warning)}</p>` : ''}<div class="exercise-review"><label for="result-exercise">Exercise</label><select id="result-exercise" ${!a.frames.length ? 'disabled' : ''}><option value="auto" ${a.exercise?.source !== 'manual' ? 'selected' : ''}>Automatic suggestion${a.exercise?.id ? ' · ' + e(exerciseById(a.exercise.id)?.name) : ' · select manually'}</option>${exercises.map((x) => `<option value="${x.id}" ${a.exercise?.source === 'manual' && a.exercise.id === x.id ? 'selected' : ''}>${e(x.name)}</option>`).join('')}</select><p class="footnote">${e(a.exercise?.reason ?? 'Re-import the recording to change its exercise.')}</p></div><div class="analysis-layout"><section aria-label="Your analyzed video">${source ? `<div class="cv-stage"><video id="cv-video" src="${e(source.url)}" controls playsinline preload="metadata" aria-label="Your analyzed lift video"></video><svg id="cv-overlay" viewBox="0 0 ${a.width} ${a.height}" aria-hidden="true"></svg></div><div class="cv-controls"><button id="cv-pose" class="secondary" aria-pressed="true">Tracked pose on</button><button id="cv-speed" class="secondary">Playback speed: 1×</button></div><p id="cv-frame-status" class="footnote">Move through the video to inspect measured joints.</p><div id="cv-angles" class="live-angles"></div><p id="cv-media-error" class="error" role="alert"></p>` : '<div class="notice"><strong>Saved measurement summary</strong><p>The video and frame landmarks were kept only in the original session. Import the clip again to view a tracked replay.</p><a href="#capture" class="text-link">Import the clip again ↗</a></div>'}${a.interval ? `<p class="notice">Auto-selected exercise · ${a.interval.start.toFixed(1)}–${a.interval.end.toFixed(1)} s. Playback and measurements focus on this candidate rep. The original recording is unchanged.</p>` : `<p class="footnote">No low-to-overhead repetition was isolated. Showing the available recording evidence.</p>`}${movementPhases(a, !!source)}<div class="section-title"><h2>Tracking quality</h2><span class="micro">${a.sampleRate} SAMPLES / SECOND</span></div><div class="quality-summary"><b>${Math.round(a.coverage * 100)}<small>%</small></b><div><strong>Usable frames</strong><p>${a.usableFrames} of ${a.sampledFrames} samples · ${a.side} side</p></div></div><p class="footnote">This percentage measures landmark availability, not technique quality.</p>${a.status === 'insufficient' ? '<div class="notice"><strong>Not enough reliable evidence</strong><p>Some joint measurements are unavailable. Independently supported phases and checks can still be shown. Film one athlete from the side, keep wrists, hips, knees and ankles visible, and use a well-lit, steady shot.</p></div>' : ''}${a.frames.length && a.status === 'tracked' ? `<div class="section-title"><h2>Elbow motion</h2><span class="micro">2D PROJECTED ANGLE</span></div>${angleChart(a)}` : ''}</section><section class="feedback-column">${barPanel(a, !!source)}${techniqueFeedback(a, !!source)}<div class="section-title"><h2>Measured joint ranges</h2></div><div class="measured-ranges">${(['elbow', 'hip', 'knee'] as const).map((key) => `<div><span>${key}</span><b>${a.ranges[key] ? `${a.ranges[key]!.min}–${a.ranges[key]!.max}°` : 'Unavailable'}</b></div>`).join('')}</div><p class="footnote">5th–95th percentile of high-visibility frames. Image-plane angles are perspective-dependent, not calibrated 3D biomechanics.</p><div class="section-title"><h2>Moments to inspect</h2></div>${a.events.length ? a.events.map((event) => `<article class="measured-event"><button data-cv-time="${event.time}" ${source ? '' : 'disabled'}><span>${e(event.title)}</span><b>${event.time.toFixed(2)} s ${icon('arrow')}</b></button><p>${e(event.detail)}</p><span class="event-kind">${event.kind === 'hypothesis' ? 'EXPERIMENTAL TECHNIQUE HYPOTHESIS' : 'MEASURED MOTION EVENT'}</span></article>`).join('') : `<p class="notice">${a.status === 'tracked' ? 'No distinct motion events met the evidence thresholds. The clip may be static or may not contain a complete lift.' : 'Motion events are withheld because tracking quality is too low.'}</p>`}${visionRadar(a)}${a.body ? `<section aria-label="Additional body landmarks"><div class="section-title"><h2>Body landmarks</h2><span class="micro">${a.body.meanVisible} / 33 VISIBLE ON AVERAGE</span></div><dl class="measured-ranges"><div><dt>Hand span</dt><dd>${a.body.handSpan ?? '—'}% torso length</dd></div><div><dt>Foot span</dt><dd>${a.body.footSpan ?? '—'}% torso length</dd></div><div><dt>Shoulder-line tilt</dt><dd>${a.body.shoulderTilt ?? '—'}°</dd></div></dl><p class="footnote">Median image-plane distances using both hands, feet, shoulders and hips. The overlay also includes fingers, heels, toes and face landmarks. Perspective affects these values; they are review cues, not judgments of correctness or calibrated body dimensions.</p></section>` : ''}<p class="footnote">${e(a.engine)} · ${(a.duration - (a.interval?.start ?? 0)).toFixed(1)} s sampled · all processing on this device</p></section></div><a class="primary compact" href="#capture">Analyze another video ${icon('arrow')}</a>`;
 }
 export function bindVisionPlayback(
   root: HTMLElement,
@@ -129,7 +151,8 @@ export function bindVisionPlayback(
         return `<line x1="${p.x * a.width}" y1="${p.y * a.height}" x2="${q.x * a.width}" y2="${q.y * a.height}"/>`;
       })
       .join('');
-    const joints = SIDES[a.side]
+    const joints = f.landmarks
+      .map((_, i) => i)
       .filter((i) => visible(f.landmarks[i]))
       .map((i) => {
         const p = f.landmarks[i];
@@ -139,12 +162,10 @@ export function bindVisionPlayback(
     overlay.innerHTML = enabled
       ? `<g stroke="#d4f778" stroke-width="${thickness}" fill="#d4f778">${segments}${joints}</g>`
       : '';
-    const automatic = a.automaticBar;
-    const point = automatic?.points.find(
-      (p) => Math.abs(p.time - video.currentTime) <= 0.5 / a.sampleRate,
-    );
-    if (point && automatic)
-      overlay.innerHTML += `<circle cx="${(point.x / automatic.width) * a.width}" cy="${(point.y / automatic.height) * a.height}" r="${(automatic.radius / automatic.width) * a.width}" fill="none" stroke="#73c9ff" stroke-width="${thickness * 2}"/>`;
+    const left = f.landmarks[15],
+      right = f.landmarks[16];
+    if (visible(left) && visible(right))
+      overlay.innerHTML += `<line x1="${left.x * a.width}" y1="${left.y * a.height}" x2="${right.x * a.width}" y2="${right.y * a.height}" stroke="#73c9ff" stroke-width="${thickness * 2}"/><circle cx="${((left.x + right.x) / 2) * a.width}" cy="${((left.y + right.y) / 2) * a.height}" r="${thickness * 3}" fill="#73c9ff"/>`;
     const values = anglesAt(f, a.side, a.width, a.height);
     angles.innerHTML = Object.entries(values)
       .map(

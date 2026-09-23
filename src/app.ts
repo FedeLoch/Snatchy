@@ -36,6 +36,13 @@ const storage: StoragePort = {
 const saved = loadHistory(storage);
 let visionRecords = loadVisionHistory(storage);
 const visionVideos = new Map<string, VideoSource>();
+const selectedReps = new Map<string, number>();
+function selectedAnalysis(record: VisionRecord) {
+  return (
+    record.analysis.repetitions?.[selectedReps.get(record.id) ?? 0] ??
+    record.analysis
+  );
+}
 let barCleanup: (() => void) | null = null;
 let visionCleanup: (() => void) | null = null;
 let records = saved.records,
@@ -106,8 +113,27 @@ function route() {
     }
     page = 'result';
     active = null;
-    draw(visionResult(record, visionVideos.get(record.id) ?? null, warning));
-    visionCleanup = bindVisionPlayback(root, record.analysis);
+    const analysis = selectedAnalysis(record);
+    draw(
+      visionResult(
+        { ...record, analysis },
+        visionVideos.get(record.id) ?? null,
+        warning,
+      ),
+    );
+    if (record.analysis.repetitions?.length) {
+      const nav = document.createElement('nav');
+      nav.className = 'rep-selector';
+      nav.setAttribute('aria-label', 'Detected repetitions');
+      nav.innerHTML = record.analysis.repetitions
+        .map(
+          (rep, i) =>
+            `<button class="secondary" data-action="select-rep" data-id="${record.id}" data-rep="${i}" aria-pressed="${rep === analysis}">Rep ${i + 1} · ${rep.interval!.start.toFixed(1)}–${rep.interval!.end.toFixed(1)} s</button>`,
+        )
+        .join('');
+      root.querySelector('.analysis-layout')?.before(nav);
+    }
+    visionCleanup = bindVisionPlayback(root, analysis);
     return;
   }
   if (route.startsWith('result/')) {
@@ -400,18 +426,25 @@ root.addEventListener('click', (event) => {
   if (!target) return;
   const action = target.dataset.action,
     id = target.dataset.id ?? '';
-  if (action === 'track-bar') {
+  if (action === 'select-rep') {
+    selectedReps.set(id, Number(target.dataset.rep));
+    route();
+  } else if (action === 'track-bar') {
     const record = visionRecords.find(
       (r) => 'vision/' + r.id === location.hash.slice(1),
     );
     const source = record ? visionVideos.get(record.id) : null;
     if (!record || !source) return;
     root.querySelector<HTMLVideoElement>('#cv-video')?.pause();
-    barCleanup = openBarCalibration(source, (bar) => {
-      record.analysis.bar = bar;
-      warning = saveVisionHistory(storage, visionRecords);
-      route();
-    });
+    barCleanup = openBarCalibration(
+      source,
+      (bar) => {
+        selectedAnalysis(record).bar = bar;
+        warning = saveVisionHistory(storage, visionRecords);
+        route();
+      },
+      selectedAnalysis(record),
+    );
   } else if (action === 'remove-history') {
     const kind = target.dataset.kind;
     const record =

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { analyzeVideo } from '../../src/services/vision';
+import { analyzeVideo, seekVideoFrame } from '../../src/services/vision';
 let video: HTMLVideoElement,
   mode = 'ok',
   decoded = true,
@@ -85,9 +85,9 @@ it('decodes and samples the source duration, returns measured failure for blank 
   expect(result.frames[14].time).toBeCloseTo(14 / 15);
   expect(workers[0].terminate).toHaveBeenCalled();
   expect(video.getAttribute('src')).toBeNull();
-  expect(progress).toHaveBeenLastCalledWith(1, 'Tracking frame 15 of 15');
+  expect(progress).toHaveBeenLastCalledWith(1, 'Analysis complete');
 });
-it.each([0.1, 31])(
+it.each([0.1, 121])(
   'rejects unsupported duration %s without starting a worker',
   async (duration) => {
     await expect(
@@ -188,4 +188,39 @@ it('rejects missing dimensions and unavailable frame context', async () => {
   await expect(
     analyzeVideo(source, { signal: controller.signal, onProgress: vi.fn() }),
   ).rejects.toThrow('dimensions');
+});
+
+it('waits for frame presentation, bounds missing callbacks, and cancels cleanly', async () => {
+  let callback: VideoFrameRequestCallback | undefined;
+  const cancel = vi.fn();
+  Object.defineProperty(video, 'requestVideoFrameCallback', {
+    value: vi.fn((fn: VideoFrameRequestCallback) => {
+      callback = fn;
+      return 7;
+    }),
+    configurable: true,
+  });
+  Object.defineProperty(video, 'cancelVideoFrameCallback', {
+    value: cancel,
+    configurable: true,
+  });
+  let ready = false;
+  const first = seekVideoFrame(video, 0.5, controller.signal).then(() => {
+    ready = true;
+  });
+  await vi.advanceTimersByTimeAsync(10);
+  expect(ready).toBe(false);
+  callback!(0, {} as VideoFrameCallbackMetadata);
+  await first;
+  expect(cancel).toHaveBeenCalledWith(7);
+  const fallback = seekVideoFrame(video, 0.6, controller.signal);
+  await vi.advanceTimersByTimeAsync(100);
+  await fallback;
+  const aborted = seekVideoFrame(video, 0.7, controller.signal);
+  const assertion = expect(aborted).rejects.toMatchObject({
+    name: 'AbortError',
+  });
+  await vi.advanceTimersByTimeAsync(0);
+  controller.abort();
+  await assertion;
 });

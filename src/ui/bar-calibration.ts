@@ -1,3 +1,4 @@
+import type { VisionAnalysis } from '../domain/vision';
 import type { VideoSource } from '../domain/types';
 import type { BarTrack } from '../domain/bar-track';
 import { trackBar } from '../services/bar-tracker';
@@ -5,11 +6,16 @@ import { escapeHtml as e } from './html';
 export function openBarCalibration(
   source: VideoSource,
   save: (track: BarTrack) => void,
+  analysis?: VisionAnalysis,
 ): () => void {
+  const rangeStart = analysis?.interval?.start ?? 0;
+  const rangeEnd = analysis?.interval?.end ?? source.duration;
+  const automatic = analysis?.automaticBar;
+  const initialTime = automatic?.points[0].time ?? rangeStart;
   const dialog = document.createElement('dialog');
   dialog.className = 'bar-calibration';
   dialog.setAttribute('aria-labelledby', 'bar-title');
-  dialog.innerHTML = `<button class="dialog-close" aria-label="Close bar tracking">×</button><h2 id="bar-title">Track your bar</h2><p>Pause just before the lift. Mark the center of the visible plate, then its outer edge. Enter the actual plate diameter. Use a fixed side-view camera; the plate must remain in the same plane.</p><video src="${e(source.url)}" muted playsinline preload="auto" hidden></video><canvas tabindex="0" role="img" aria-label="Video frame for plate selection. Click center then edge, or use the position fields below."></canvas><label>Video position <input id="bar-scrub" type="range" min="0" max="${Math.max(0, source.duration - 0.01)}" step="0.066667" value="0"></label><output id="bar-time">0.00 s</output><div class="bar-fields"><label>Center X (%)<input id="bar-x" type="number" min="0" max="100" step="0.1"></label><label>Center Y (%)<input id="bar-y" type="number" min="0" max="100" step="0.1"></label><label>Plate radius (% of frame width)<input id="bar-radius" type="number" min="0.1" max="40" step="0.1"></label><label>Actual plate diameter (cm)<input id="bar-diameter" type="number" min="5" max="100" step="0.1" placeholder="Enter measured diameter"></label><label>Track until (seconds)<input id="bar-end" type="number" min="0.3" max="${source.duration}" step="0.01" value="${Math.max(0, source.duration - 0.01).toFixed(2)}"></label></div><label class="bar-confirm"><input id="bar-static" type="checkbox">The camera is stationary and the plate stays in the same plane.</label><button id="bar-start" class="primary" disabled>Track marked plate</button><p id="bar-progress" role="status">Loading video frame…</p><p id="bar-error" role="alert" class="error"></p><div id="bar-review" hidden><p>Scrub through the tracked interval. The highlighted dot must stay on the plate center. Reject and retrack if it follows the background or another object.</p><label class="bar-confirm"><input id="bar-verified" type="checkbox">I reviewed the tracked interval and the dot follows the plate.</label><button id="bar-save" class="primary" disabled>Use reviewed measurements</button></div>`;
+  dialog.innerHTML = `<button class="dialog-close" aria-label="Close bar tracking">×</button><h2 id="bar-title">Track your bar</h2><p>Pause just before the lift. Mark the center of the visible plate, then its outer edge. Enter the actual plate diameter. Use a fixed side-view camera; the plate must remain in the same plane.</p><video src="${e(source.url)}" muted playsinline preload="auto" hidden></video><canvas tabindex="0" role="img" aria-label="Video frame for plate selection. Click center then edge, or use the position fields below."></canvas><label>Video position <input id="bar-scrub" type="range" min="${rangeStart}" max="${Math.max(rangeStart, rangeEnd - 0.01)}" step="0.066667" value="${initialTime}"></label><output id="bar-time">${initialTime.toFixed(2)} s</output><div class="bar-fields"><label>Center X (%)<input id="bar-x" type="number" min="0" max="100" step="0.1"></label><label>Center Y (%)<input id="bar-y" type="number" min="0" max="100" step="0.1"></label><label>Plate radius (% of frame width)<input id="bar-radius" type="number" min="0.1" max="40" step="0.1"></label><label>Actual plate diameter (cm)<input id="bar-diameter" type="number" min="5" max="100" step="0.1" placeholder="Enter measured diameter"></label><label>Track until (seconds)<input id="bar-end" type="number" min="0.3" max="${rangeEnd}" step="0.01" value="${Math.min(rangeEnd - 0.01, initialTime + 30).toFixed(2)}"></label></div><label class="bar-confirm"><input id="bar-static" type="checkbox">The camera is stationary and the plate stays in the same plane.</label><button id="bar-start" class="primary" disabled>Track marked plate</button><p id="bar-progress" role="status">Loading video frame…</p><p id="bar-error" role="alert" class="error"></p><div id="bar-review" hidden><p>Scrub through the tracked interval. The highlighted dot must stay on the plate center. Reject and retrack if it follows the background or another object.</p><label class="bar-confirm"><input id="bar-verified" type="checkbox">I reviewed the tracked interval and the dot follows the plate.</label><button id="bar-save" class="primary" disabled>Use reviewed measurements</button></div>`;
   document.body.append(dialog);
   dialog.showModal();
   const video = dialog.querySelector('video')!,
@@ -78,8 +84,25 @@ export function openBarCalibration(
   video.addEventListener('loadeddata', () => {
     canvas.width = 640;
     canvas.height = Math.round((640 * video.videoHeight) / video.videoWidth);
+    video.currentTime = initialTime;
+    if (automatic) {
+      input('x').value = (
+        (automatic.points[0].x / automatic.width) *
+        100
+      ).toFixed(2);
+      input('y').value = (
+        (automatic.points[0].y / automatic.height) *
+        100
+      ).toFixed(2);
+      input('radius').value = (
+        (automatic.radius / automatic.width) *
+        100
+      ).toFixed(2);
+    }
     start.disabled = false;
-    status.textContent = 'Mark the plate center, then its outer edge.';
+    status.textContent = automatic
+      ? 'Automatic candidate prefilled. Verify the marked plate and enter its measured diameter.'
+      : 'Mark the plate center, then its outer edge.';
     draw();
   });
   video.addEventListener('seeked', draw);

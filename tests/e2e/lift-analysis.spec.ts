@@ -6,6 +6,7 @@ test.setTimeout(120000);
 async function poseFixture(
   page: import('@playwright/test').Page,
   frames = liftFrames(),
+  file = 'plate.mp4',
 ) {
   await page.route('**/assets/pose.worker-*.js', (route) =>
     route.fulfill({
@@ -16,7 +17,7 @@ async function poseFixture(
   await page.goto('/#capture');
   await page
     .locator('#import')
-    .setInputFiles(resolve('tests/fixtures/plate.mp4'));
+    .setInputFiles(resolve('tests/fixtures/' + file));
   await page
     .getByRole('button', { name: 'Analyze this video', exact: true })
     .click();
@@ -170,4 +171,68 @@ test('partial scores list missing phases, remain accessible and survive reload',
   await expect(page.locator('.partial-score-note')).toContainText(
     'Phases not recognized: Recovery',
   );
+});
+
+test('isolates multiple repetitions, switches measured results, and preserves per-rep summaries', async ({
+  page,
+}) => {
+  const frames = Array.from({ length: 60 }, (_, i) => ({
+    time: i / 15,
+    people: 0,
+    landmarks: [] as ReturnType<typeof liftFrames>[number]['landmarks'],
+  }));
+  for (const offset of [0, 33])
+    liftFrames().forEach((f, i) => {
+      frames[offset + i] = { ...f, time: (offset + i) / 15 };
+    });
+  await poseFixture(page, frames, 'lift.mp4');
+  const selector = page.getByRole('navigation', {
+    name: 'Detected repetitions',
+  });
+  await expect(selector.getByRole('button')).toHaveCount(2);
+  await selector
+    .getByRole('button', { name: /Rep 2/ })
+    .click({ timeout: 10000 });
+  await expect(page.locator('[data-cv-phase="Catch"]')).toContainText('3.20 s');
+  await expect(page.locator('[data-measured-score]')).toContainText('100');
+  await page.locator('[data-cv-phase="Catch"]').click();
+  await expect
+    .poll(() =>
+      page
+        .locator('#cv-video')
+        .evaluate((v) => (v as HTMLVideoElement).currentTime),
+    )
+    .toBeCloseTo(3.2);
+  await page.reload();
+  await selector
+    .getByRole('button', { name: /Rep 2/ })
+    .click({ timeout: 10000 });
+  await expect(page.locator('[data-cv-phase="Catch"]')).toContainText('3.20 s');
+  await expect(page.locator('[data-cv-phase="Catch"]')).toBeDisabled();
+});
+
+test('automatically detects and follows real plate pixels without calibration', async ({
+  page,
+}) => {
+  const frames = Array.from({ length: 30 }, (_, i) => {
+    const f = structuredClone(liftFrames()[0]);
+    f.time = i / 15;
+    for (const index of [15, 16])
+      f.landmarks[index] = { x: 0.5, y: (180 - 2 * i) / 240, visibility: 1 };
+    return f;
+  });
+  await poseFixture(page, frames);
+  const panel = page.getByRole('region', { name: 'Measured bar path' });
+  await expect(panel).toContainText('AUTOMATIC · VERIFY PLATE');
+  await expect(panel).toContainText('% frame height');
+  await expect(panel).toContainText('size calibration needed');
+  await expect(panel.getByRole('img')).toBeVisible();
+  await page.locator('#cv-video').evaluate((v) => {
+    (v as HTMLVideoElement).currentTime = 0.5;
+  });
+  await expect(
+    page.locator('#cv-overlay circle[stroke="#73c9ff"]'),
+  ).toHaveCount(1);
+  await page.reload();
+  await expect(panel).toContainText('AUTOMATIC · VERIFY PLATE');
 });

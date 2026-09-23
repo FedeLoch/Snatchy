@@ -56,6 +56,31 @@ export function isVisionRecord(value: unknown): value is VisionRecord {
     })
   )
     return false;
+  if (
+    a.interval !== undefined &&
+    (!a.interval ||
+      !Number.isFinite(a.interval.start) ||
+      !Number.isFinite(a.interval.end) ||
+      a.interval.start < 0 ||
+      a.interval.end <= a.interval.start ||
+      a.interval.end > a.duration)
+  )
+    return false;
+  if (
+    a.repetitions !== undefined &&
+    (!Array.isArray(a.repetitions) ||
+      a.repetitions.length > 100 ||
+      !a.repetitions.every(
+        (rep, i) =>
+          rep &&
+          rep.repetitions === undefined &&
+          rep.interval &&
+          rep.duration <= a.duration &&
+          rep.interval.start >= (i ? a.repetitions![i - 1].interval!.end : 0) &&
+          isVisionRecord({ id: r.id, createdAt: r.createdAt, analysis: rep }),
+      ))
+  )
+    return false;
   if (a.lift !== undefined) {
     const lift = a.lift;
     if (
@@ -144,6 +169,35 @@ export function isVisionRecord(value: unknown): value is VisionRecord {
     };
     if (lift.checks.some((c) => supports[c.name] !== true)) return false;
   }
+  if (a.automaticBar !== undefined) {
+    const b = a.automaticBar;
+    if (
+      !b ||
+      b.method !== 'circle-template' ||
+      ![b.width, b.height, b.radius].every(
+        (v) => Number.isFinite(v) && v > 0,
+      ) ||
+      typeof b.stoppedEarly !== 'boolean' ||
+      !Array.isArray(b.points) ||
+      b.points.length < 6 ||
+      b.points.length > 1801 ||
+      !b.points.every(
+        (p, i) =>
+          p &&
+          [p.x, p.y, p.time, p.confidence].every(Number.isFinite) &&
+          p.x >= 0 &&
+          p.x < b.width &&
+          p.y >= 0 &&
+          p.y < b.height &&
+          p.time >= 0 &&
+          p.time <= a.duration &&
+          p.confidence >= 0.8 &&
+          p.confidence <= 1.000001 &&
+          (i === 0 || p.time > b.points[i - 1].time),
+      )
+    )
+      return false;
+  }
   if (a.bar !== undefined) {
     const b = a.bar;
     if (
@@ -211,7 +265,7 @@ export function loadVisionHistory(storage: StoragePort): VisionRecord[] {
     return Array.isArray(data)
       ? data
           .filter(isVisionRecord)
-          .map((r) => ({ ...r, analysis: { ...r.analysis, frames: [] } }))
+          .map((r) => ({ ...r, analysis: summary(r.analysis) }))
           .slice(0, 10)
       : [];
   } catch {
@@ -228,11 +282,21 @@ export function saveVisionHistory(
       JSON.stringify(
         records
           .slice(0, 10)
-          .map((r) => ({ ...r, analysis: { ...r.analysis, frames: [] } })),
+          .map((r) => ({ ...r, analysis: summary(r.analysis) })),
       ),
     );
     return '';
   } catch {
     return 'This analysis is available for this session, but the summary could not be saved on this device.';
   }
+}
+
+function summary(a: VisionAnalysis): VisionAnalysis {
+  return {
+    ...a,
+    frames: [],
+    ...(a.repetitions
+      ? { repetitions: a.repetitions.map((rep) => ({ ...rep, frames: [] })) }
+      : {}),
+  };
 }

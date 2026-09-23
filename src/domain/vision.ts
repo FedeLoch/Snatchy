@@ -1,3 +1,4 @@
+import type { AutomaticBar } from './automatic-bar';
 import { estimatePhases, type LiftPhases } from './lift-phases';
 import type { BarTrack } from './bar-track';
 export interface Landmark {
@@ -51,6 +52,9 @@ export interface VisionAnalysis {
   frames: PoseSample[];
   lift?: LiftPhases;
   bar?: BarTrack;
+  automaticBar?: AutomaticBar;
+  interval?: { start: number; end: number };
+  repetitions?: VisionAnalysis[];
 }
 export interface VisionRecord {
   id: string;

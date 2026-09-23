@@ -36,7 +36,8 @@ GitHub Actions runs static checks, coverage thresholds, a production build, depe
 - Responsive home and local lift history, with an interactive illustrated demo.
 - Camera/gallery capture, file validation, video review, real pose analysis and cancellation.
 - Real clips: tracked skeleton, measured joint angles and radar chart, seven estimated movement phases with frame seeking, experimental movement checks, and calibrated plate tracking for bar metrics.
-- Explicit demo is preserved: **83/100**, seven phase scores (**94, 91, 86, 72, 76, 84, 92**), all feedback/drills, and illustrative bar metrics (**6.4 cm, 1.24 m, 1.82 m/s**). Demo values remain clearly labeled and are never assigned to uploaded videos.
+- Recorded-video results reuse the demo’s large-score layout, phase timeline, feedback cards and bar-metric layout. Their values come only from that recording and its reviewed calibration. Missing evidence shows an unavailable value; the demo’s score is never a fallback.
+- The separate explicit demo is preserved: **83/100**, seven phase scores (**94, 91, 86, 72, 76, 84, 92**), all feedback/drills, and illustrative bar metrics (**6.4 cm, 1.24 m, 1.82 m/s**). Demo values remain clearly labeled and are never assigned to uploaded videos.
 - Saved real measurement summaries remain separate from simulated demo results.
 - Accessible navigation, focus restoration, large touch controls, reduced-motion support, and recoverable errors.
 

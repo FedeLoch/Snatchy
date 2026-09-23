@@ -38,7 +38,9 @@ test('real local model detects a person, overlays actual frames, and saves measu
     .toBeGreaterThan(0);
   await expect(page.getByText('No technique score assigned')).toBeVisible();
   await expect(
-    page.locator('.score, #pose-frame, [data-motion-time]'),
+    page.locator(
+      '.score:not([data-measured-score]), #pose-frame, [data-motion-time]',
+    ),
   ).toHaveCount(0);
   await expect(page.locator('.live-angles')).toContainText('°');
   await page.getByRole('button', { name: 'Playback speed: 1×' }).click();
@@ -64,7 +66,9 @@ test('real local model detects a person, overlays actual frames, and saves measu
   await page.reload();
   await expect(page.getByText('Saved measurement summary')).toBeVisible();
   await expect(page.locator('#cv-video')).toHaveCount(0);
-  await expect(page.locator('.score, [data-motion-time]')).toHaveCount(0);
+  await expect(
+    page.locator('.score:not([data-measured-score]), [data-motion-time]'),
+  ).toHaveCount(0);
   await page
     .getByRole('navigation')
     .getByRole('link', { name: 'History' })
@@ -92,27 +96,44 @@ test('blank video receives no pose, technique score or invented observations', a
   ).toBeVisible();
   await expect(page.getByText('Not enough reliable evidence')).toBeVisible();
   await expect(
-    page.locator('.measured-event, #cv-overlay circle, .score'),
+    page.locator(
+      '.measured-event, #cv-overlay circle, .score:not([data-measured-score])',
+    ),
   ).toHaveCount(0);
   await expect(page.locator('.quality-summary')).toContainText('0%');
+  await expect(page.locator('[data-measured-score]')).toContainText('—');
 });
 test('cancelling real inference keeps the clip reviewable and saves no result', async ({
   page,
 }) => {
-  await page.goto('/#capture');
-  await page
-    .locator('#import')
-    .setInputFiles(resolve('tests/fixtures/person.mp4'));
-  await page
-    .getByRole('button', { name: 'Analyze this video', exact: true })
-    .click();
-  await page.getByRole('button', { name: 'Cancel analysis' }).click();
-  await expect(page.getByLabel('Review your lift video')).toBeVisible();
-  expect(
-    await page.evaluate(() =>
-      localStorage.getItem('snatchy-vision-history-v1'),
-    ),
-  ).toBeNull();
+  // Hold model loading so cancellation cannot race a fast, already-completed analysis.
+  let releaseModel = () => {};
+  const held = new Promise<void>((resolve) => {
+    releaseModel = resolve;
+  });
+  await page.route('**/models/*.task', async (route) => {
+    await held;
+    await route.abort().catch(() => {});
+  });
+  try {
+    await page.goto('/#capture');
+    await page
+      .locator('#import')
+      .setInputFiles(resolve('tests/fixtures/person.mp4'));
+    await page
+      .getByRole('button', { name: 'Analyze this video', exact: true })
+      .click();
+    await page.getByRole('button', { name: 'Cancel analysis' }).click();
+    releaseModel();
+    await expect(page.getByLabel('Review your lift video')).toBeVisible();
+    expect(
+      await page.evaluate(() =>
+        localStorage.getItem('snatchy-vision-history-v1'),
+      ),
+    ).toBeNull();
+  } finally {
+    releaseModel();
+  }
 });
 test('model loading failures preserve the clip and offer a retry', async ({
   page,
@@ -132,5 +153,7 @@ test('model loading failures preserve the clip and offer a retry', async ({
   await expect(
     page.getByRole('button', { name: 'Analyze this video', exact: true }),
   ).toBeVisible();
-  await expect(page.locator('.score')).toHaveCount(0);
+  await expect(page.locator('.score:not([data-measured-score])')).toHaveCount(
+    0,
+  );
 });

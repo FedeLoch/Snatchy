@@ -29,6 +29,13 @@ test('real result exposes measured phases, seeking, checks and saved summaries',
     page.getByRole('heading', { name: 'Movement phases', exact: true }),
   ).toBeVisible();
   await expect(page.locator('[data-cv-phase]')).toHaveCount(7);
+  await expect(page.locator('.measured-score .score')).toContainText('100');
+  await expect(page.locator('.measured-issue')).toHaveCount(5);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
   await expect(
     page.getByLabel('Experimental movement check score'),
   ).toContainText('100');

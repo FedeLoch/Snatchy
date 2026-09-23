@@ -1884,3 +1884,75 @@ dialog blockquote {
     padding: 20px;
   }
 }
+
+.measured-score {
+  text-align: right;
+  flex-shrink: 0;
+}
+.measured-score .score {
+  font-size: clamp(76px, 10vw, 140px);
+}
+.measured-score > .micro {
+  display: block;
+  margin-top: 18px;
+}
+.result-heading .measured-score p {
+  font-size: 10px;
+  margin: 8px 0 0;
+}
+.measured-issue > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.measured-issue > summary::-webkit-details-marker {
+  display: none;
+}
+.measured-issue[open] {
+  border-color: var(--warning);
+}
+.measured-issue[open] .expand-icon {
+  transform: rotate(45deg);
+}
+.measured-issue .issue-body {
+  padding-top: 0;
+}
+.measured-issue .check-met {
+  color: var(--accent);
+}
+.analysis-layout details.measured-issue {
+  margin: 0 0 10px;
+}
+.measured-bar-content {
+  background: #202719;
+  border-radius: 8px;
+  padding: 22px;
+}
+.measured-bar-content .measured-bar-path {
+  width: 40%;
+  max-height: 260px;
+  background: transparent;
+  flex-shrink: 0;
+}
+.bar-path-empty {
+  width: 40%;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.measured-bar-content .bar-metrics {
+  flex: 1;
+  min-width: 0;
+}
+@media (max-width: 600px) {
+  .result-heading:has(.measured-score) {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .measured-score {
+    margin-left: auto;
+  }
+  .measured-bar-content {
+    padding: 16px;
+    gap: 16px;
+  }
+}

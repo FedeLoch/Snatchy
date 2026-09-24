@@ -36,16 +36,18 @@ test('real result exposes measured phases, seeking, checks and saved summaries',
     page.getByRole('heading', { name: 'Movement phases', exact: true }),
   ).toBeVisible();
   await expect(page.locator('[data-cv-phase]')).toHaveCount(7);
-  await expect(page.locator('.measured-score .score')).toContainText('100');
+  await expect(page.locator('[data-measured-score]')).toHaveText(
+    /^80\s*\/\s*100$/,
+  );
   await expect(page.locator('.measured-issue')).toHaveCount(5);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
-  await expect(
-    page.getByLabel('Experimental movement check score'),
-  ).toContainText('100');
+  await expect(page.locator('[data-measured-score]')).toHaveText(
+    /^80\s*\/\s*100$/,
+  );
   await page.locator('[data-cv-phase="Catch"]').click();
   await expect
     .poll(() =>
@@ -71,9 +73,9 @@ test('real result exposes measured phases, seeking, checks and saved summaries',
   await page.reload();
   await expect(page.locator('[data-cv-phase="Catch"]')).toBeDisabled();
   await expect(page.locator('[data-cv-phase="Catch"]')).toContainText('1.00 s');
-  await expect(
-    page.getByLabel('Experimental movement check score'),
-  ).toContainText('100');
+  await expect(page.locator('[data-measured-score]')).toHaveText(
+    /^80\s*\/\s*100$/,
+  );
 });
 test('automatic wrist metrics appear first, mobile score aligns with title, and history retains scores', async ({
   page,
@@ -92,15 +94,15 @@ test('automatic wrist metrics appear first, mobile score aligns with title, and 
   const title = await page.locator('.result-heading h1').boundingBox(),
     score = await page.locator('[data-measured-score]').boundingBox();
   expect(Math.abs(title!.y - score!.y)).toBeLessThan(8);
-  await expect(page.locator('.result-heading h1')).toHaveText('Strong lift.');
+  await expect(page.locator('.result-heading h1')).toHaveText('Good lift.');
   await page.getByRole('link', { name: 'Your lifts', exact: true }).click();
-  await expect(page.locator('.lift-score')).toContainText('100');
+  await expect(page.locator('.lift-score')).toHaveText(/^80\s*\/100$/);
   await page
     .getByRole('navigation', { name: 'Main navigation' })
     .getByRole('link', { name: 'Home' })
     .click();
-  await expect(page.locator('.recent-section .lift-score')).toContainText(
-    '100',
+  await expect(page.locator('.recent-section .lift-score')).toHaveText(
+    /^80\s*\/100$/,
   );
 });
 test('demo retains its original score, phase numbers, feedback and bar values', async ({
@@ -124,13 +126,25 @@ test('demo retains its original score, phase numbers, feedback and bar values', 
   await expect(page.locator('.bar-metrics')).toContainText('6.4');
   await expect(page.locator('.bar-metrics')).toContainText('1.24');
   await expect(page.locator('.bar-metrics')).toContainText('1.82');
+  const bar = await page
+    .getByRole('heading', { name: 'Follow the bar' })
+    .boundingBox();
+  const details = await page
+    .getByRole('heading', { name: 'The details that matter' })
+    .boundingBox();
+  expect(bar!.y).toBeLessThan(details!.y);
+  const title = await page.locator('.result-heading h1').boundingBox();
+  const score = await page.getByLabel('Score 83 out of 100').boundingBox();
+  expect(Math.abs(title!.y - score!.y)).toBeLessThan(8);
 });
 
 test('partial scores list missing phases, remain accessible and survive reload', async ({
   page,
 }) => {
   await poseFixture(page, liftFrames().slice(0, 20));
-  await expect(page.locator('[data-measured-score]')).toContainText('100');
+  await expect(page.locator('[data-measured-score]')).toHaveText(
+    /^100\*\s*\/\s*100$/,
+  );
   await expect(
     page.getByLabel('Partial analysis', { exact: true }),
   ).toBeVisible();
@@ -155,10 +169,16 @@ test('partial scores list missing phases, remain accessible and survive reload',
     ),
   ).toBe(true);
   await page.reload();
-  await expect(page.locator('[data-measured-score]')).toContainText('100');
+  await expect(page.locator('[data-measured-score]')).toHaveText(
+    /^100\*\s*\/\s*100$/,
+  );
   await page.locator('.partial-score-note summary').click();
   await expect(page.locator('.partial-score-note')).toContainText(
     'Phases not recognized: Recovery',
+  );
+  await page.getByRole('link', { name: 'Your lifts', exact: true }).click();
+  await expect(page.locator('.lift-score')).toHaveText(
+    /^100\*\s*\/100Partial analysis$/,
   );
 });
 
@@ -183,7 +203,9 @@ test('isolates multiple repetitions, switches measured results, and preserves pe
     .getByRole('button', { name: /Rep 2/ })
     .click({ timeout: 10000 });
   await expect(page.locator('[data-cv-phase="Catch"]')).toContainText('3.20 s');
-  await expect(page.locator('[data-measured-score]')).toContainText('100');
+  await expect(page.locator('[data-measured-score]')).toHaveText(
+    /^80\*\s*\/\s*100$/,
+  );
   await page.locator('[data-cv-phase="Catch"]').click();
   await expect
     .poll(() =>

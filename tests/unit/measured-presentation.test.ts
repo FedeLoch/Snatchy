@@ -37,10 +37,10 @@ it('changes the score and feedback when the recorded joint trajectory changes', 
 });
 it('renders automatic wrist estimates without calibration controls or physical units', () => {
   const a = analyzePoseSamples(liftFrames(), 100, 100, 2);
-  expect(barPanel(a, true)).toContain('WRIST-LINE ESTIMATE');
-  expect(barPanel(a, true)).toContain('% frame height / s');
-  expect(barPanel(a, true)).not.toContain('data-action="track-bar"');
-  expect(barPanel(analyzePoseSamples([], 100, 100, 2), true)).toContain(
+  expect(barPanel(a)).toContain('WRIST-LINE ESTIMATE');
+  expect(barPanel(a)).toContain('% frame height / s');
+  expect(barPanel(a)).not.toContain('data-action="track-bar"');
+  expect(barPanel(analyzePoseSamples([], 100, 100, 2))).toContain(
     'Both wrists must be visible',
   );
 });

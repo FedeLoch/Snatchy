@@ -25,7 +25,7 @@ src/
 
 1. Select an available `Movement`. Validate imported media and read metadata locally.
 2. Imported clips invoke `services/vision.ts`, which decodes real frames and sends them to a MediaPipe worker. The explicit demo action alone invokes the simulated `AnalysisProvider`. Both paths support cancellation.
-3. Store a `VisionRecord` for measured results and a separate `LiftRecord` for demo results. The types, storage keys and routes stay separate. Real video/landmark data is session-only; only measurement summaries persist.
+3. Store a `VisionRecord` for measured results and a separate `LiftRecord` for demo results. The types, storage keys and routes stay separate. Video and full-body pose frames are session-only; summaries and limited wrist trajectories persist.
 4. Render measured results with `ui/vision.ts` and actual footage. Demo results use their separate templates and illustrations. Old fabricated upload records are intercepted and shown as not analyzed.
 5. `LiftPlayer` owns demo playback. Real replay uses native video controls and draws the closest actual landmark sample only within a bounded time gap. Missing tracking never falls back to an illustration.
 
@@ -33,13 +33,13 @@ Navigation uses hash routes: `#home`, `#capture`, `#history`, `#result/<id>` (de
 
 ## Add a movement
 
-1. Create `src/data/<movement>.ts` with its `Movement`, drill definitions and an `Analysis` fixture. Use stable lowercase IDs. Phase starts must be ordered, start at zero, and lie within the result duration. Issue phase/drill references must resolve.
-2. Add the definition to the registry in `domain/movements.ts`, initially unavailable. Keep the default experience Snatch until the new movement is complete.
-3. Add explicit provider dispatch in `services/analysis-provider.ts`. A movement must never fall back to another movement's analysis. For a real provider, keep cancellation/progress behavior and introduce an explicitly versioned real-analysis contract; version 1 deliberately requires `simulated: true`.
-4. Add a matching demo renderer in `ui/movement-visuals.ts` if an illustration is useful. The fallback clearly says no illustration is available; it never renders Snatch for an unknown movement. For tracked footage, use a separate renderer that consumes actual timestamped keypoints.
-5. Validate the fixture with `isAnalysis`, test phase boundaries and issue/drill references, and add browser coverage for the new movement. Then set `available: true`. The capture selector exposes available entries automatically.
+1. Add an exercise definition in `domain/exercises.ts` with a stable ID, family, starting position and receiving style. `domain/movements.ts` exposes supported definitions in the selector. Unimplemented families remain unavailable.
+2. Implement and test its evidence rules in `domain/lift-phases.ts`, including applicable phases, receiving position, recovery and score checks. Do not silently apply Snatch overhead rules to another family.
+3. Extend automatic recognition only when there is supporting evidence. Manual selection must remain available; an unresolved automatic choice must not fabricate a score. Add repetition-detection cases for the new start/receive pattern.
+4. Extend persisted-data validation in `services/vision-history.ts` as needed. Validate both full session results and summaries with frames removed.
+5. Test deterministic positive/negative trajectories, visibility gaps, variant corrections, reload and the actual UI. Add annotated real recordings before claiming detection accuracy.
 
-Home's featured demo remains Snatch by design. All result scores, phases, observations, metrics and drills come from the active movement/result. No new pages or player implementation are needed to support a new movement.
+An illustrated demo is optional and separate. To add one, supply a movement-specific `Analysis` fixture, explicit provider dispatch, a matching renderer and fixture validation. The current demo provider supports only Snatch; real Clean availability does not cause Clean uploads to receive a Snatch demo.
 
 ## Boundaries worth preserving
 
@@ -60,6 +60,12 @@ This is a simplified side-view illustration, not motion capture. Choreography wa
 
 ## Measured vision modules
 
+- `domain/exercises.ts`: exercise catalog and heuristic automatic suggestions.
+- `domain/wrist-bar.ts`: bilateral wrist midpoint trajectory and relative metrics.
+- `domain/body-measurements.ts`: visible landmark counts, torso-relative spans and shoulder tilt.
+- `domain/score-summary.ts`: score verdicts, partial markers and recording-level averages.
+- `domain/repetitions.ts`: candidate rep intervals and independent per-rep analysis.
+- `domain/lift-phases.ts`: exercise-specific phase evidence and experimental checks.
 - `domain/vision.ts`: measured-only contracts, visibility gates, aspect-correct angles, robust ranges, event rules and sample lookup.
 - `services/vision.ts`: video decoding, sampling, worker request lifecycle, progress, timeouts and cancellation.
 - `workers/pose.worker.ts`: actual MediaPipe CPU/WASM inference; returns detected landmarks, not measurements or scores.

@@ -27,7 +27,7 @@ Browser tests cover the complete analysis loop, persistence/reload, native picke
 
 ## Media fixtures
 
-`tests/fixtures/lift.mp4` and `short.mp4` are tiny, synthetic H.264 color clips (4 seconds and 0.8 seconds). No personal recordings or external video content are used. To regenerate with FFmpeg:
+`tests/fixtures/lift.mp4` and `short.mp4` are tiny, synthetic H.264 color clips (4 seconds and 0.8 seconds). These clips contain no personal recordings. Separate pose fixtures and anonymized coordinate regressions are described below. To regenerate with FFmpeg:
 
 ```sh
 ffmpeg -f lavfi -i 'color=c=0x25351a:s=320x240:r=24:d=4' -vf 'drawbox=x=140:y=70:w=30:h=130:color=0xd4f778:t=fill' -c:v libx264 -pix_fmt yuv420p -movflags +faststart tests/fixtures/lift.mp4
@@ -58,7 +58,9 @@ The positive fixture `person.mp4` repeats Google's public MediaPipe `pose.jpg` t
 
 ## Phase, score and bar regression tests
 
-`lift-analysis.spec.ts` verifies real-result phase seeking and saved summaries using deterministic pose samples, and tracks an actual generated moving-plate video through the browser decoder. Its known displacement and velocity catch frame-boundary errors. The demo regression locks in 83/100, all seven original phase numbers and the original bar values. Unit tests cover incomplete phases, detection gaps, explicit scoring rules, template ambiguity, tracking loss, calibration, cancellation and persisted-data validation. These tests validate mechanics, not performance on a representative athlete dataset. Android packaging steps in README require a separate physical-phone verification; CI does not build an APK.
+`lift-analysis.spec.ts` verifies phase seeking, partial scores, automatic wrist metrics, section order, title/score alignment, exercise suggestions and manual correction, history scores and saved summaries using deterministic pose samples. Clean fixtures cover front-rack checks, power/muscle receiving and high-hang phase applicability. History tests check row focus after deletion and expiring Undo notices. The demo regression preserves 83/100, seven original phase scores and illustrative bar values.
+
+Unit tests cover incomplete phases, gaps, variant rules, wrist geometry/velocity, body measurements, averaging, untrusted stored trajectories and calibration/tracking legacy compatibility. Generated `plate.mp4` provides video playback for injected-pose tests; the current browser flow no longer runs pixel plate tracking. These tests validate mechanics, not performance on a representative athlete dataset. Android packaging steps in README require separate physical-phone verification; CI does not build an APK.
 
 ### Recorded phase regressions
 

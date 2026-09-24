@@ -61,3 +61,12 @@ it('marks even a 100 score as partial and names missing phases', () => {
     techniqueScore(analyzePoseSamples(liftFrames(), 100, 100, 2)),
   ).not.toContain('partial-score-note');
 });
+
+it('renders stick figure athlete silhouette and expected trace comparison in barPanel', () => {
+  const a = analyzePoseSamples(liftFrames(), 100, 100, 2);
+  const html = barPanel(a);
+  expect(html).toContain('Expected trace');
+  expect(html).toContain('Your wrist path');
+  expect(html).toContain('viewBox="115 15 150 355"');
+});
+

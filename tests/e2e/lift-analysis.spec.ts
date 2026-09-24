@@ -104,6 +104,34 @@ test('automatic wrist metrics appear first, mobile score aligns with title, and 
   await expect(page.locator('.recent-section .lift-score')).toHaveText(
     /^80\s*\/100$/,
   );
+  await page.getByRole('button', { name: 'Explore the Snatch demo' }).click();
+  await page.getByRole('link', { name: 'Your lifts', exact: true }).click();
+  for (const route of ['#history', '#home']) {
+    await page.goto('/' + route);
+    const measured = page.locator('a[href^="#vision/"] .lift-score');
+    const demo = page.locator('a[href^="#result/"] .lift-score');
+    await expect(measured).toHaveText(/^80\s*\/100$/);
+    const m = await measured.boundingBox(),
+      d = await demo.boundingBox();
+    expect(Math.abs(m!.x + m!.width - d!.x - d!.width)).toBeLessThan(1);
+    for (const property of [
+      'font-size',
+      'font-weight',
+      'color',
+      'letter-spacing',
+    ])
+      expect(
+        await measured.evaluate(
+          (el, property) => getComputedStyle(el).getPropertyValue(property),
+          property,
+        ),
+      ).toBe(
+        await demo.evaluate(
+          (el, property) => getComputedStyle(el).getPropertyValue(property),
+          property,
+        ),
+      );
+  }
 });
 test('demo retains its original score, phase numbers, feedback and bar values', async ({
   page,
@@ -177,8 +205,9 @@ test('partial scores list missing phases, remain accessible and survive reload',
     'Phases not recognized: Recovery',
   );
   await page.getByRole('link', { name: 'Your lifts', exact: true }).click();
-  await expect(page.locator('.lift-score')).toHaveText(
-    /^100\*\s*\/100Partial analysis$/,
+  await expect(page.locator('.lift-score')).toHaveText(/^100\s*\/100$/);
+  await expect(page.locator('.lift-description')).toContainText(
+    'Partial analysis',
   );
 });
 

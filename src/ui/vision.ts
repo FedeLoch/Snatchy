@@ -56,9 +56,29 @@ const links = [
   [28, 32],
 ];
 export function visionRows(records: VisionRecord[]): string {
-  return records.length
-    ? `<div class="lift-list">${records.map((r) => `<div class="history-entry"><a class="lift-row" href="#vision/${r.id}" aria-label="Open measured pose analysis"><span class="lift-icon">${icon('eye')}</span><span class="lift-description"><strong>${e(exerciseById((r.analysis.repetitions?.[0]?.exercise ?? r.analysis.exercise)?.id ?? ((r.analysis.repetitions?.[0]?.exercise ?? r.analysis.exercise) ? '' : 'snatch'))?.name ?? 'Movement')} · YOUR VIDEO</strong><small>${e(new Date(r.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}</small></span><span class="lift-score" aria-label="${historyScore(r.analysis).partial ? 'Partial ' : ''}score">${historyScore(r.analysis).value ?? '—'}${historyScore(r.analysis).partial && historyScore(r.analysis).value !== null ? '<sup>*</sup>' : ''}<small>/100${historyScore(r.analysis).count > 1 ? ' avg' : ''}</small><small>${historyScore(r.analysis).partial ? 'Partial analysis' : ''}</small></span><span class="upload-status">${r.analysis.repetitions?.length ? r.analysis.repetitions.length + ' reps detected' : r.analysis.status === 'tracked' ? 'Pose tracked' : 'Limited tracking'}</span>${icon('arrow')}</a><button class="history-remove" data-action="remove-history" data-kind="vision" data-id="${r.id}" aria-label="Remove video analysis from history">Remove</button></div>`).join('')}</div>`
-    : '';
+  if (!records.length) return '';
+  return `<div class="lift-list">${records
+    .map((r) => {
+      const score = historyScore(r.analysis);
+      const exercise =
+        r.analysis.repetitions?.[0]?.exercise ?? r.analysis.exercise;
+      const name =
+        exerciseById(exercise?.id ?? (exercise ? '' : 'snatch'))?.name ??
+        'Movement';
+      const reps = r.analysis.repetitions?.length ?? 0;
+      const status = reps
+        ? `${reps} ${reps === 1 ? 'rep' : 'reps'} detected`
+        : r.analysis.status === 'tracked'
+          ? 'Pose tracked'
+          : 'Limited tracking';
+      const notes = [
+        status,
+        ...(score.partial ? ['Partial analysis'] : []),
+        ...(score.count > 1 ? ['Average score'] : []),
+      ];
+      return `<div class="history-entry"><a class="lift-row" href="#vision/${r.id}" aria-label="Open measured pose analysis"><span class="lift-icon">${icon('eye')}</span><span class="lift-description"><strong>${e(name)} · YOUR VIDEO</strong><small>${e(new Date(r.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}</small><small>${notes.map(e).join('<span class="row-dot">·</span>')}</small></span><span class="lift-score" aria-label="${score.partial ? 'Partial ' : ''}${score.count > 1 ? 'average ' : ''}score${score.value === null ? ' unavailable' : ` ${score.value} out of 100`}">${score.value ?? '—'}<small>/100</small></span>${icon('arrow')}</a><button class="history-remove" data-action="remove-history" data-kind="vision" data-id="${r.id}" aria-label="Remove video analysis from history">Remove</button></div>`;
+    })
+    .join('')}</div>`;
 }
 export function visionProcessing(): string {
   return `<div class="narrow"><div class="eyebrow">ON-DEVICE COMPUTER VISION</div><h1>Reading<br>your movement<span class="accent">.</span></h1><p>Your video stays on this device. The model is detecting body landmarks from the actual frames.</p><div class="vision-progress"><progress max="1" value="0" aria-label="Video analysis progress"></progress><p id="vision-progress-label" role="status">Loading the local pose model</p></div><button class="secondary" data-action="cancel">Cancel analysis ${icon('close')}</button><p class="footnote">First runs may take longer. Keep this tab open.</p></div>`;

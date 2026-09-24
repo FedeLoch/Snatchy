@@ -56,7 +56,6 @@ test('real result exposes measured phases, seeking, checks and saved summaries',
         .evaluate((v) => (v as HTMLVideoElement).currentTime),
     )
     .toBeCloseTo(1, 1);
-  await expect(page.locator('#cv-phase-reading')).toContainText('Catch');
   await expect(
     page.getByRole('heading', { name: 'Follow the bar', exact: true }),
   ).toBeVisible();

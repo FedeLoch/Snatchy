@@ -69,4 +69,3 @@ it('renders stick figure athlete silhouette and expected trace comparison in bar
   expect(html).toContain('Your wrist path');
   expect(html).toContain('viewBox="115 15 150 355"');
 });
-

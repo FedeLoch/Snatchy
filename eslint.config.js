@@ -9,6 +9,8 @@ export default tseslint.config(
       'playwright-report/**',
       'test-results/**',
       'public/vision/**',
+      'android/**',
+      'scripts/**',
     ],
   },
   js.configs.recommended,

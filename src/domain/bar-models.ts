@@ -71,8 +71,12 @@ export function getBarPathModel(exerciseId?: string): BarPathModel {
   }
 
   const corridorWidth = family === 'clean' ? 8 : 9;
-  const corridorLeft = refPoints.map((p) => `${(p[0] - corridorWidth).toFixed(1)},${p[1].toFixed(1)}`);
-  const corridorRight = [...refPoints].reverse().map((p) => `${(p[0] + corridorWidth).toFixed(1)},${p[1].toFixed(1)}`);
+  const corridorLeft = refPoints.map(
+    (p) => `${(p[0] - corridorWidth).toFixed(1)},${p[1].toFixed(1)}`,
+  );
+  const corridorRight = [...refPoints]
+    .reverse()
+    .map((p) => `${(p[0] + corridorWidth).toFixed(1)},${p[1].toFixed(1)}`);
   const corridorPath = `M${corridorLeft.join(' L')} L${corridorRight.join(' L')} Z`;
 
   const refTracePath = refPoints

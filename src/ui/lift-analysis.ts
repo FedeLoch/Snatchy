@@ -66,7 +66,6 @@ export function barPanel(a: VisionAnalysis): string {
 
   if (track && track.points.length >= 2) {
     const py = track.points.map((p) => p.y);
-    const px = track.points.map((p) => p.x);
     const minY = Math.min(...py);
     const maxY = Math.max(...py);
     const ySpan = Math.max(1, maxY - minY);
@@ -91,7 +90,9 @@ export function barPanel(a: VisionAnalysis): string {
     });
   }
 
-  const hasPath = Boolean(metrics && track && track.points.length >= 2 && measuredSvgPath);
+  const hasPath = Boolean(
+    metrics && track && track.points.length >= 2 && measuredSvgPath,
+  );
 
   return `<section class="bar-section analysis-card" aria-label="Estimated bar path"><div class="section-title"><h2>Follow the bar</h2><span class="micro">${e(model.exerciseName.toUpperCase())} · WRIST-LINE ESTIMATE</span></div><div class="bar-content measured-bar-content">${
     hasPath
@@ -99,4 +100,3 @@ export function barPanel(a: VisionAnalysis): string {
       : '<div class="bar-path-empty">Both wrists must be visible to estimate the path.</div>'
   }<dl class="bar-metrics"><div><dt>Horizontal deviation</dt><dd>${metrics ? metrics.horizontal.toFixed(1) : '—'}<small>% frame width</small></dd></div><div><dt>Vertical rise</dt><dd>${metrics ? metrics.rise.toFixed(1) : '—'}<small>% frame height</small></dd></div><div><dt>Peak upward velocity</dt><dd>${metrics?.velocity !== null && metrics?.velocity !== undefined ? metrics.velocity.toFixed(1) : '—'}<small>% frame height / s</small></dd></div></dl></div></section>`;
 }
-

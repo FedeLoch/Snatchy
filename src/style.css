@@ -2074,7 +2074,9 @@ dialog blockquote {
   border-radius: 10px;
   padding: 20px 22px;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 .analysis-card:hover {
   border-color: #445834;
@@ -2225,7 +2227,13 @@ dialog blockquote {
   border: 1px dashed rgba(255, 255, 255, 0.4);
 }
 .legend-ref-indicator {
-  background: repeating-linear-gradient(90deg, #687b5a 0, #687b5a 3px, transparent 3px, transparent 6px);
+  background: repeating-linear-gradient(
+    90deg,
+    #687b5a 0,
+    #687b5a 3px,
+    transparent 3px,
+    transparent 6px
+  );
 }
 .legend-user-indicator {
   background: #d4f778;
@@ -2281,7 +2289,9 @@ dialog blockquote {
   font-weight: 500;
   letter-spacing: 0.2px;
   min-height: auto;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 .partial-score-note summary::-webkit-details-marker {
   display: none;
@@ -2518,4 +2528,3 @@ dialog blockquote {
     white-space: normal;
   }
 }
-

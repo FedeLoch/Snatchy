@@ -175,7 +175,7 @@ function route() {
       nav.innerHTML = record.analysis.repetitions
         .map(
           (rep, i) =>
-            `<button class="secondary" data-action="select-rep" data-id="${record.id}" data-rep="${i}" aria-pressed="${rep === analysis}">Rep ${i + 1} · ${rep.interval!.start.toFixed(1)}–${rep.interval!.end.toFixed(1)} s</button>`,
+            `<button class="rep-pill" data-action="select-rep" data-id="${record.id}" data-rep="${i}" aria-pressed="${rep === analysis}">Rep ${i + 1}<small>${rep.interval!.start.toFixed(1)}–${rep.interval!.end.toFixed(1)} s</small></button>`,
         )
         .join('');
       root.querySelector('.analysis-layout')?.before(nav);
@@ -476,8 +476,19 @@ root.addEventListener('click', (event) => {
   const action = target.dataset.action,
     id = target.dataset.id ?? '';
   if (action === 'select-rep') {
-    selectedReps.set(id, Number(target.dataset.rep));
+    const rep = Number(target.dataset.rep);
+    selectedReps.set(id, rep);
+    const y = window.scrollY;
+    suppressFocus = true;
     route();
+    suppressFocus = false;
+    window.scrollTo(0, y);
+    root
+      .querySelector<HTMLElement>(
+        `[data-action="select-rep"][data-id="${id}"][data-rep="${rep}"]`,
+      )
+      ?.focus({ preventScroll: true });
+    announce(`Rep ${rep + 1} selected.`);
   } else if (action === 'remove-history') {
     const rowIndex = Array.from(
       root.querySelectorAll('.history-remove'),

@@ -1,4 +1,5 @@
 import { visible, type VisionAnalysis } from './vision';
+import { barTrace, MOTION } from './snatch-motion';
 export interface WristBarPoint {
   time: number;
   left: { x: number; y: number };
@@ -62,4 +63,44 @@ export function wristMetrics(t: WristBar) {
     rise: (Math.max(0, ...t.points.map((p) => first.y - p.y)) / t.height) * 100,
     velocity,
   };
+}
+/** The illustration's idealised bar path, scaled and aligned onto the measured track. */
+export function barReference(t: WristBar): { x: number[]; y: number[] } | null {
+  if (t.points.length < 3) return null;
+  const ref = barTrace(MOTION.duration);
+  const rx = ref.map((p) => p[0]),
+    ry = ref.map((p) => p[1]);
+  const px = t.points.map((p) => p.x),
+    py = t.points.map((p) => p.y);
+  const xMin = Math.min(...rx),
+    xMax = Math.max(...rx),
+    xSpan = Math.max(1, xMax - xMin);
+  const yMin = Math.min(...ry),
+    yMax = Math.max(...ry),
+    ySpan = Math.max(1, yMax - yMin);
+  const pXMin = Math.min(...px),
+    pXSpan = Math.max(1, Math.max(...px) - pXMin);
+  const pYMin = Math.min(...py),
+    pYSpan = Math.max(1, Math.max(...py) - pYMin);
+  return {
+    x: ref.map((p) => pXMin + ((p[0] - xMin) / xSpan) * pXSpan),
+    y: ref.map((p) => pYMin + ((p[1] - yMin) / ySpan) * pYSpan),
+  };
+}
+/** Largest horizontal gap between the measured path and the aligned reference, as % frame width. */
+export function wristDrift(
+  t: WristBar,
+  reference: { x: number[]; y: number[] } | null,
+): number | null {
+  if (!reference || t.points.length < 3) return null;
+  const n = t.points.length;
+  let max = 0;
+  for (let i = 0; i < n; i++) {
+    const k = Math.min(
+      reference.x.length - 1,
+      Math.round((i / Math.max(1, n - 1)) * (reference.x.length - 1)),
+    );
+    max = Math.max(max, Math.abs(t.points[i].x - reference.x[k]));
+  }
+  return (max / t.width) * 100;
 }

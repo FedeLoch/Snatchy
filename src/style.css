@@ -721,14 +721,14 @@ select {
 }
 .analysis-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr);
-  gap: 42px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
 }
 .video-column {
   align-self: start;
-  position: sticky;
-  top: 24px;
 }
+
 .video-stage {
   position: relative;
   background: #20291b;
@@ -2062,18 +2062,116 @@ dialog blockquote {
   color: #b7c3ad;
   margin-left: 0;
 }
+.video-column,
+.feedback-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.analysis-card {
+  background: #192214;
+  border: 1px solid #334227;
+  border-radius: 10px;
+  padding: 20px 22px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.analysis-card:hover {
+  border-color: #445834;
+}
+.analysis-card .section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #28361e;
+}
+.analysis-card .section-title h2 {
+  font-size: 17px;
+  letter-spacing: -0.4px;
+  margin: 0;
+  color: var(--text);
+}
+.video-card {
+  padding: 16px;
+}
+.video-card .cv-stage {
+  border-radius: 8px;
+  overflow: hidden;
+}
+.motion-card svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #11170d;
+  border-radius: 6px;
+  padding: 8px;
+}
+.quality-card .quality-summary {
+  background: #11170d;
+  border: 1px solid #28361e;
+  border-radius: 6px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.ranges-card .measured-ranges {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  background: transparent;
+  padding: 0;
+}
+.ranges-card .measured-ranges div {
+  background: #11170d;
+  border: 1px solid #28361e;
+  border-radius: 6px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.moments-card .measured-event {
+  background: #11170d;
+  border: 1px solid #28361e;
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.moments-card .measured-event:last-child {
+  margin-bottom: 0;
+}
+.landmarks-card dl {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.landmarks-card dl div {
+  background: #11170d;
+  border: 1px solid #28361e;
+  border-radius: 6px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 .analysis-layout details.measured-issue {
   margin: 0 0 10px;
-  background: #182013;
-  border: 1px solid #334027;
+  background: #141b10;
+  border: 1px solid #2f3c24;
   border-radius: 8px;
+}
+.analysis-layout details.measured-issue:last-of-type {
+  margin-bottom: 0;
 }
 .measured-bar-content {
   display: block;
-  background: #1e2617;
-  border: 1px solid #334027;
-  border-radius: 8px;
-  padding: 18px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
 }
 .measured-bar-content .measured-bar-path {
   display: block;
@@ -2105,8 +2203,8 @@ dialog blockquote {
   align-items: center;
   gap: 16px;
   margin-top: 12px;
-  padding: 8px 4px 0;
-  border-top: 1px solid #2d3824;
+  padding: 10px 4px 0;
+  border-top: 1px solid #28361e;
 }
 .legend-badge {
   display: inline-flex;
@@ -2132,6 +2230,15 @@ dialog blockquote {
 .legend-user-indicator {
   background: #d4f778;
   box-shadow: 0 0 6px rgba(212, 247, 120, 0.5);
+}
+@media (max-width: 600px) {
+  .analysis-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .analysis-card {
+    padding: 16px;
+  }
 }
 @media (max-width: 600px) {
   .result-heading:has(.measured-score),

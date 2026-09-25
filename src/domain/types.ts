@@ -51,6 +51,8 @@ export interface Movement {
 export interface LiftRecord {
   id: string;
   createdAt: number;
+  /** 'demo' is legacy: the simulated provider was removed, but records saved
+      by earlier versions still load, render and can be deleted. */
   source: 'demo' | 'video';
   analysis: Analysis;
 }
@@ -60,14 +62,3 @@ export interface VideoSource {
   duration: number;
 }
 export type Page = 'home' | 'capture' | 'history' | 'result';
-export type ProcessingStep =
-  | 'Detecting athlete'
-  | 'Tracking barbell'
-  | 'Identifying lift phases'
-  | 'Analyzing technique';
-export interface AnalysisProvider {
-  analyze(
-    movementId: string,
-    options: { signal: AbortSignal; onProgress: (step: number) => void },
-  ): Promise<Analysis>;
-}

@@ -103,68 +103,7 @@ test('automatic wrist metrics appear first, mobile score aligns with title, and 
   await expect(page.locator('.recent-section .lift-score')).toHaveText(
     /^80\s*\/100$/,
   );
-  await page.getByRole('button', { name: 'Explore the Snatch demo' }).click();
-  await page.getByRole('link', { name: 'Your lifts', exact: true }).click();
-  for (const route of ['#history', '#home']) {
-    await page.goto('/' + route);
-    const measured = page.locator('a[href^="#vision/"] .lift-score');
-    const demo = page.locator('a[href^="#result/"] .lift-score');
-    await expect(measured).toHaveText(/^80\s*\/100$/);
-    const m = await measured.boundingBox(),
-      d = await demo.boundingBox();
-    expect(Math.abs(m!.x + m!.width - d!.x - d!.width)).toBeLessThan(1);
-    for (const property of [
-      'font-size',
-      'font-weight',
-      'color',
-      'letter-spacing',
-    ])
-      expect(
-        await measured.evaluate(
-          (el, property) => getComputedStyle(el).getPropertyValue(property),
-          property,
-        ),
-      ).toBe(
-        await demo.evaluate(
-          (el, property) => getComputedStyle(el).getPropertyValue(property),
-          property,
-        ),
-      );
-  }
 });
-test('demo retains its original score, phase numbers, feedback and bar values', async ({
-  page,
-}) => {
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Explore the Snatch demo' }).click();
-  await expect(page.getByLabel('Score 83 out of 100')).toBeVisible();
-  await expect(page.locator('.timeline b')).toHaveText([
-    '94',
-    '91',
-    '86',
-    '72',
-    '76',
-    '84',
-    '92',
-  ]);
-  await expect(
-    page.getByRole('button', { name: /Early arm bend/ }),
-  ).toBeVisible();
-  await expect(page.locator('.bar-metrics')).toContainText('6.4');
-  await expect(page.locator('.bar-metrics')).toContainText('1.24');
-  await expect(page.locator('.bar-metrics')).toContainText('1.82');
-  const bar = await page
-    .getByRole('heading', { name: 'Follow the bar' })
-    .boundingBox();
-  const details = await page
-    .getByRole('heading', { name: 'The details that matter' })
-    .boundingBox();
-  expect(bar!.y).toBeLessThan(details!.y);
-  const title = await page.locator('.result-heading h1').boundingBox();
-  const score = await page.getByLabel('Score 83 out of 100').boundingBox();
-  expect(Math.abs(title!.y - score!.y)).toBeLessThan(8);
-});
-
 test('partial scores list missing phases, remain accessible and survive reload', async ({
   page,
 }) => {

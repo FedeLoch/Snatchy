@@ -337,7 +337,7 @@ a .icon {
   align-items: center;
   justify-content: center;
   border: 1px solid var(--line);
-  border-radius: 2px;
+  border-radius: 50%;
   color: var(--muted);
 }
 .theme-toggle .icon {
@@ -1862,15 +1862,30 @@ dialog blockquote {
   border-bottom: 0;
 }
 .history-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  padding: 0;
   background: transparent;
-  color: var(--warning);
-  border: 1px solid var(--warning-line);
-  border-radius: 8px;
-  padding: 10px 12px;
-  min-height: 44px;
+  color: var(--muted);
+  border: 1px solid transparent;
+  border-radius: 50%;
   cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.history-remove .icon {
+  width: 13px;
+  height: 13px;
 }
 .history-remove:hover {
+  color: var(--warning);
+  border-color: var(--warning-line);
   background: var(--warning-wash);
 }
 .history-undo {
@@ -1964,10 +1979,6 @@ dialog blockquote {
 @media (max-width: 600px) {
   .history-entry {
     gap: 6px;
-  }
-  .history-remove {
-    padding: 10px 8px;
-    font-size: 12px;
   }
   .history-entry .lift-row {
     gap: 8px;

@@ -31,7 +31,6 @@ import {
   systemTheme,
   type Theme,
 } from './services/theme';
-import { demoProvider, processingSteps } from './services/analysis-provider';
 import { LiftPlayer, type PlayerState } from './ui/player';
 import { escapeHtml as e, icon } from './ui/html';
 import { movementVisual } from './ui/movement-visuals';
@@ -331,50 +330,7 @@ function selectIssue(id: string, toggle = true) {
       : 'Observation collapsed',
   );
 }
-async function analyzeDemo() {
-  movement = requireMovement('snatch');
-  dispose();
-  releaseVideo(pendingVideo);
-  pendingVideo = null;
-  const controller = new AbortController();
-  work = controller;
-  page = 'capture';
-  draw(views.processing(movement));
-  try {
-    const analysis = await demoProvider.analyze(movement.id, {
-      signal: controller.signal,
-      onProgress: (step) => {
-        document
-          .querySelectorAll<HTMLElement>('[data-step]')
-          .forEach((row, i) => {
-            row.classList.toggle('done', i < step);
-            row.classList.toggle('current', i === step);
-            row.querySelector('b')!.textContent =
-              i < step ? '✓' : i === step ? '◌' : '·';
-          });
-        announce(processingSteps[step]);
-      },
-    });
-    if (controller.signal.aborted) return;
-    const record: LiftRecord = {
-      id: crypto.randomUUID(),
-      createdAt: Date.now(),
-      source: 'demo',
-      analysis,
-    };
-    records = addRecord(records, record);
-    warning = saveHistory(storage, records);
-    work = null;
-    go('result/' + record.id);
-  } catch (error) {
-    if (controller.signal.aborted) return;
-    draw(views.capture(movement, pendingVideo, exerciseChoice));
-    document.querySelector('#capture-error')!.textContent =
-      error instanceof Error
-        ? error.message
-        : 'Analysis could not complete. Please try again.';
-  }
-}
+
 async function analyzeUpload() {
   if (!pendingVideo) return;
   dispose();
@@ -557,8 +513,7 @@ root.addEventListener('click', (event) => {
       warning = '';
     }
     refreshInPlace();
-  } else if (action === 'demo') void analyzeDemo();
-  else if (action === 'analyze-video') void analyzeUpload();
+  } else if (action === 'analyze-video') void analyzeUpload();
   else if (action === 'review-speed') {
     const video = document.querySelector<HTMLVideoElement>(
       '.review-video video',

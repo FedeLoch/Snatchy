@@ -410,13 +410,35 @@ p {
   min-height: 56px;
 }
 .primary {
-  background: var(--accent-fill);
-  color: var(--accent-on);
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--line-strong);
   margin-top: 26px;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.primary:hover {
+  border-color: var(--accent-fill);
+  background: var(--accent-wash);
+}
+.primary .icon {
+  transition: transform 0.2s ease;
+}
+.primary:hover .icon {
+  transform: translateX(4px);
 }
 .secondary {
   border: 1px solid var(--line-strong);
+  color: var(--text-soft);
   margin-top: 12px;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.secondary:hover {
+  border-color: var(--line-strong);
+  background: var(--panel-2);
 }
 .compact {
   max-width: 300px;

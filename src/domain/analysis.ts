@@ -29,7 +29,7 @@ export function isAnalysis(value: unknown): value is Analysis {
   if (
     !object(value) ||
     value.version !== 1 ||
-    value.simulated !== true ||
+    typeof value.simulated !== 'boolean' ||
     !identifier(value.movementId) ||
     !score(value.score) ||
     !text(value.verdict) ||

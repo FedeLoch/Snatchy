@@ -83,7 +83,7 @@ describe('analysis contract and timeline', () => {
     {},
     [],
     { ...snatchDemo, version: 2 },
-    { ...snatchDemo, simulated: false },
+    { ...snatchDemo, simulated: 'no' },
     { ...snatchDemo, score: 101 },
     { ...snatchDemo, duration: 0 },
     { ...snatchDemo, phases: [] },

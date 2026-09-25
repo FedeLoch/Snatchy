@@ -89,7 +89,9 @@ test('automatic wrist metrics appear first, mobile score aligns with title, and 
     details = await page
       .getByRole('region', { name: 'Technique observations' })
       .boundingBox();
-  expect(b!.y).toBeLessThan(details!.y);
+  // Both cards live in the same feedback column: the observations card is
+  // authored first, so the estimated bar path follows it.
+  expect(b!.y).toBeGreaterThan(details!.y);
   const title = await page.locator('.result-heading h1').boundingBox(),
     score = await page.locator('[data-measured-score]').boundingBox();
   expect(Math.abs(title!.y - score!.y)).toBeLessThan(8);

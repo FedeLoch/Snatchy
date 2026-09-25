@@ -20,7 +20,7 @@ export function techniqueScore(a: VisionAnalysis): string {
     (missing.length > 0 ||
       lift.checks.length < 5 ||
       lift.phases.some((p) => p.estimated));
-  return `<aside class="measured-score" aria-label="Experimental movement check score"><div class="score" data-measured-score>${lift.score ?? '—'}${partial ? '<sup class="partial-score-mark" aria-label="Partial analysis">*</sup>' : ''}<small>/ 100</small></div><span class="micro">EXPERIMENTAL MOVEMENT SCORE</span><p class="footnote">${lift.score === null ? 'Not enough phase evidence' : `${lift.checks.filter((c) => c.passed).length} of ${lift.checks.length} measured checks met`}</p>${
+  return `<aside class="measured-score" aria-label="Experimental movement check score"><div class="score" data-measured-score>${lift.score ?? '—'}${partial ? '<sup class="partial-score-mark" aria-hidden="true">*</sup>' : ''}<small>/ 100</small></div><span class="micro">EXPERIMENTAL MOVEMENT SCORE</span><p class="footnote">${lift.score === null ? 'Not enough phase evidence' : `${lift.checks.filter((c) => c.passed).length} of ${lift.checks.length} measured checks met`}</p>${
     partial
       ? `<details class="partial-score-note"><summary aria-label="Partial analysis" title="Partial analysis"><span class="partial-badge-text" aria-hidden="true">ⓘ</span></summary><div class="partial-score-popover"><p>${lift.phases.filter((p) => p.start !== null).length} of ${lift.phases.filter((p) => p.applicable !== false).length} phases recognized · ${lift.checks.length} of 5 checks available.</p><p>${missing.length ? `Phases not recognized: ${e(missing.join(', '))}.` : 'Some recognized phases lack enough evidence for their measurement checks.'}</p><p>${
           lift.phases.some((p) => p.estimated)

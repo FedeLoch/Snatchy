@@ -35,7 +35,7 @@ export interface Analysis {
   verdict: string;
   summary: string;
   duration: number;
-  simulated: true;
+  simulated: boolean;
   phases: Phase[];
   issues: Issue[];
   metrics: Metric[];

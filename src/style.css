@@ -2417,10 +2417,10 @@ dialog blockquote {
 }
 .measured-bar-content {
   display: block;
-  background: transparent;
+  background: var(--panel);
   border: none;
-  border-radius: 0;
-  padding: 0;
+  border-radius: 10px;
+  padding: 18px 20px;
 }
 .measured-bar-content .measured-bar-path {
   display: block;

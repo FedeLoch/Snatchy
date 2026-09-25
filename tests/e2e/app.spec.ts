@@ -12,10 +12,15 @@ async function seedResult(page: Page, overrides: Record<string, unknown> = {}) {
     source: 'demo',
     analysis: { ...snatchDemo, ...overrides },
   };
-  await page.addInitScript(
+  // The app reads history once at boot (see `loadHistory` in src/app.ts), so a
+  // hash-only `goto` is not enough: it neither re-runs init scripts nor re-reads
+  // storage. Seed, then force a full document load before routing.
+  await page.goto('/');
+  await page.evaluate(
     (r) => localStorage.setItem('snatchy-history-v2', JSON.stringify([r])),
     record,
   );
+  await page.reload();
   await page.goto('/#result/custom');
   await expect(page.getByRole('heading', { name: 'Good lift.' })).toBeVisible();
 }
@@ -244,6 +249,8 @@ test('all main screens and the drill dialog pass accessibility checks', async ({
         .analyze()
     ).violations,
   ).toEqual([]);
+  // Drill links only render inside an expanded issue, so open one first.
+  await page.locator('.issue-toggle').first().click();
   await page.getByRole('button', { name: 'Snatch Pull', exact: true }).click();
   expect(
     (

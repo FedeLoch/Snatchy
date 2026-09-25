@@ -6,15 +6,33 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#10130f" />
+    <meta name="theme-color" content="#0d1117" />
     <meta
       name="description"
       content="Snatchy — understand your lift. A local-first visual technique prototype."
     />
     <title>Snatchy — Understand your lift</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <script type="module" crossorigin src="/assets/index-CpnHCprN.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DsVS3hhI.css">
+    <script>
+      // Resolve the theme before first paint. Without this the page renders
+      // dark and then repaints, which is visible on reload. Keep the key in
+      // sync with THEME_KEY in src/services/theme.ts.
+      (function () {
+        try {
+          var stored = localStorage.getItem('snatchy-theme-v1');
+          document.documentElement.dataset.theme =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : matchMedia('(prefers-color-scheme: light)').matches
+                ? 'light'
+                : 'dark';
+        } catch (e) {
+          document.documentElement.dataset.theme = 'dark';
+        }
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-TRfd9mXP.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CNF-7Bqq.css">
   </head>
   <body>
     <div id="app"></div>

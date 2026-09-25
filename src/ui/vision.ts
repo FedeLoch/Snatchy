@@ -100,7 +100,7 @@ function angleChart(a: VisionAnalysis): string {
     path += `${pen ? 'L' : 'M'}${(((p.time - start) / span) * 300).toFixed(2)},${(100 - (p.angle / 180) * 90).toFixed(2)} `;
     pen = true;
   }
-  return `<svg viewBox="0 0 320 120" role="img" aria-label="Measured elbow angle over time; gaps indicate low confidence"><path d="M0 10h300M0 55h300M0 100h300" stroke="#46513b" stroke-width=".5"/><path d="${path}" fill="none" stroke="#d4f778" stroke-width="2"/><text x="0" y="117" fill="#a8b09d" font-size="9">${start.toFixed(1)} s</text><text x="270" y="117" fill="#a8b09d" font-size="9">${a.duration.toFixed(1)} s</text></svg>`;
+  return `<svg viewBox="0 0 320 120" role="img" aria-label="Measured elbow angle over time; gaps indicate low confidence"><path class="chart-grid" d="M0 10h300M0 55h300M0 100h300" stroke-width=".5"/><path class="chart-accent" d="${path}" stroke-width="2"/><text class="chart-label" x="0" y="117" font-size="9">${start.toFixed(1)} s</text><text class="chart-label" x="270" y="117" font-size="9">${a.duration.toFixed(1)} s</text></svg>`;
 }
 export function visionResult(
   record: VisionRecord,
@@ -184,12 +184,12 @@ export function bindVisionPlayback(
       })
       .join('');
     overlay.innerHTML = enabled
-      ? `<g stroke="#d4f778" stroke-width="${thickness}" fill="#d4f778">${segments}${joints}</g>`
+      ? `<g class="figure-accent figure-accent-fill" stroke-width="${thickness}">${segments}${joints}</g>`
       : '';
     const left = f.landmarks[15],
       right = f.landmarks[16];
     if (visible(left) && visible(right))
-      overlay.innerHTML += `<line x1="${left.x * a.width}" y1="${left.y * a.height}" x2="${right.x * a.width}" y2="${right.y * a.height}" stroke="#73c9ff" stroke-width="${thickness * 2}"/><circle cx="${((left.x + right.x) / 2) * a.width}" cy="${((left.y + right.y) / 2) * a.height}" r="${thickness * 3}" fill="#73c9ff"/>`;
+      overlay.innerHTML += `<line class="figure-reference" x1="${left.x * a.width}" y1="${left.y * a.height}" x2="${right.x * a.width}" y2="${right.y * a.height}" stroke-width="${thickness * 2}"/><circle class="figure-reference-fill" cx="${((left.x + right.x) / 2) * a.width}" cy="${((left.y + right.y) / 2) * a.height}" r="${thickness * 3}"/>`;
     const values = anglesAt(f, a.side, a.width, a.height);
     angles.innerHTML = Object.entries(values)
       .map(

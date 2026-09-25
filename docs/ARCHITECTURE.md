@@ -12,6 +12,7 @@ src/
   services/analysis-provider.ts  Cancellable AnalysisProvider implementation
   services/history.ts            Versioned persistence, migration and recovery
   services/media.ts              File validation, metadata and object URL ownership
+  services/theme.ts             Theme resolution, persistence and document application
   ui/views.ts                   Screen templates and feedback components
   ui/player.ts                  Playback lifecycle; independent of screen rendering
   ui/movement-visuals.ts         Movement-to-illustration registry
@@ -51,6 +52,16 @@ An illustrated demo is optional and separate. To add one, supply a movement-spec
 - Analysis and provider availability are distinct from catalog entries.
 
 A framework, backend, account system and native wrapper are intentionally deferred. Add them when a concrete requirement makes the additional complexity useful.
+
+## Theming
+
+The interface ships two themes. `services/theme.ts` owns the `'dark' | 'light'` contract, the `snatchy-theme-v1` storage key, and the preference order: a stored choice wins, otherwise the operating system decides. Storage access takes an explicit port and tolerates denial or corrupted values, so a blocked or unavailable `localStorage` degrades to the system preference instead of failing.
+
+`applyTheme` writes `data-theme` on the document element and keeps the mobile `theme-color` meta tag in step. The attribute deliberately lives on the root rather than on a re-rendered container, because `app.ts` replaces `#app` via `innerHTML` and would otherwise discard the theme on every screen change. `index.html` sets the same attribute with a small blocking script so the first paint is already correct.
+
+`style.css` declares the dark ramp once, shared with the media surfaces, and lets `[data-theme='light']` re-hue only the page. Media surfaces (`.video-stage`, `.framing`, `.processing-visual`, `.demo-hero`, `.bar-content`, `.cv-stage`, `.bar-calibration`) are excluded from the light block, so overlay chrome stays legible over arbitrary footage. They also set `color: var(--text)` explicitly: an inherited `color` resolves from the nearest ancestor's computed value, so without it text inside a pinned surface picks up the light theme's text colour from `<body>` and disappears.
+
+Colours that SVG presentation attributes cannot reach are expressed as `figure-*` and `chart-*` classes instead of `var()`, so figures follow the same ramp. The `theme` action is rendered by the shared shell, labelled by the theme it switches _to_, and is covered in both themes by accessibility tests that assert zero axe violations.
 
 ## Demo motion
 

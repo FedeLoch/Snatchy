@@ -7,10 +7,15 @@ import type {
   VideoSource,
 } from '../domain/types';
 import { processingSteps } from '../services/analysis-provider';
+import type { Theme } from '../services/theme';
 import { escapeHtml as e, icon } from './html';
 import { movementVisual, movementBarPath } from './movement-visuals';
-export function shell(content: string, page: Page): string {
-  return `<a href="#main" class="skip-link">Skip to content</a><header class="app-header"><a class="brand" href="#home" aria-label="Snatchy home"><span class="brand-mark" aria-hidden="true">Ⅱ</span>snatchy<span>.</span></a><div class="edition">THE TECHNIQUE LAB <span>VOL. 01</span></div><span class="header-status"><i></i> LOCAL FIRST</span></header><main id="main" tabindex="-1">${content}</main><nav aria-label="Main navigation">${(['home', 'capture', 'history'] as const).map((p) => `<a href="#${p}" ${page === p || (page === 'result' && p === 'capture') ? 'aria-current="page"' : ''}>${icon(p === 'capture' ? 'plus' : p)}<span>${p === 'capture' ? 'Analyze' : p === 'home' ? 'Home' : 'History'}</span></a>`).join('')}</nav><div class="sr-only" id="announcer" role="status" aria-live="polite"></div>`;
+export function shell(content: string, page: Page, theme: Theme): string {
+  const next: Theme = theme === 'dark' ? 'light' : 'dark';
+  // The icon shows the theme you would switch to, and the label says so in
+  // words. No aria-pressed: a theme toggle is not a two-state toggle button.
+  const toggle = `<button class="theme-toggle" data-action="theme" title="Switch to ${next} theme" aria-label="Switch to ${next} theme">${icon(next === 'light' ? 'sun' : 'moon')}</button>`;
+  return `<a href="#main" class="skip-link">Skip to content</a><header class="app-header"><a class="brand" href="#home" aria-label="Snatchy home"><span class="brand-mark" aria-hidden="true">Ⅱ</span>snatchy<span>.</span></a><div class="edition">THE TECHNIQUE LAB <span>VOL. 01</span></div><div class="header-tools"><span class="header-status"><i></i> LOCAL FIRST</span>${toggle}</div></header><main id="main" tabindex="-1">${content}</main><nav aria-label="Main navigation">${(['home', 'capture', 'history'] as const).map((p) => `<a href="#${p}" ${page === p || (page === 'result' && p === 'capture') ? 'aria-current="page"' : ''}>${icon(p === 'capture' ? 'plus' : p)}<span>${p === 'capture' ? 'Analyze' : p === 'home' ? 'Home' : 'History'}</span></a>`).join('')}</nav><div class="sr-only" id="announcer" role="status" aria-live="polite"></div>`;
 }
 function rows(records: LiftRecord[]): string {
   return records.length

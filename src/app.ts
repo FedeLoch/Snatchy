@@ -23,6 +23,14 @@ import {
   type StoragePort,
 } from './services/history';
 import { prepareVideo, releaseVideo } from './services/media';
+import {
+  applyTheme,
+  loadTheme,
+  preferredTheme,
+  saveTheme,
+  systemTheme,
+  type Theme,
+} from './services/theme';
 import { demoProvider, processingSteps } from './services/analysis-provider';
 import { LiftPlayer, type PlayerState } from './ui/player';
 import { escapeHtml as e, icon } from './ui/html';
@@ -60,6 +68,8 @@ let player: LiftPlayer | null = null;
 let active: LiftRecord | null = null;
 let selected: string | null = 'arms';
 let overlay = true;
+let theme = preferredTheme(storage);
+applyTheme(document, theme);
 let loadingVideo = false;
 let announceTimer: ReturnType<typeof setTimeout> | undefined;
 function announce(message: string) {
@@ -87,7 +97,7 @@ function dispose() {
   document.querySelector('video')?.pause();
 }
 function draw(content: string, focus = true) {
-  root.innerHTML = views.shell(content, page);
+  root.innerHTML = views.shell(content, page, theme);
   if (removed)
     root
       .querySelector('main')
@@ -582,6 +592,24 @@ root.addEventListener('click', (event) => {
     target.innerHTML =
       icon('eye') + `<span>Pose ${overlay ? 'on' : 'off'}</span>`;
     if (player) updatePlayback(player.state);
+  } else if (action === 'theme') {
+    // Applied in place rather than through route(), so an in-flight analysis
+    // or a playing lift is not torn down by a re-render.
+    const next: Theme = theme === 'dark' ? 'light' : 'dark';
+    theme = next;
+    applyTheme(document, theme);
+    target.setAttribute(
+      'aria-label',
+      `Switch to ${next === 'dark' ? 'light' : 'dark'} theme`,
+    );
+    target.setAttribute(
+      'title',
+      `Switch to ${next === 'dark' ? 'light' : 'dark'} theme`,
+    );
+    target.innerHTML = icon(next === 'dark' ? 'sun' : 'moon');
+    const failure = saveTheme(storage, theme);
+    if (failure) warning = failure;
+    announce(`${theme === 'dark' ? 'Dark' : 'Light'} theme on.`);
   } else if (action === 'issue') selectIssue(id);
   else if (action === 'jump') {
     selectIssue(id, false);
@@ -665,6 +693,20 @@ root.addEventListener('keydown', (event) => {
 window.addEventListener('hashchange', route);
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) player?.pause();
+});
+// Follow the operating system only while no explicit choice has been stored,
+// so a later system change is respected without overriding a deliberate pick.
+matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+  if (loadTheme(storage) !== null) return;
+  theme = systemTheme();
+  applyTheme(document, theme);
+  const toggle = root.querySelector<HTMLElement>('[data-action="theme"]');
+  if (toggle) {
+    const next: Theme = theme === 'dark' ? 'light' : 'dark';
+    toggle.setAttribute('aria-label', `Switch to ${next} theme`);
+    toggle.setAttribute('title', `Switch to ${next} theme`);
+    toggle.innerHTML = icon(next === 'dark' ? 'sun' : 'moon');
+  }
 });
 window.addEventListener('pagehide', () => {
   dispose();

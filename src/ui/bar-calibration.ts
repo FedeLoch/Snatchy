@@ -31,11 +31,23 @@ export function openBarCalibration(
     controller: AbortController | null = null,
     draft: BarTrack | null = null,
     closed = false;
+  // A canvas has no CSS cascade, so the marker colours are read from this
+  // surface's own tokens. The surface is pinned dark in every theme, so one
+  // read per dialog is enough.
+  let traceColor = '',
+    pointColor = '';
+  function palette() {
+    if (traceColor) return;
+    const style = getComputedStyle(dialog);
+    traceColor = style.getPropertyValue('--accent-fill').trim() || '#7caec7';
+    pointColor = style.getPropertyValue('--reference').trim() || '#e8792b';
+  }
   function draw() {
     if (closed || !video.videoWidth || video.readyState < 2) return;
+    palette();
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     if (draft) {
-      ctx.strokeStyle = '#d4f778';
+      ctx.strokeStyle = traceColor;
       ctx.lineWidth = 2;
       ctx.beginPath();
       draft.points.forEach((p, i) => {
@@ -54,7 +66,7 @@ export function openBarCalibration(
         draft.points[0],
       );
       if (Math.abs(point.time - video.currentTime) <= 0.1) {
-        ctx.fillStyle = '#67dcff';
+        ctx.fillStyle = pointColor;
         ctx.beginPath();
         ctx.arc(
           (point.x / draft.width) * canvas.width,
@@ -66,7 +78,7 @@ export function openBarCalibration(
         ctx.fill();
       }
     } else if (input('x').value && input('y').value) {
-      ctx.strokeStyle = '#d4f778';
+      ctx.strokeStyle = traceColor;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(

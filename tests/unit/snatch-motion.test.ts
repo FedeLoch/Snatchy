@@ -117,4 +117,23 @@ describe('Snatch demo physical invariants', () => {
     expect(poseSvg(1.85, true, 'shoulder')).not.toContain('153°');
     expect(snatchBarPathSvg()).toContain('matching the demo motion');
   });
+  it('colours the figure only with themeable classes, never raw values', () => {
+    for (const t of [0, 0.45, 1.34, 1.85, 2.6, 3.6]) {
+      const html = poseSvg(t, true, 'elbow');
+      expect(html).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+      expect(html).not.toMatch(/\b(?:rgb|rgba|hsl|hsla)\(/i);
+      expect(html).toMatch(/class="figure-[a-z-]+"/);
+    }
+    expect(snatchBarPathSvg()).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+  });
+  it('never pairs a fill="none" element with a fill class', () => {
+    // A CSS `fill` beats an SVG `fill="none"` presentation attribute, so an
+    // open polyline carrying a fill class silently renders as a filled blob.
+    for (const html of [poseSvg(1.34, true, 'elbow'), snatchBarPathSvg()]) {
+      for (const [, attrs] of html.matchAll(/<[a-z]+\s([^>]*?)\/?>/g)) {
+        if (!/\bfill="none"/.test(attrs)) continue;
+        expect(attrs).not.toMatch(/class="[^"]*-fill\b/);
+      }
+    }
+  });
 });

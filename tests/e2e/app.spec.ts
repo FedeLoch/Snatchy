@@ -356,6 +356,9 @@ test('small screens do not overflow and controls remain touch-sized', async ({
 test('all main screens and the drill dialog pass accessibility checks', async ({
   page,
 }) => {
+  // Pin the theme: Playwright defaults to a light colour scheme, and the light
+  // palette is covered separately below.
+  await page.emulateMedia({ colorScheme: 'dark' });
   for (const route of ['/#home', '/#capture', '/#history']) {
     await page.goto(route);
     const result = await new AxeBuilder({ page })
@@ -381,6 +384,94 @@ test('all main screens and the drill dialog pass accessibility checks', async ({
     ).violations,
   ).toEqual([]);
 });
+test('theme toggles, persists across reloads, and stays accessible', async ({
+  page,
+}) => {
+  // Pin the starting preference: Playwright defaults to a light colour scheme,
+  // which would otherwise decide the first paint.
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/');
+  const toggle = page.getByRole('button', { name: 'Switch to light theme' });
+  await expect(toggle).toBeVisible();
+  await toggle.click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  // The label must follow the current theme, so query it by action rather than
+  // by the name it had a moment ago.
+  const control = page.locator('[data-action="theme"]');
+  await expect(control).toHaveAccessibleName('Switch to dark theme');
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute(
+    'content',
+    '#f2f5f8',
+  );
+  // A stored choice must win over the operating system on reload.
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await page.getByRole('button', { name: 'Switch to dark theme' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute(
+    'content',
+    '#0d1117',
+  );
+  // The system must not override a deliberate choice while the app is open.
+  await page.emulateMedia({ colorScheme: 'light' });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+});
+
+test('light mode is the default when the system prefers light', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect(
+    page.getByRole('button', { name: 'Switch to dark theme' }),
+  ).toBeVisible();
+});
+
+test('light mode passes accessibility checks and does not overflow', async ({
+  page,
+}) => {
+  const analysis = {
+    ...snatchDemo,
+    score: 91,
+    verdict: 'Strong lift',
+    phases: snatchDemo.phases.map((p) => ({ ...p, score: 90 })),
+  };
+  await page.addInitScript(
+    (record) =>
+      localStorage.setItem('snatchy-history-v2', JSON.stringify([record])),
+    { id: 'custom', createdAt: 1234, source: 'demo', analysis },
+  );
+  await page.emulateMedia({ colorScheme: 'light' });
+  for (const route of ['/#home', '/#capture', '/#history', '/#result/custom']) {
+    await page.goto(route);
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    expect(
+      (
+        await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+          .analyze()
+      ).violations,
+    ).toEqual([]);
+    await noOverflow(page);
+  }
+});
+
+test('the theme control stays touch-sized on the narrowest screen', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.goto('/');
+  const box = await page
+    .getByRole('button', { name: 'Switch to light theme' })
+    .boundingBox();
+  expect(box!.width).toBeGreaterThanOrEqual(44);
+  expect(box!.height).toBeGreaterThanOrEqual(44);
+  await noOverflow(page);
+});
+
 test('saved movement data controls rendering instead of hardcoded scores', async ({
   page,
 }) => {

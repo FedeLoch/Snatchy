@@ -1,12 +1,113 @@
-:root {
+/* Palette. The dark ramp is declared once and shared with the media surfaces
+   below so overlay chrome stays legible over arbitrary footage. Only the
+   `[data-theme='light']` block re-hues the page, which is why media containers
+   keep the dark values in every theme: the light rule never matches them. */
+:root,
+.video-stage,
+.framing,
+.processing-visual,
+.demo-hero,
+.bar-content,
+.cv-stage,
+.bar-calibration {
   color-scheme: dark;
-  --bg: #10130f;
-  --panel: #1b2117;
-  --line: #333c2c;
-  --text: #edf0e6;
-  --muted: #a8b09d;
-  --accent: #d4f778;
+  /* Elements that rely on an inherited `color` resolve it from the nearest
+     ancestor, not from the custom property, so seed the dark ramp here as
+     well. Without this, text inside a pinned surface picks up the light
+     theme's --text from <body> and disappears. */
+  color: var(--text);
+
+  --bg: #0d1117;
+  --panel: #161c24;
+  --panel-2: #1a222c;
+  --panel-3: #11161d;
+  --panel-raised: #1e2630;
+  --panel-sunken: #080b0f;
+  --panel-veil: rgb(20 26 34 / 96%);
+  --scrim: rgb(8 11 15 / 82%);
+
+  --line: #2b333e;
+  --line-strong: #48545f;
+
+  --text: #e8edf3;
+  --text-soft: #c3cedb;
+  --muted: #a3b0c0;
+
+  --accent: #7caec7;
+  --accent-fill: #7caec7;
+  --accent-on: #0d1117;
+  --accent-wash: rgb(124 174 199 / 16%);
+  --accent-glow: rgb(124 174 199 / 45%);
+
+  --reference: #e8792b;
+  --reference-muted: #a8622a;
+  --phase-idle: #46586b;
+
   --warning: #f0c995;
+  --warning-wash: rgb(240 201 149 / 14%);
+  --warning-line: rgb(240 201 149 / 40%);
+
+  --shell: rgb(0 0 0 / 45%);
+  --shell-soft: rgb(0 0 0 / 28%);
+  --shell-strong: rgb(0 0 0 / 65%);
+  --hairline: rgb(255 255 255 / 40%);
+  --hover-filter: brightness(1.12);
+
+  --figure-grid: #2b333e;
+  --figure-axis: #79879a;
+  --figure-shadow: #060a0e;
+  --figure-limb: #6b788a;
+  --figure-leg: #8b98a8;
+  --figure-torso: #5d6a7a;
+  --figure-skin: #b3bfcc;
+  --figure-heel: #d3dae2;
+  --figure-silhouette: #39434f;
+  --figure-bar: #ccd4dc;
+  --figure-plate: #33414f;
+  --figure-plate-lit: #3d4d5e;
+  --figure-plate-edge: #7caec7;
+  --figure-hub: #e6edf3;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #f2f5f8;
+  --panel: #ffffff;
+  --panel-2: #f7f9fb;
+  --panel-3: #eaeff4;
+  --panel-raised: #ffffff;
+  --panel-sunken: #dde4ea;
+  --panel-veil: rgb(255 255 255 / 92%);
+  --scrim: rgb(8 11 15 / 82%);
+
+  --line: #d3dbe3;
+  --line-strong: #9aa8b5;
+
+  --text: #141b24;
+  --text-soft: #3c4a59;
+  --muted: #4e5f70;
+
+  --accent: #1d5c7d;
+  --accent-fill: #9ec8dd;
+  --accent-on: #141b24;
+  --accent-wash: rgb(29 92 125 / 12%);
+  --accent-glow: rgb(158 200 221 / 55%);
+
+  --reference: #8f5314;
+  --reference-muted: #8f5314;
+  --phase-idle: #b3c0cc;
+
+  --warning: #7a5320;
+  --warning-wash: rgb(122 83 32 / 12%);
+  --warning-line: rgb(122 83 32 / 40%);
+
+  --shell: rgb(10 15 22 / 45%);
+  --shell-soft: rgb(10 15 22 / 16%);
+  --shell-strong: rgb(10 15 22 / 40%);
+  --hairline: rgb(255 255 255 / 40%);
+  --hover-filter: brightness(0.95);
+}
+:root {
   font-family:
     Inter,
     -apple-system,
@@ -17,6 +118,100 @@
   color: var(--text);
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
+}
+
+/* SVG colours live in CSS, not in the markup: a presentation attribute cannot
+   hold a var(), and poseSvg re-renders on every animation frame, so resolving
+   tokens per frame through getComputedStyle would be wasteful. */
+.figure-grid {
+  stroke: var(--figure-grid);
+  fill: none;
+}
+.figure-axis {
+  stroke: var(--figure-axis);
+  fill: none;
+}
+.figure-shadow {
+  fill: var(--figure-shadow);
+}
+.figure-limb {
+  stroke: var(--figure-limb);
+}
+.figure-leg {
+  stroke: var(--figure-leg);
+}
+.figure-torso {
+  stroke: var(--figure-torso);
+  fill: none;
+}
+/* SVG presentation attributes such as `fill="none"` are weaker than any CSS
+   declaration, so a class that sets `fill` silently overrides that attribute
+   and fills open polylines. Stroke classes therefore default to `fill: none`
+   and shapes that are genuinely filled opt in with a `*-fill` companion. */
+.figure-skin {
+  stroke: var(--figure-skin);
+  fill: none;
+}
+.figure-skin-fill {
+  fill: var(--figure-skin);
+}
+.figure-heel {
+  stroke: var(--figure-heel);
+}
+.figure-silhouette {
+  stroke: var(--figure-silhouette);
+  fill: none;
+}
+.figure-silhouette-fill {
+  fill: var(--figure-silhouette);
+}
+.figure-bar {
+  stroke: var(--figure-bar);
+  fill: none;
+}
+.figure-plate {
+  fill: var(--figure-plate);
+}
+.figure-plate-lit {
+  fill: var(--figure-plate-lit);
+}
+.figure-plate-edge {
+  stroke: var(--figure-plate-edge);
+}
+.figure-hub {
+  fill: var(--figure-hub);
+}
+.figure-accent {
+  stroke: var(--accent-fill);
+  fill: none;
+}
+.figure-accent-fill {
+  fill: var(--accent-fill);
+}
+.figure-reference {
+  stroke: var(--reference);
+  fill: none;
+}
+.figure-reference-fill {
+  fill: var(--reference);
+}
+.figure-warning {
+  stroke: var(--warning);
+  fill: none;
+}
+.figure-warning-fill {
+  fill: var(--warning);
+}
+.chart-grid {
+  stroke: var(--line-strong);
+  fill: none;
+}
+.chart-accent {
+  stroke: var(--accent);
+  fill: none;
+}
+.chart-label {
+  fill: var(--muted);
 }
 * {
   box-sizing: border-box;
@@ -62,7 +257,7 @@ main:focus {
 }
 button:hover:not(:disabled),
 a:hover {
-  filter: brightness(1.12);
+  filter: var(--hover-filter);
 }
 button,
 a {
@@ -101,8 +296,8 @@ a .icon {
   color: var(--accent);
 }
 .brand-mark {
-  background: var(--accent);
-  color: #171d0e;
+  background: var(--accent-fill);
+  color: var(--accent-on);
   font-size: 23px;
   transform: skew(-12deg);
   height: 28px;
@@ -130,12 +325,31 @@ a .icon {
   align-items: center;
   gap: 7px;
 }
+.header-tools {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.theme-toggle {
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  color: var(--muted);
+}
+.theme-toggle .icon {
+  width: 17px;
+  height: 17px;
+}
 i {
   display: inline-block;
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--accent-fill);
 }
 main {
   max-width: 1076px;
@@ -196,12 +410,12 @@ p {
   min-height: 56px;
 }
 .primary {
-  background: var(--accent);
-  color: #1b230f;
+  background: var(--accent-fill);
+  color: var(--accent-on);
   margin-top: 26px;
 }
 .secondary {
-  border: 1px solid #536044;
+  border: 1px solid var(--line-strong);
   margin-top: 12px;
 }
 .compact {
@@ -224,7 +438,7 @@ p {
 .home-hero-centered .lead {
   font-size: 15px;
   max-width: 480px;
-  color: #b8c4ad;
+  color: var(--text-soft);
   line-height: 1.6;
 }
 .home-hero-centered .primary {
@@ -269,7 +483,7 @@ p {
 }
 .demo-hero {
   background: var(--panel);
-  border: 1px solid #3c4931;
+  border: 1px solid var(--line);
   overflow: hidden;
   text-align: left;
   border-radius: 3px;
@@ -302,10 +516,10 @@ p {
   letter-spacing: 1px;
   display: inline-flex;
   align-items: center;
-  border: 1px solid #55663e;
+  border: 1px solid var(--line-strong);
   padding: 6px 8px;
   color: var(--accent);
-  background: #202719e8;
+  background: var(--panel-raised);
   white-space: nowrap;
 }
 .athlete {
@@ -320,7 +534,7 @@ p {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-top: 1px solid #35412b;
+  border-top: 1px solid var(--line);
   padding-top: 17px;
   gap: 10px;
   font-size: 8px;
@@ -369,7 +583,7 @@ p {
   border-bottom: 1px solid var(--line);
 }
 .lift-icon {
-  background: #242e1b;
+  background: var(--panel-2);
   padding: 14px;
   color: var(--accent);
 }
@@ -487,8 +701,8 @@ p {
 }
 select {
   color: var(--text);
-  border: 1px solid #46523b;
-  background: #1c2317;
+  border: 1px solid var(--line);
+  background: var(--panel-raised);
   padding: 10px 25px 10px 12px;
   border-radius: 2px;
   min-height: 44px;
@@ -589,7 +803,7 @@ select {
   width: 100%;
   max-height: 330px;
   display: block;
-  background: #080b07;
+  background: var(--panel-sunken);
 }
 .file-meta {
   display: flex;
@@ -609,9 +823,9 @@ select {
 }
 .notice {
   font-size: 12px;
-  color: #d8decf;
-  background: #222b1a;
-  border-left: 2px solid #97ab75;
+  color: var(--text-soft);
+  background: var(--panel-2);
+  border-left: 2px solid var(--accent);
   padding: 13px 16px;
   margin: 20px 0;
   line-height: 1.7;
@@ -629,7 +843,7 @@ select {
 .error:not(:empty) {
   margin-top: 16px;
   padding: 12px 15px;
-  background: #2a241b;
+  background: var(--warning-wash);
   border-left: 2px solid var(--warning);
 }
 .processing-visual {
@@ -651,8 +865,8 @@ select {
   left: 0;
   right: 0;
   height: 1px;
-  background: var(--accent);
-  box-shadow: 0 0 24px 4px #d4f77820;
+  background: var(--accent-fill);
+  box-shadow: 0 0 24px 4px var(--accent-glow);
   animation: scan 2s ease-in-out infinite;
 }
 @keyframes scan {
@@ -731,7 +945,7 @@ select {
 
 .video-stage {
   position: relative;
-  background: #20291b;
+  background: var(--panel-2);
   overflow: hidden;
   border-radius: 3px;
   scroll-margin-top: 20px;
@@ -750,8 +964,8 @@ select {
   gap: 10px;
 }
 .chip {
-  background: #172010e8;
-  border: 1px solid #596a43;
+  background: var(--scrim);
+  border: 1px solid var(--line-strong);
   padding: 8px 10px;
   font-size: 10px;
   display: flex;
@@ -777,7 +991,7 @@ select {
   font-size: 11px;
 }
 .stage-bottom span {
-  background: #182012cf;
+  background: var(--scrim);
   padding: 5px 7px;
 }
 .stage-bottom span:last-child {
@@ -789,14 +1003,14 @@ select {
   height: 400px;
   object-fit: contain;
   display: block;
-  background: #080b07;
+  background: var(--panel-sunken);
 }
 .pose-inset {
   position: absolute;
   right: 12px;
   bottom: 55px;
   width: 110px;
-  background: #20291bed;
+  background: var(--scrim);
   border: 1px solid var(--line);
 }
 .pose-inset .athlete {
@@ -816,7 +1030,7 @@ select {
 }
 .player button[aria-pressed='true'] {
   color: var(--accent);
-  background: #26321a;
+  background: var(--panel-2);
 }
 .player .icon {
   width: 18px;
@@ -853,15 +1067,15 @@ select {
 .phase-line {
   height: 4px;
   display: block;
-  background: #738654;
+  background: var(--phase-idle);
   margin-bottom: 10px;
 }
 .phase-line.warning {
-  background: #bb9461;
+  background: var(--warning);
 }
 .timeline button[aria-pressed='true'] .phase-line {
-  background: var(--accent);
-  box-shadow: 0 0 0 2px #d4f77826;
+  background: var(--accent-fill);
+  box-shadow: 0 0 0 2px var(--accent-wash);
 }
 .timeline b {
   font-size: 13px;
@@ -878,7 +1092,7 @@ select {
 }
 .selected-reading {
   border-left: 2px solid var(--warning);
-  background: #23291c;
+  background: var(--panel-2);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -966,12 +1180,12 @@ select {
 .severity {
   font-size: 9px;
   padding: 3px 6px;
-  border: 1px solid #4b5641;
+  border: 1px solid var(--line-strong);
   text-transform: capitalize;
 }
 .severity.moderate {
   color: var(--warning);
-  border-color: #6b563c;
+  border-color: var(--warning-line);
 }
 .expand-icon {
   margin-left: auto;
@@ -1000,7 +1214,7 @@ select {
 .issue-body dd {
   font-size: 12px;
   line-height: 1.7;
-  color: #d0d7c5;
+  color: var(--text-soft);
 }
 .drill-links {
   display: flex;
@@ -1014,7 +1228,7 @@ select {
   gap: 9px;
   font-size: 10px;
   color: var(--accent);
-  border: 1px solid #52613e;
+  border: 1px solid var(--line-strong);
   padding: 10px 11px;
   min-height: 44px;
 }
@@ -1108,9 +1322,9 @@ nav[aria-label='Main navigation'] {
   width: 420px;
   max-width: 100%;
   display: flex;
-  background: #161d12f5;
+  background: var(--panel-veil);
   backdrop-filter: blur(18px);
-  border: 1px solid #3d4932;
+  border: 1px solid var(--line);
   border-bottom: 0;
   z-index: 10;
   padding: 8px 12px max(10px, env(safe-area-inset-bottom));
@@ -1135,16 +1349,16 @@ nav a[aria-current='page'] {
   color: var(--accent);
 }
 dialog {
-  background: #20291b;
+  background: var(--panel-2);
   color: var(--text);
-  border: 1px solid #566445;
+  border: 1px solid var(--line-strong);
   border-radius: 4px;
   padding: 35px 28px 28px;
   max-width: 385px;
   width: calc(100% - 40px);
 }
 dialog::backdrop {
-  background: #000b;
+  background: var(--shell);
   backdrop-filter: blur(4px);
 }
 dialog h2 {
@@ -1523,7 +1737,7 @@ dialog blockquote {
 }
 .cv-stage {
   position: relative;
-  background: #090d07;
+  background: var(--panel-sunken);
 }
 .cv-stage video {
   display: block;
@@ -1640,7 +1854,7 @@ dialog blockquote {
   display: flex;
   align-items: center;
   gap: 12px;
-  border-bottom: 1px solid var(--line, #35402e);
+  border-bottom: 1px solid var(--line);
 }
 .history-entry .lift-row {
   flex: 1;
@@ -1649,15 +1863,15 @@ dialog blockquote {
 }
 .history-remove {
   background: transparent;
-  color: #d7b9ab;
-  border: 1px solid #5b4a41;
+  color: var(--warning);
+  border: 1px solid var(--warning-line);
   border-radius: 8px;
   padding: 10px 12px;
   min-height: 44px;
   cursor: pointer;
 }
 .history-remove:hover {
-  background: #362b25;
+  background: var(--warning-wash);
 }
 .history-undo {
   display: flex;
@@ -1666,12 +1880,12 @@ dialog blockquote {
   gap: 16px;
   padding: 14px 18px;
   margin-bottom: 24px;
-  background: #27331e;
-  border: 1px solid #687e43;
+  background: var(--panel-2);
+  border: 1px solid var(--line-strong);
   border-radius: 12px;
 }
 .history-undo button {
-  color: #d4f778;
+  color: var(--accent);
   background: transparent;
   border: 0;
   text-decoration: underline;
@@ -1679,8 +1893,8 @@ dialog blockquote {
   cursor: pointer;
 }
 .radar-card {
-  background: #182014;
-  border: 1px solid #3b4730;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
   border-radius: 18px;
   padding: 22px;
   margin-bottom: 28px;
@@ -1694,25 +1908,25 @@ dialog blockquote {
   overflow: visible;
 }
 .radar-grid {
-  stroke: #536044;
+  stroke: var(--line-strong);
   stroke-width: 1;
   fill: none;
 }
 .radar-value {
-  fill: #d4f77826;
-  stroke: #d4f778;
+  fill: var(--accent-wash);
+  stroke: var(--accent);
   stroke-width: 2;
   stroke-linejoin: round;
 }
 .radar-point {
-  fill: #d4f778;
+  fill: var(--accent-fill);
 }
 .radar-label {
-  fill: #e2e8d9;
+  fill: var(--text);
   font-size: 11px;
 }
 .radar-scale {
-  fill: #abb99b;
+  fill: var(--muted);
   font-size: 9px;
 }
 .radar-values {
@@ -1726,14 +1940,14 @@ dialog blockquote {
   font-size: 13px;
 }
 .radar-values dt {
-  color: #b6c1a9;
+  color: var(--text-soft);
 }
 .radar-values dd {
   margin: 0;
   font-variant-numeric: tabular-nums;
 }
 .radar-review {
-  border-top: 1px solid #46513b;
+  border-top: 1px solid var(--line);
   margin-top: 18px;
   padding-top: 18px;
 }
@@ -1745,7 +1959,7 @@ dialog blockquote {
   font-size: 13px;
   line-height: 1.6;
   margin: 0;
-  color: #c2cbb8;
+  color: var(--text-soft);
 }
 @media (max-width: 600px) {
   .history-entry {
@@ -1769,9 +1983,9 @@ dialog blockquote {
 .tracking-score {
   flex: 0 0 auto;
   padding: 20px 24px;
-  border: 1px solid #46513b;
+  border: 1px solid var(--line);
   border-radius: 16px;
-  background: #182014;
+  background: var(--panel-2);
   text-align: right;
 }
 .tracking-score > div {
@@ -1783,19 +1997,19 @@ dialog blockquote {
 .tracking-score b {
   font-size: clamp(60px, 7vw, 96px);
   line-height: 1.1;
-  color: #d4f778;
+  color: var(--accent);
   font-weight: 500;
   letter-spacing: -5px;
   font-variant-numeric: tabular-nums;
 }
 .tracking-score > div > span {
-  color: #b6c1a9;
+  color: var(--text-soft);
   font-size: 16px;
 }
 .result-heading .tracking-score p {
   font-size: 12px;
   margin: 8px 0 0;
-  color: #b6c1a9;
+  color: var(--text-soft);
   line-height: 1.5;
 }
 .tracking-score strong {
@@ -1829,7 +2043,7 @@ dialog blockquote {
   cursor: default;
 }
 .phase-line.unresolved {
-  background: #536044;
+  background: var(--line-strong);
   opacity: 0.4;
 }
 .phase-evidence {
@@ -1840,11 +2054,11 @@ dialog blockquote {
   margin: 14px 0;
 }
 .phase-evidence dt {
-  color: #d4f778;
+  color: var(--accent);
 }
 .phase-evidence dd {
   margin: 4px 0 0;
-  color: #b6c1a9;
+  color: var(--text-soft);
 }
 .real-phases details,
 .analysis-layout details {
@@ -1852,13 +2066,13 @@ dialog blockquote {
 }
 .analysis-layout summary {
   cursor: pointer;
-  color: #d4f778;
+  color: var(--accent);
   font-size: 13px;
 }
 .measured-bar-path {
   width: 100%;
   max-height: 260px;
-  background: #182014;
+  background: var(--panel-2);
   border-radius: 12px;
 }
 .bar-calibration {
@@ -1876,7 +2090,7 @@ dialog blockquote {
   display: block;
   font-size: 13px;
   margin: 12px 0;
-  color: #d6dfca;
+  color: var(--text-soft);
 }
 .bar-calibration input[type='range'] {
   width: 100%;
@@ -1891,9 +2105,9 @@ dialog blockquote {
   width: 100%;
   padding: 10px;
   margin-top: 8px;
-  color: #eef3e7;
-  background: #182014;
-  border: 1px solid #657450;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--line-strong);
   border-radius: 6px;
 }
 .bar-calibration .bar-confirm {
@@ -1906,7 +2120,7 @@ dialog blockquote {
   width: 22px;
   height: 22px;
   flex-shrink: 0;
-  accent-color: #d4f778;
+  accent-color: var(--accent);
 }
 @media (max-width: 600px) {
   .measured-timeline {
@@ -1944,7 +2158,7 @@ dialog blockquote {
   display: none;
 }
 .measured-issue[open] {
-  border-color: rgba(240, 201, 149, 0.4);
+  border-color: var(--warning-line);
 }
 .measured-issue[open] .expand-icon {
   transform: rotate(45deg);
@@ -2005,7 +2219,7 @@ dialog blockquote {
   gap: 10px;
   margin: 10px 0 8px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #2d3824;
+  border-bottom: 1px solid var(--line);
 }
 .delta-badge {
   display: inline-flex;
@@ -2016,12 +2230,12 @@ dialog blockquote {
   font-weight: 600;
 }
 .delta-met {
-  background: rgba(212, 247, 120, 0.12);
-  color: #d4f778;
+  background: var(--accent-wash);
+  color: var(--accent);
 }
 .delta-short {
-  background: rgba(240, 201, 149, 0.14);
-  color: #f0c995;
+  background: var(--warning-wash);
+  color: var(--warning);
 }
 .jump-frame-btn {
   font-size: 11px;
@@ -2035,7 +2249,7 @@ dialog blockquote {
 .issue-coaching-tip {
   font-size: 13px;
   line-height: 1.5;
-  color: #d8e2d2;
+  color: var(--text-soft);
   margin: 6px 0 10px;
 }
 .issue-sub-details {
@@ -2059,7 +2273,7 @@ dialog blockquote {
   margin-top: 6px;
 }
 .issue-sub-details dd {
-  color: #b7c3ad;
+  color: var(--text-soft);
   margin-left: 0;
 }
 .video-column,
@@ -2069,17 +2283,17 @@ dialog blockquote {
   gap: 24px;
 }
 .analysis-card {
-  background: #192214;
-  border: 1px solid #334227;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
   border-radius: 10px;
   padding: 20px 22px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 4px 18px var(--shell-soft);
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
 }
 .analysis-card:hover {
-  border-color: #445834;
+  border-color: var(--line-strong);
 }
 .analysis-card .section-title {
   display: flex;
@@ -2087,7 +2301,7 @@ dialog blockquote {
   justify-content: space-between;
   margin: 0 0 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #28361e;
+  border-bottom: 1px solid var(--line);
 }
 .analysis-card .section-title h2 {
   font-size: 17px;
@@ -2106,13 +2320,13 @@ dialog blockquote {
   display: block;
   width: 100%;
   height: auto;
-  background: #11170d;
+  background: var(--panel-3);
   border-radius: 6px;
   padding: 8px;
 }
 .quality-card .quality-summary {
-  background: #11170d;
-  border: 1px solid #28361e;
+  background: var(--panel-3);
+  border: 1px solid var(--line);
   border-radius: 6px;
   padding: 14px 18px;
   display: flex;
@@ -2127,8 +2341,8 @@ dialog blockquote {
   padding: 0;
 }
 .ranges-card .measured-ranges div {
-  background: #11170d;
-  border: 1px solid #28361e;
+  background: var(--panel-3);
+  border: 1px solid var(--line);
   border-radius: 6px;
   padding: 12px 14px;
   display: flex;
@@ -2136,8 +2350,8 @@ dialog blockquote {
   gap: 4px;
 }
 .moments-card .measured-event {
-  background: #11170d;
-  border: 1px solid #28361e;
+  background: var(--panel-3);
+  border: 1px solid var(--line);
   border-radius: 6px;
   padding: 14px 16px;
   margin-bottom: 10px;
@@ -2151,8 +2365,8 @@ dialog blockquote {
   gap: 12px;
 }
 .landmarks-card dl div {
-  background: #11170d;
-  border: 1px solid #28361e;
+  background: var(--panel-3);
+  border: 1px solid var(--line);
   border-radius: 6px;
   padding: 12px 14px;
   display: flex;
@@ -2161,8 +2375,8 @@ dialog blockquote {
 }
 .analysis-layout details.measured-issue {
   margin: 0 0 10px;
-  background: #141b10;
-  border: 1px solid #2f3c24;
+  background: var(--panel-3);
+  border: 1px solid var(--line);
   border-radius: 8px;
 }
 .analysis-layout details.measured-issue:last-of-type {
@@ -2180,7 +2394,7 @@ dialog blockquote {
   width: 100%;
   height: auto;
   max-height: 360px;
-  background: #11170d;
+  background: var(--panel-3);
   border-radius: 6px;
   flex-shrink: 0;
 }
@@ -2206,7 +2420,7 @@ dialog blockquote {
   gap: 16px;
   margin-top: 12px;
   padding: 10px 4px 0;
-  border-top: 1px solid #28361e;
+  border-top: 1px solid var(--line);
 }
 .legend-badge {
   display: inline-flex;
@@ -2223,21 +2437,21 @@ dialog blockquote {
   border-radius: 2px;
 }
 .legend-corridor-indicator {
-  background: #73c9ff;
-  border: 1px dashed rgba(255, 255, 255, 0.4);
+  background: var(--reference);
+  border: 1px dashed var(--hairline);
 }
 .legend-ref-indicator {
   background: repeating-linear-gradient(
     90deg,
-    #687b5a 0,
-    #687b5a 3px,
+    var(--reference-muted) 0,
+    var(--reference-muted) 3px,
     transparent 3px,
     transparent 6px
   );
 }
 .legend-user-indicator {
-  background: #d4f778;
-  box-shadow: 0 0 6px rgba(212, 247, 120, 0.5);
+  background: var(--accent-fill);
+  box-shadow: 0 0 6px var(--accent-glow);
 }
 @media (max-width: 600px) {
   .analysis-layout {
@@ -2267,6 +2481,10 @@ dialog blockquote {
   vertical-align: super;
   color: var(--warning);
   letter-spacing: 0;
+  /* The score tracks -5px between glyphs, which would otherwise press the
+     marker against the last digit. A fixed gap keeps the spacing even as the
+     score scales through its clamp. */
+  margin-left: 9px;
 }
 .partial-score-note {
   position: relative;
@@ -2279,12 +2497,12 @@ dialog blockquote {
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 10px;
-  background: rgba(240, 201, 149, 0.12);
-  border: 1px solid rgba(240, 201, 149, 0.3);
+  justify-content: center;
+  padding: 3px 8px;
+  background: var(--warning-wash);
+  border: 1px solid var(--warning-line);
   border-radius: 999px;
-  color: var(--warning, #f0c995);
+  color: var(--warning);
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.2px;
@@ -2297,8 +2515,8 @@ dialog blockquote {
   display: none;
 }
 .partial-score-note summary:hover {
-  background: rgba(240, 201, 149, 0.22);
-  border-color: rgba(240, 201, 149, 0.5);
+  background: var(--warning-wash);
+  border-color: var(--warning-line);
 }
 .partial-score-popover {
   position: absolute;
@@ -2306,13 +2524,13 @@ dialog blockquote {
   right: 0;
   width: 290px;
   max-width: calc(100vw - 32px);
-  background: #192114;
-  border: 1px solid #4a5a3a;
+  background: var(--panel-2);
+  border: 1px solid var(--line-strong);
   border-radius: 8px;
   padding: 12px 14px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
+  box-shadow: 0 12px 32px var(--shell-strong);
   z-index: 60;
-  color: #dbe4d5;
+  color: var(--text-soft);
   font-size: 11.5px;
   line-height: 1.55;
 }
@@ -2374,7 +2592,7 @@ dialog blockquote {
 .rep-selector [aria-pressed='true'] {
   border-color: var(--accent);
   color: var(--accent);
-  background: #202719;
+  background: var(--panel-2);
 }
 .rep-selector [aria-pressed='true'] small {
   color: var(--accent);
@@ -2389,7 +2607,7 @@ dialog blockquote {
   justify-content: center;
   gap: 2px;
   width: auto;
-  border: 1px solid #536044;
+  border: 1px solid var(--line-strong);
   border-radius: 999px;
   background: transparent;
   color: var(--text);
@@ -2432,9 +2650,9 @@ dialog blockquote {
 .exercise-review select {
   flex: 1;
   min-height: 38px;
-  background: var(--surface, #202719);
+  background: var(--panel-2);
   color: var(--text);
-  border: 1px solid #566445;
+  border: 1px solid var(--line-strong);
   padding: 6px 10px;
   border-radius: 6px;
   font-size: 13px;
@@ -2451,7 +2669,7 @@ dialog blockquote {
   width: max-content;
   max-width: calc(100vw - 32px);
   z-index: 20;
-  box-shadow: 0 8px 30px #0008;
+  box-shadow: 0 8px 30px var(--shell-soft);
 }
 .lift-score > small {
   display: block;

@@ -52,9 +52,11 @@ it('marks even a 100 score as partial and names missing phases', () => {
   expect(dom.querySelector('[data-measured-score]')?.textContent).toContain(
     '100',
   );
-  expect(dom.querySelector('summary')?.textContent).toContain(
+  expect(dom.querySelector('summary')?.getAttribute('aria-label')).toBe(
     'Partial analysis',
   );
+  // The disclosure shows only the glyph; the name lives on aria-label.
+  expect(dom.querySelector('summary')?.textContent?.trim()).toBe('ⓘ');
   expect(dom.textContent).toContain('Phases not recognized: Recovery');
   expect(dom.textContent).toContain('4 of 5 checks available');
   expect(
@@ -68,4 +70,20 @@ it('renders stick figure athlete silhouette and expected trace comparison in bar
   expect(html).toContain('Expected trace');
   expect(html).toContain('Your wrist path');
   expect(html).toContain('viewBox="115 15 150 355"');
+});
+
+it('keeps the bar path traces unfilled and the corridor band filled', () => {
+  const html = barPanel(analyzePoseSamples(liftFrames(), 100, 100, 2));
+  const stroked = [...html.matchAll(/<path\s([^>]*?)\/?>/g)].map((m) => m[1]);
+  // Traces are open polylines: a fill class would render them as blobs.
+  for (const attrs of stroked) {
+    if (!/\bfill="none"/.test(attrs)) continue;
+    expect(attrs).not.toMatch(/class="[^"]*-fill\b/);
+  }
+  // The corridor band is a closed shape and must stay filled.
+  expect(html).toMatch(/class="figure-reference figure-reference-fill"/);
+  // Every dotted marker is a fill.
+  expect(html).toMatch(/class="figure-accent-fill"/);
+  expect(html).toMatch(/class="figure-silhouette-fill"/);
+  expect(html).not.toMatch(/#[0-9a-f]{3,8}\b/i);
 });

@@ -7,7 +7,6 @@
 .framing,
 .processing-visual,
 .demo-hero,
-.bar-content,
 .cv-stage,
 .bar-calibration {
   color-scheme: dark;
@@ -106,6 +105,21 @@
   --shell-strong: rgb(10 15 22 / 40%);
   --hairline: rgb(255 255 255 / 40%);
   --hover-filter: brightness(0.95);
+
+  --figure-grid: #d3dbe3;
+  --figure-axis: #9aa8b5;
+  --figure-shadow: #eaeff4;
+  --figure-limb: #9aa8b5;
+  --figure-leg: #b3c0cc;
+  --figure-torso: #7a90a8;
+  --figure-skin: #3c4a59;
+  --figure-heel: #141b24;
+  --figure-silhouette: #9aa8b5;
+  --figure-bar: #1d5c7d;
+  --figure-plate: #d3dbe3;
+  --figure-plate-lit: #eaeff4;
+  --figure-plate-edge: #9ec8dd;
+  --figure-hub: #141b24;
 }
 :root {
   font-family:
@@ -2584,9 +2598,9 @@ dialog blockquote {
 }
 
 .quick-verdict {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
   margin: 8px 0 0;
   padding: 10px 0 16px;
   border-bottom: 1px solid var(--line);
@@ -2595,6 +2609,7 @@ dialog blockquote {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 .quick-verdict dt {
   font-size: 9px;
@@ -2615,7 +2630,8 @@ dialog blockquote {
 }
 @media (max-width: 600px) {
   .quick-verdict {
-    gap: 16px;
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
 
@@ -2676,8 +2692,9 @@ dialog blockquote {
 }
 .exercise-review-controls {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
 }
 .exercise-review-controls label {
   font-size: 11px;
@@ -2686,17 +2703,11 @@ dialog blockquote {
   letter-spacing: 1px;
   color: var(--muted);
   margin-bottom: 0;
-  white-space: nowrap;
 }
 .exercise-review select {
-  flex: 1;
-  min-height: 38px;
-  background: var(--panel-2);
-  color: var(--text);
-  border: 1px solid var(--line-strong);
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 13px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 40px 10px 12px;
 }
 .exercise-review .footnote {
   margin-top: 4px;

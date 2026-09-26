@@ -278,7 +278,7 @@ a .icon {
 .app-header {
   max-width: 1160px;
   margin: auto;
-  padding: 29px 42px;
+  padding: calc(29px + env(safe-area-inset-top)) 42px 29px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -291,22 +291,15 @@ a .icon {
   display: flex;
   align-items: center;
   min-height: 44px;
+  gap: 6px;
 }
-.brand > span:last-child {
+.brand > span > span:last-child {
   color: var(--accent);
 }
-.brand-mark {
-  background: var(--accent-fill);
-  color: var(--accent-on);
-  font-size: 23px;
-  transform: skew(-12deg);
-  height: 28px;
-  width: 29px;
-  line-height: 26px;
-  margin-right: 12px;
-  letter-spacing: -5px;
-  padding-right: 5px;
-  text-align: center;
+.brand-logo {
+  height: 52px;
+  width: auto;
+  display: block;
 }
 .edition {
   font-size: 9px;
@@ -723,11 +716,26 @@ p {
 }
 select {
   color: var(--text);
-  border: 1px solid var(--line);
-  background: var(--panel-raised);
-  padding: 10px 25px 10px 12px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-raised) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center / 16px 16px;
+  padding: 10px 40px 10px 12px;
   border-radius: 2px;
   min-height: 44px;
+  appearance: none;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+select:hover:not(:disabled) {
+  border-color: var(--accent-fill);
+  background-color: var(--accent-wash);
+}
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-wash);
+}
+select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .field-hint {
   font-size: 10px;

@@ -96,9 +96,9 @@
   --reference-muted: #8f5314;
   --phase-idle: #b3c0cc;
 
-  --warning: #7a5320;
-  --warning-wash: rgb(122 83 32 / 12%);
-  --warning-line: rgb(122 83 32 / 40%);
+  --warning: #b36b1a;
+  --warning-wash: rgb(179 107 26 / 15%);
+  --warning-line: rgb(179 107 26 / 50%);
 
   --shell: rgb(10 15 22 / 45%);
   --shell-soft: rgb(10 15 22 / 16%);

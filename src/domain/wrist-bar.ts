@@ -1,5 +1,20 @@
 import { visible, type VisionAnalysis } from './vision';
 import { barTrace, MOTION } from './snatch-motion';
+
+function smoothPoints(points: { time: number; x: number; y: number }[], window = 3): { time: number; x: number; y: number }[] {
+  if (points.length < window) return points;
+  const smoothed = [];
+  for (let i = 0; i < points.length; i++) {
+    const start = Math.max(0, i - Math.floor(window / 2));
+    const end = Math.min(points.length, start + window);
+    const slice = points.slice(start, end);
+    const x = slice.reduce((s, p) => s + p.x, 0) / slice.length;
+    const y = slice.reduce((s, p) => s + p.y, 0) / slice.length;
+    smoothed.push({ time: points[i].time, x, y });
+  }
+  return smoothed;
+}
+
 export interface WristBarPoint {
   time: number;
   left: { x: number; y: number };
@@ -15,7 +30,7 @@ export interface WristBar {
   points: WristBarPoint[];
 }
 export function estimateWristBar(a: VisionAnalysis): WristBar {
-  const points = a.frames
+  const rawPoints = a.frames
     .filter(
       (f) =>
         f.people === 1 && visible(f.landmarks[15]) && visible(f.landmarks[16]),
@@ -37,12 +52,19 @@ export function estimateWristBar(a: VisionAnalysis): WristBar {
         y: (left.y + right.y) / 2,
       };
     });
+  const smoothed = smoothPoints(rawPoints);
   return {
     method: 'wrist-midpoint',
     width: a.width,
     height: a.height,
-    coverage: a.frames.length ? points.length / a.frames.length : 0,
-    points,
+    coverage: a.frames.length ? smoothed.length / a.frames.length : 0,
+    points: smoothed.map((p, i) => ({
+      time: p.time,
+      left: rawPoints[i].left,
+      right: rawPoints[i].right,
+      x: p.x,
+      y: p.y,
+    })),
   };
 }
 export function wristMetrics(t: WristBar) {

@@ -24,11 +24,15 @@
     "horizontalDeviation": "Écart horizontal",
     "pathAria": "Trajectoire estimée de la barre",
     "peakVelocity": "Vitesse ascendante maximale",
+    "plateTrack": "Suivi de plaque",
     "title": "Suivez la barre",
     "verticalRise": "Élévation verticale",
     "wristLineEstimate": "Estimation de la ligne des poignets",
+    "yourBarPath": "Votre trajectoire de barre",
     "wristPathAria": "Trajectoire de poignet estimée pour {movement}, comparée à la marge d'erreur de la trace attendue et à la silhouette de l'athlète",
-    "yourWristPath": "Votre trajectoire de poignet"
+    "yourWristPath": "Votre trajectoire de poignet",
+    "exerciseNotResolved": "Exercice non résolu",
+    "selectExercise": "Sélectionnez un exercice dans le menu déroulant ci-dessus pour voir la trajectoire de la barre pour ce mouvement."
   },
   "barTrack": {
     "canvasAria": "Image vidéo pour sélectionner la plaque. Cliquez sur le centre puis sur le bord, ou utilisez les champs de position ci-dessous.",

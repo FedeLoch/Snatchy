@@ -260,6 +260,7 @@
   "barPanel": {
     "title": "Follow the bar",
     "wristLineEstimate": "Wrist-line estimate",
+    "plateTrack": "Plate tracking",
     "horizontalDeviation": "Horizontal deviation",
     "frameWidth": "% frame width",
     "verticalRise": "Vertical rise",
@@ -269,8 +270,11 @@
     "pathAria": "Estimated bar path",
     "expectedTrace": "Expected trace (± margin)",
     "yourWristPath": "Your wrist path",
+    "yourBarPath": "Your bar path",
     "wristPathAria": "Estimated wrist trajectory for {movement} compared against expected trace error margin and athlete silhouette",
-    "bothWristsRequired": "Both wrists must be visible to estimate the path."
+    "bothWristsRequired": "Both wrists must be visible to estimate the path.",
+    "exerciseNotResolved": "Exercise not resolved",
+    "selectExercise": "Select an exercise from the dropdown above to view the bar path for that movement."
   },
   "vision": {
     "openAnalysis": "Open measured pose analysis",

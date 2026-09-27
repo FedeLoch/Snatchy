@@ -63,7 +63,7 @@ function rows(records: LiftRecord[], allRecords: LiftRecord[] = []): string {
           return `<div class="history-entry"><a class="lift-row" href="#result/${r.id}" aria-label="${e(r.source === 'video' ? t('liftRow.openNotAnalyzed', { movement: movementName(r.analysis.movementId) }) : t('liftRow.openScored', { movement: movementName(r.analysis.movementId), score: formatNumber(r.analysis.score) }))}"><span class="lift-icon">${icon('arrow')}</span><span class="lift-description"><strong>${e(movementName(r.analysis.movementId, getMovement(r.analysis.movementId)?.name ?? ''))}</strong><small>${e(formatDateTime(r.createdAt))}<span class="row-dot">·</span>${e(t(`liftRow.${r.source === 'video' ? 'importedClip' : 'demoLift'}`))}</small></span>${r.source === 'video' ? `<span class="upload-status">${e(t('liftRow.notAnalyzed'))}</span>` : `<span class="lift-score">${r.analysis.score}<small>/100</small>${delta}</span>`}${icon('arrow')}</a><button class="history-remove" data-action="remove-history" data-kind="demo" data-id="${r.id}" aria-label="${e(r.source === 'demo' ? t('liftRow.removeDemoLift') : t('liftRow.removeVideoAnalysis'))}">${icon('close')}</button></div>`;
         })
         .join('')}</div>`
-    : `<div class="empty-state"><span class="empty-icon">${icon('history')}</span><div><h3>${e(t('home.emptyTitle'))}</h3><p>${e(t('home.emptyBody'))}</p></div><a href="#capture" class="text-link">${e(t('home.startALift'))} ${icon('arrow')}</a></div>`;
+    : `<div class="empty-state"><div><h3>${e(t('home.emptyTitle'))}</h3><p>${e(t('home.emptyBody'))}</p></div><a href="#capture" class="text-link">${e(t('home.startALift'))} ${icon('arrow')}</a></div>`;
 }
 
 export function home(

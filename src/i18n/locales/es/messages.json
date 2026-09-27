@@ -24,11 +24,15 @@
     "horizontalDeviation": "Desviación horizontal",
     "pathAria": "Trayectoria estimada de la barra",
     "peakVelocity": "Velocidad máxima ascendente",
+    "plateTrack": "Seguimiento de placa",
     "title": "Sigue la barra",
     "verticalRise": "Ascenso vertical",
     "wristLineEstimate": "Estimación de la línea de muñeca",
+    "yourBarPath": "Tu trayectoria de barra",
     "wristPathAria": "Trayectoria estimada de muñeca para {movement} comparada con el margen de error del trazo esperado y la silueta del atleta",
-    "yourWristPath": "Tu trayectoria de muñeca"
+    "yourWristPath": "Tu trayectoria de muñeca",
+    "exerciseNotResolved": "Ejercicio no resuelto",
+    "selectExercise": "Selecciona un ejercicio del desplegable de arriba para ver la trayectoria de la barra para ese movimiento."
   },
   "barTrack": {
     "canvasAria": "Fotograma de vídeo para seleccionar la placa. Haz clic en el centro y luego en el borde, o usa los campos de posición de abajo.",

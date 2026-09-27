@@ -345,6 +345,10 @@
     "suggestedOverhead": "Suggested from sustained overhead receiving position and initial hand height. Confirm or change it; floor contact and variation are not verified.",
     "suggestedRack": "Suggested from sustained front-rack receiving position and initial hand height. Confirm or change it; floor contact and variation are not verified."
   },
+  "comparison": {
+    "firstRecord": "First recorded {exercise}",
+    "vsPrevious": "vs previous"
+  },
   "joints": {
     "elbow": "Elbow",
     "hip": "Hip",

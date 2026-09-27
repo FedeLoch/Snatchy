@@ -11,6 +11,7 @@ import { formatDateTime, formatNumber } from '../i18n';
 import type { Theme } from '../services/theme';
 import { escapeHtml as e, icon } from './html';
 import { movementVisual, movementBarPath } from './movement-visuals';
+import { compareWithPrevious } from '../services/comparison';
 import {
   demoMetric,
   demoSummary,
@@ -50,9 +51,18 @@ export function shell(content: string, page: Page, theme: Theme): string {
   return `<a href="#main" class="skip-link">${e(t('app.skipToContent'))}</a><header class="app-header"><a class="brand" href="#home" aria-label="${e(t('app.homeAria'))}"><img class="brand-logo" src="/logo-snatchy.png" alt="" aria-hidden="true"><span>${e(t('app.brand'))}<span>.</span></span></a><div class="edition">${e(t('app.techniqueLab'))} <span>${e(t('app.volume'))}</span></div><div class="header-tools"><span class="header-status"><i></i> ${e(t('app.localFirst'))}</span>${toggle}</div></header><main id="main" tabindex="-1">${content}</main><nav class="app-nav" aria-label="${e(t('app.mainNavigation'))}">${nav}</nav><div class="sr-only" id="announcer" role="status" aria-live="polite"></div>`;
 }
 
-function rows(records: LiftRecord[]): string {
+function rows(records: LiftRecord[], allRecords: LiftRecord[] = []): string {
   return records.length
-    ? `<div class="lift-list">${records.map((r) => `<div class="history-entry"><a class="lift-row" href="#result/${r.id}" aria-label="${e(r.source === 'video' ? t('liftRow.openNotAnalyzed', { movement: movementName(r.analysis.movementId) }) : t('liftRow.openScored', { movement: movementName(r.analysis.movementId), score: formatNumber(r.analysis.score) }))}"><span class="lift-icon">${icon('arrow')}</span><span class="lift-description"><strong>${e(movementName(r.analysis.movementId, getMovement(r.analysis.movementId)?.name ?? ''))}</strong><small>${e(formatDateTime(r.createdAt))}<span class="row-dot">·</span>${e(t(`liftRow.${r.source === 'video' ? 'importedClip' : 'demoLift'}`))}</small></span>${r.source === 'video' ? `<span class="upload-status">${e(t('liftRow.notAnalyzed'))}</span>` : `<span class="lift-score">${r.analysis.score}<small>/100</small></span>`}${icon('arrow')}</a><button class="history-remove" data-action="remove-history" data-kind="demo" data-id="${r.id}" aria-label="${e(r.source === 'demo' ? t('liftRow.removeDemoLift') : t('liftRow.removeVideoAnalysis'))}">${icon('close')}</button></div>`).join('')}</div>`
+    ? `<div class="lift-list">${records
+        .map((r) => {
+          const comparison = compareWithPrevious(allRecords, r);
+          const delta =
+            comparison.overallDeltaPct !== null && r.source === 'video'
+              ? `<span class="improvement-delta ${comparison.overallDeltaPct > 0 ? 'up' : 'down'}" title="${comparison.overallDeltaPct > 0 ? '+' : ''}${comparison.overallDeltaPct.toFixed(1)}%">${icon(comparison.overallDeltaPct > 0 ? 'arrowUp' : 'arrowDown')}${comparison.overallDeltaPct > 0 ? '+' : ''}${comparison.overallDeltaPct.toFixed(1)}%</span>`
+              : '';
+          return `<div class="history-entry"><a class="lift-row" href="#result/${r.id}" aria-label="${e(r.source === 'video' ? t('liftRow.openNotAnalyzed', { movement: movementName(r.analysis.movementId) }) : t('liftRow.openScored', { movement: movementName(r.analysis.movementId), score: formatNumber(r.analysis.score) }))}"><span class="lift-icon">${icon('arrow')}</span><span class="lift-description"><strong>${e(movementName(r.analysis.movementId, getMovement(r.analysis.movementId)?.name ?? ''))}</strong><small>${e(formatDateTime(r.createdAt))}<span class="row-dot">·</span>${e(t(`liftRow.${r.source === 'video' ? 'importedClip' : 'demoLift'}`))}</small></span>${r.source === 'video' ? `<span class="upload-status">${e(t('liftRow.notAnalyzed'))}</span>` : `<span class="lift-score">${r.analysis.score}<small>/100</small>${delta}</span>`}${icon('arrow')}</a><button class="history-remove" data-action="remove-history" data-kind="demo" data-id="${r.id}" aria-label="${e(r.source === 'demo' ? t('liftRow.removeDemoLift') : t('liftRow.removeVideoAnalysis'))}">${icon('close')}</button></div>`;
+        })
+        .join('')}</div>`
     : `<div class="empty-state"><span class="empty-icon">${icon('history')}</span><div><h3>${e(t('home.emptyTitle'))}</h3><p>${e(t('home.emptyBody'))}</p></div><a href="#capture" class="text-link">${e(t('home.startALift'))} ${icon('arrow')}</a></div>`;
 }
 
@@ -61,7 +71,7 @@ export function home(
   warning: string,
   realHistory = '',
 ): string {
-  return `<section class="home-hero-centered"><div class="eyebrow"><i></i> ${e(t('home.eyebrow'))}</div><h1>${e(t('home.titleLead'))}<br>${e(t('home.titleAccent'))}</h1><p class="lead">${e(t('home.leadFirst'))}<br>${e(t('home.leadSecond'))}</p><a class="primary" href="#capture">${e(t('home.cta'))} ${icon('arrow')}</a><span class="under-cta">${e(t('home.underCta'))}</span></section><section class="recent-section"><div class="section-title"><h2>${e(t('home.recentLifts'))}</h2><a href="#history" class="text-link">${e(t('home.viewHistory'))} ${icon('arrow')}</a></div>${warning ? `<p class="notice" role="status">${e(td(warning))}</p>` : ''}${realHistory}${records.length || !realHistory ? rows(records.slice(0, 3)) : ''}</section><div class="principle-strip"><span>01 <b>${e(t('home.principles.record'))}</b></span><span>02 <b>${e(t('home.principles.understand'))}</b></span><span>03 <b>${e(t('home.principles.improve'))}</b></span></div>${footer()}`;
+  return `<section class="home-hero-centered"><div class="eyebrow"><i></i> ${e(t('home.eyebrow'))}</div><h1>${e(t('home.titleLead'))}<br>${e(t('home.titleAccent'))}</h1><p class="lead">${e(t('home.leadFirst'))}<br>${e(t('home.leadSecond'))}</p><a class="primary" href="#capture">${e(t('home.cta'))} ${icon('arrow')}</a><span class="under-cta">${e(t('home.underCta'))}</span></section><section class="recent-section"><div class="section-title"><h2>${e(t('home.recentLifts'))}</h2><a href="#history" class="text-link">${e(t('home.viewHistory'))} ${icon('arrow')}</a></div>${warning ? `<p class="notice" role="status">${e(td(warning))}</p>` : ''}${realHistory}${records.length || !realHistory ? rows(records.slice(0, 3), records) : ''}</section><div class="principle-strip"><span>01 <b>${e(t('home.principles.record'))}</b></span><span>02 <b>${e(t('home.principles.understand'))}</b></span><span>03 <b>${e(t('home.principles.improve'))}</b></span></div>${footer()}`;
 }
 
 export function history(
@@ -69,7 +79,7 @@ export function history(
   warning: string,
   realHistory = '',
 ): string {
-  return `<div class="page-title"><div class="eyebrow">${e(t('history.eyebrow'))}</div><h1>${e(t('history.title'))}<span class="accent">.</span></h1><p>${e(t('history.lead'))}</p></div>${warning ? `<p class="notice" role="status">${e(td(warning))}</p>` : ''}${realHistory}${records.length || !realHistory ? rows(records) : ''}<p class="footnote">${e(t('history.footnote'))}</p><a class="primary compact" href="#capture">${e(t('history.analyzeAnother'))} ${icon('plus')}</a>${footer()}`;
+  return `<div class="page-title"><div class="eyebrow">${e(t('history.eyebrow'))}</div><h1>${e(t('history.title'))}<span class="accent">.</span></h1><p>${e(t('history.lead'))}</p></div>${warning ? `<p class="notice" role="status">${e(td(warning))}</p>` : ''}${realHistory}${records.length || !realHistory ? rows(records, records) : ''}<p class="footnote">${e(t('history.footnote'))}</p><a class="primary compact" href="#capture">${e(t('history.analyzeAnother'))} ${icon('plus')}</a>${footer()}`;
 }
 
 export function capture(

@@ -10,6 +10,8 @@ export function escapeHtml(value: unknown): string {
 export function icon(name: string): string {
   const paths: Record<string, string> = {
     arrow: '<path d="M5 19 19 5M5 5h14v14"/>',
+    arrowUp: '<path d="M12 19V5M5 12l7-7 7 7"/>',
+    arrowDown: '<path d="M12 5v14M5 12l7 7 7-7"/>',
     back: '<path d="m12 5-7 7 7 7M5 12h14"/>',
     home: '<path d="m3 10 9-7 9 7v10H3zM9 20v-7h6v7"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',

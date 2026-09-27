@@ -289,6 +289,55 @@ a .icon {
   flex-shrink: 0;
   vertical-align: middle;
 }
+.improvement-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-left: 0.35rem;
+  white-space: nowrap;
+}
+.improvement-delta .icon {
+  width: 14px;
+  height: 14px;
+}
+.improvement-delta.up {
+  color: var(--color-success);
+}
+.improvement-delta.down {
+  color: var(--color-error);
+}
+.check-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+  font-size: 0.6rem;
+  font-weight: 600;
+  margin-left: 0.2rem;
+  vertical-align: middle;
+}
+.check-delta .icon {
+  width: 12px;
+  height: 12px;
+}
+.check-delta.up {
+  color: var(--color-success);
+}
+.check-delta.down {
+  color: var(--color-error);
+}
+.score-comparison {
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+}
+.score-comparison .improvement-delta {
+  margin-left: 0;
+}
+.first-record {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
 .app-header {
   max-width: 1160px;
   margin: auto;

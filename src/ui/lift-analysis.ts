@@ -3,6 +3,7 @@ import { exerciseById } from '../domain/exercises';
 import { estimatePhases } from '../domain/lift-phases';
 import { getBarPathModel } from '../domain/bar-models';
 import type { VisionAnalysis } from '../domain/vision';
+import type { ExerciseComparison } from '../services/comparison';
 import { escapeHtml as e, icon } from './html';
 import { formatNumber, t } from '../i18n';
 import {
@@ -18,7 +19,7 @@ export function movementPhases(a: VisionAnalysis, canSeek: boolean): string {
   return `<section class="real-phases analysis-card" aria-label="${e(t('phasesPanel.title'))}"><div class="section-title"><h2>${e(t('phasesPanel.title'))}</h2><span class="micro">${e(t('phasesPanel.estimatedCount', { count: formatNumber(lift.phases.filter((p) => p.applicable !== false).length) }))}</span></div><div class="timeline measured-timeline">${lift.phases.map((p) => `<button data-cv-phase="${e(p.name)}" ${p.start === null ? '' : `data-cv-time="${p.start}"`} ${p.start === null || !canSeek ? 'disabled' : ''} aria-pressed="false"><span class="phase-line ${p.start === null ? 'unresolved' : ''}"></span><b>${p.applicable === false ? e(t('phasesPanel.notApplicable')) : p.start === null ? '—' : `${e(formatNumber(p.start, 2))} s`}</b><span>${e(phaseName(p.name))}${p.estimated ? `<small class="phase-estimate">${e(t('phasesPanel.timingEstimate'))}</small>` : ''}</span></button>`).join('')}</div><details><summary>${e(t('phasesPanel.evidenceSummary'))}</summary><dl class="phase-evidence">${lift.phases.map((p) => `<div><dt>${e(phaseName(p.name))} · ${p.applicable === false ? e(t('phasesPanel.notApplicableLong')) : p.start === null ? e(t('phasesPanel.unresolved')) : `${e(formatNumber(p.start, 2))} s`}</dt><dd>${e(phaseEvidence(p))}${p.end !== null && p.start !== null ? ` ${e(t('phasesPanel.duration', { time: formatNumber(p.end - p.start, 2) }))}` : ''}${p.coverage !== null ? ` ${e(t('phasesPanel.usablePoseFrames', { percent: formatNumber(p.coverage * 100, 0) }))}` : ''}</dd></div>`).join('')}</dl></details></section>`;
 }
 
-export function techniqueScore(a: VisionAnalysis): string {
+export function techniqueScore(a: VisionAnalysis, comparison?: ExerciseComparison): string {
   const lift = a.lift ?? estimatePhases(a);
   const missing = lift.phases
     .filter((p) => p.start === null && p.applicable !== false)
@@ -28,7 +29,14 @@ export function techniqueScore(a: VisionAnalysis): string {
     (missing.length > 0 ||
       lift.checks.length < 5 ||
       lift.phases.some((p) => p.estimated));
-  return `<aside class="measured-score" aria-label="${e(t('checksPanel.experimentalAria'))}"><div class="score" data-measured-score>${lift.score === null || lift.score === undefined ? '—' : formatNumber(lift.score)}${partial ? '<sup class="partial-score-mark" aria-hidden="true">*</sup>' : ''}<small>/ 100</small></div><span class="micro">${e(t('checksPanel.experimentalTitle'))}</span><p class="footnote">${lift.score === null || lift.score === undefined ? e(t('checksPanel.notEnoughEvidence')) : e(t('checksPanel.metCount', { met: formatNumber(lift.checks.filter((c) => c.passed).length), total: formatNumber(lift.checks.length) }))}</p>${
+  const deltaHtml = comparison
+    ? comparison.isFirstRecord
+      ? ''
+      : comparison.overallDeltaPct !== null
+        ? `<div class="score-comparison"><span class="improvement-delta ${comparison.overallDeltaPct > 0 ? 'up' : 'down'}" title="${comparison.overallDeltaPct > 0 ? '+' : ''}${comparison.overallDeltaPct.toFixed(1)}%">${icon(comparison.overallDeltaPct > 0 ? 'arrowUp' : 'arrowDown')}${comparison.overallDeltaPct > 0 ? '+' : ''}${comparison.overallDeltaPct.toFixed(1)}%</span></div>`
+        : ''
+    : '';
+  return `<aside class="measured-score" aria-label="${e(t('checksPanel.experimentalAria'))}"><div class="score" data-measured-score>${lift.score === null || lift.score === undefined ? '—' : formatNumber(lift.score)}${partial ? '<sup class="partial-score-mark" aria-hidden="true">*</sup>' : ''}<small>/ 100</small></div><span class="micro">${e(t('checksPanel.experimentalTitle'))}</span><p class="footnote">${lift.score === null || lift.score === undefined ? e(t('checksPanel.notEnoughEvidence')) : e(t('checksPanel.metCount', { met: formatNumber(lift.checks.filter((c) => c.passed).length), total: formatNumber(lift.checks.length) }))}</p>${deltaHtml}${
     partial
       ? `<details class="partial-score-note"><summary aria-label="${e(t('checksPanel.partialAria'))}" title="${e(t('checksPanel.partialAria'))}"><span class="partial-badge-text" aria-hidden="true">ⓘ</span></summary><div class="partial-score-popover"><p>${e(
           t('checksPanel.partialCounts', {
@@ -40,26 +48,7 @@ export function techniqueScore(a: VisionAnalysis): string {
             ),
             available: formatNumber(lift.checks.length),
           }),
-        )}</p><p>${
-          missing.length
-            ? e(
-                t('checksPanel.partialMissing', {
-                  phases: missing.map(phaseName).join(', '),
-                }),
-              )
-            : e(t('checksPanel.partialNoMissing'))
-        }</p><p>${
-          lift.phases.some((p) => p.estimated)
-            ? e(
-                t('checksPanel.partialEstimated', {
-                  phases: lift.phases
-                    .filter((p) => p.estimated)
-                    .map((p) => phaseName(p.name))
-                    .join(', '),
-                }),
-              )
-            : ''
-        }${e(t('checksPanel.partialDisclaimer'))}</p></div></details>`
+        )}</p><p>${missing.length ? e(t('checksPanel.partialMissing', { phases: missing.map(phaseName).join(', ') })) : e(t('checksPanel.partialNoMissing'))}</p><p>${lift.phases.some((p) => p.estimated) ? e(t('checksPanel.partialEstimated', { phases: lift.phases.filter((p) => p.estimated).map((p) => phaseName(p.name)).join(', ') })) : ''}${e(t('checksPanel.partialDisclaimer'))}</p></div></details>`
       : ''
   }</aside>`;
 }
@@ -83,12 +72,16 @@ export function measuredSummary(a: VisionAnalysis): string {
     : t('checksPanel.summaryAll', { count: formatNumber(lift.checks.length) });
 }
 
-export function techniqueFeedback(a: VisionAnalysis, canSeek: boolean): string {
+export function techniqueFeedback(a: VisionAnalysis, canSeek: boolean, comparison?: ExerciseComparison): string {
   const lift = a.lift ?? estimatePhases(a);
   const checks = [...lift.checks].sort(
     (x, y) => Number(x.passed) - Number(y.passed),
   );
-  return `<section class="technique-section analysis-card" aria-label="${e(t('checksPanel.techniqueAria'))}"><div class="section-title"><h2>${e(t('checksPanel.title'))}</h2><span class="micro">${e(t('checksPanel.measuredCount', { count: formatNumber(checks.length) }))}</span></div>${checks.length ? checks.map((c, i) => `<details class="issue measured-issue" ${!c.passed ? 'open' : ''}><summary class="issue-toggle"><span class="issue-number">${String(i + 1).padStart(2, '0')}</span><span class="issue-name"><strong>${e(checkName(c.name))}</strong><span class="severity ${c.passed ? 'check-met' : 'moderate'}">${e(t(c.passed ? 'checksPanel.checkMet' : 'checksPanel.review'))}</span></span><div class="check-score" aria-label="${e(t('checksPanel.scoreAria', { value: formatNumber(c.value), unit: c.unit, target: formatNumber(c.target) }))}"><span class="check-value ${c.passed ? '' : 'miss'}">${e(formatNumber(c.value))}<small>${e(c.unit)}</small></span><span class="check-target">${e(t('checksPanel.target', { target: formatNumber(c.target), unit: c.unit }))}</span></div><span class="expand-icon" aria-hidden="true">+</span></summary><div class="issue-body"><div class="issue-action-bar"><span class="delta-badge ${c.passed ? 'delta-met' : 'delta-short'}">${e(t(c.passed ? 'checksPanel.metDelta' : 'checksPanel.shortDelta', { delta: formatNumber(c.passed ? c.value - c.target : c.target - c.value), unit: c.unit }))}</span><button class="text-link jump-frame-btn" data-cv-time="${c.time}" ${canSeek ? '' : 'disabled'}>${e(t('checksPanel.viewFrame', { time: formatNumber(c.time, 2) }))} ${icon('arrow')}</button></div><p class="issue-coaching-tip">${e(t(c.passed ? 'checksPanel.tipMet' : 'checksPanel.tipReview'))}</p><details class="issue-sub-details"><summary>${e(t('checksPanel.measurementDetail'))}</summary><dl><dt>${e(t('checksPanel.whatMeasured'))}</dt><dd>${e(checkDetail(c.name, c.detail))}</dd><dt>${e(t('checksPanel.result'))}</dt><dd>${e(t(c.passed ? 'checksPanel.meetsTarget' : 'checksPanel.belowTarget', { value: formatNumber(c.value), unit: c.unit, target: formatNumber(c.target) }))}</dd><dt>${e(t('checksPanel.whatToReview'))}</dt><dd>${e(t(c.passed ? 'checksPanel.reviewTiming' : 'checksPanel.reviewAlignment'))}</dd></dl></details></div></details>`).join('') : `<p class="notice">${e(t('checksPanel.noneScored'))}</p>`}<details><summary>${e(t('checksPanel.howScored'))}</summary><p class="footnote">${e(t('checksPanel.formulaHead'))} ${e(t(exerciseById(a.exercise?.id ?? 'snatch')?.family === 'clean' ? 'checksPanel.formulaRack' : 'checksPanel.formulaReceiving'))}${e(t('checksPanel.formulaStanding'))} ${e(t('checksPanel.formulaDisclaimer'))}</p></details></section>`;
+  return `<section class="technique-section analysis-card" aria-label="${e(t('checksPanel.techniqueAria'))}"><div class="section-title"><h2>${e(t('checksPanel.title'))}</h2><span class="micro">${e(t('checksPanel.measuredCount', { count: formatNumber(checks.length) }))}</span></div>${checks.length ? checks.map((c, i) => {
+    const checkDelta = comparison ? comparison.checkDeltas.find(d => d.name === c.name)?.deltaPct ?? null : null;
+    const deltaHtml = checkDelta !== null ? `<span class="check-delta ${checkDelta > 0 ? 'up' : 'down'}" title="${checkDelta > 0 ? '+' : ''}${checkDelta.toFixed(1)}%">${icon(checkDelta > 0 ? 'arrowUp' : 'arrowDown')}${checkDelta > 0 ? '+' : ''}${checkDelta.toFixed(1)}%</span>` : '';
+    return `<details class="issue measured-issue" ${!c.passed ? 'open' : ''}><summary class="issue-toggle"><span class="issue-number">${String(i + 1).padStart(2, '0')}</span><span class="issue-name"><strong>${e(checkName(c.name))}</strong><span class="severity ${c.passed ? 'check-met' : 'moderate'}">${e(t(c.passed ? 'checksPanel.checkMet' : 'checksPanel.review'))}</span></span><div class="check-score" aria-label="${e(t('checksPanel.scoreAria', { value: formatNumber(c.value), unit: c.unit, target: formatNumber(c.target) }))}"><span class="check-value ${c.passed ? '' : 'miss'}">${e(formatNumber(c.value))}<small>${e(c.unit)}</small>${deltaHtml}</span><span class="check-target">${e(t('checksPanel.target', { target: formatNumber(c.target), unit: c.unit }))}</span></div><span class="expand-icon" aria-hidden="true">+</span></summary><div class="issue-body"><div class="issue-action-bar"><span class="delta-badge ${c.passed ? 'delta-met' : 'delta-short'}">${e(t(c.passed ? 'checksPanel.metDelta' : 'checksPanel.shortDelta', { delta: formatNumber(c.passed ? c.value - c.target : c.target - c.value), unit: c.unit }))}</span><button class="text-link jump-frame-btn" data-cv-time="${c.time}" ${canSeek ? '' : 'disabled'}>${e(t('checksPanel.viewFrame', { time: formatNumber(c.time, 2) }))} ${icon('arrow')}</button></div><p class="issue-coaching-tip">${e(t(c.passed ? 'checksPanel.tipMet' : 'checksPanel.tipReview'))}</p><details class="issue-sub-details"><summary>${e(t('checksPanel.measurementDetail'))}</summary><dl><dt>${e(t('checksPanel.whatMeasured'))}</dt><dd>${e(checkDetail(c.name, c.detail))}</dd><dt>${e(t('checksPanel.result'))}</dt><dd>${e(t(c.passed ? 'checksPanel.meetsTarget' : 'checksPanel.belowTarget', { value: formatNumber(c.value), unit: c.unit, target: formatNumber(c.target) }))}</dd><dt>${e(t('checksPanel.whatToReview'))}</dt><dd>${e(t(c.passed ? 'checksPanel.reviewTiming' : 'checksPanel.reviewAlignment'))}</dd></dl></details></div></details>`;
+  }).join('') : `<p class="notice">${e(t('checksPanel.noneScored'))}</p>`}<details><summary>${e(t('checksPanel.howScored'))}</summary><p class="footnote">${e(t('checksPanel.formulaHead'))} ${e(t(exerciseById(a.exercise?.id ?? 'snatch')?.family === 'clean' ? 'checksPanel.formulaRack' : 'checksPanel.formulaReceiving'))}${e(t('checksPanel.formulaStanding'))} ${e(t('checksPanel.formulaDisclaimer'))}</p></details></section>`;
 }
 
 export function barPanel(a: VisionAnalysis): string {

@@ -230,6 +230,10 @@
     "suggestedRack": "Sugerido a partir de una posición de recepción en rack frontal sostenida y de la altura inicial de las manos. Confírmalo o cámbialo; no se verifican el contacto con el suelo ni la variante.",
     "unresolved": "No se ha resuelto el ejercicio. Selecciona el movimiento manualmente para aplicar sus reglas de fases y puntuación."
   },
+  "comparison": {
+    "firstRecord": "Primer {exercise} registrado",
+    "vsPrevious": "vs anterior"
+  },
   "history": {
     "analyzeAnother": "Analizar un levantamiento",
     "eyebrow": "Un registro de tu trabajo",

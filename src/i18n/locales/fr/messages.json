@@ -230,6 +230,10 @@
     "suggestedRack": "Suggéré à partir d'une position de réception en épaulé maintenue et de la hauteur initiale des mains. Confirmez ou changez-le ; le contact au sol et la variation ne sont pas vérifiés.",
     "unresolved": "Mouvement non résolu. Sélectionnez le mouvement manuellement pour appliquer ses règles de phase et de score."
   },
+  "comparison": {
+    "firstRecord": "Premier {exercise} enregistré",
+    "vsPrevious": "vs précédent"
+  },
   "history": {
     "analyzeAnother": "Analyser un mouvement",
     "eyebrow": "La trace de votre travail",

@@ -200,6 +200,7 @@ function route() {
         { ...record, analysis },
         visionVideos.get(record.id) ?? null,
         warning,
+        records,
       ),
     );
     if (record.analysis.repetitions?.length) {

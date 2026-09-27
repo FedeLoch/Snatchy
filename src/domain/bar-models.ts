@@ -2,6 +2,8 @@ import { exerciseById } from './exercises';
 import { type Point } from './snatch-motion';
 
 export interface BarPathModel {
+  /** The exercise id this model describes, so the UI can localise its name. */
+  exerciseId: string;
   exerciseName: string;
   family: 'snatch' | 'clean';
   start: 'floor' | 'hang' | 'high-hang';
@@ -136,6 +138,7 @@ export function getBarPathModel(exerciseId?: string): BarPathModel {
   }
 
   return {
+    exerciseId: exerciseId ?? 'snatch',
     exerciseName: name,
     family,
     start,

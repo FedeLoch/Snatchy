@@ -60,9 +60,7 @@ describe('theme preference', () => {
 
   it('treats an unreadable store as no choice, not a failure', () => {
     expect(loadTheme(blocking)).toBeNull();
-    expect(saveTheme(blocking, 'dark')).toBe(
-      'This theme applies to this session only.',
-    );
+    expect(saveTheme(blocking, 'dark')).toBe('theme.sessionOnly');
   });
 
   it('prefers the stored choice over the operating system', () => {

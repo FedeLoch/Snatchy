@@ -3,6 +3,7 @@ import type { VideoSource } from '../domain/types';
 import type { BarTrack } from '../domain/bar-track';
 import { trackBar } from '../services/bar-tracker';
 import { escapeHtml as e } from './html';
+import { formatNumber, t, td } from '../i18n';
 export function openBarCalibration(
   source: VideoSource,
   save: (track: BarTrack) => void,
@@ -15,7 +16,7 @@ export function openBarCalibration(
   const dialog = document.createElement('dialog');
   dialog.className = 'bar-calibration';
   dialog.setAttribute('aria-labelledby', 'bar-title');
-  dialog.innerHTML = `<button class="dialog-close" aria-label="Close bar tracking">×</button><h2 id="bar-title">Track your bar</h2><p>Pause just before the lift. Mark the center of the visible plate, then its outer edge. Enter the actual plate diameter. Use a fixed side-view camera; the plate must remain in the same plane.</p><video src="${e(source.url)}" muted playsinline preload="auto" hidden></video><canvas tabindex="0" role="img" aria-label="Video frame for plate selection. Click center then edge, or use the position fields below."></canvas><label>Video position <input id="bar-scrub" type="range" min="${rangeStart}" max="${Math.max(rangeStart, rangeEnd - 0.01)}" step="0.066667" value="${initialTime}"></label><output id="bar-time">${initialTime.toFixed(2)} s</output><div class="bar-fields"><label>Center X (%)<input id="bar-x" type="number" min="0" max="100" step="0.1"></label><label>Center Y (%)<input id="bar-y" type="number" min="0" max="100" step="0.1"></label><label>Plate radius (% of frame width)<input id="bar-radius" type="number" min="0.1" max="40" step="0.1"></label><label>Actual plate diameter (cm)<input id="bar-diameter" type="number" min="5" max="100" step="0.1" placeholder="Enter measured diameter"></label><label>Track until (seconds)<input id="bar-end" type="number" min="0.3" max="${rangeEnd}" step="0.01" value="${Math.min(rangeEnd - 0.01, initialTime + 30).toFixed(2)}"></label></div><label class="bar-confirm"><input id="bar-static" type="checkbox">The camera is stationary and the plate stays in the same plane.</label><button id="bar-start" class="primary" disabled>Track marked plate</button><p id="bar-progress" role="status">Loading video frame…</p><p id="bar-error" role="alert" class="error"></p><div id="bar-review" hidden><p>Scrub through the tracked interval. The highlighted dot must stay on the plate center. Reject and retrack if it follows the background or another object.</p><label class="bar-confirm"><input id="bar-verified" type="checkbox">I reviewed the tracked interval and the dot follows the plate.</label><button id="bar-save" class="primary" disabled>Use reviewed measurements</button></div>`;
+  dialog.innerHTML = `<button class="dialog-close" aria-label="${e(t('barTrack.close'))}">×</button><h2 id="bar-title">${e(t('barTrack.title'))}</h2><p>${e(t('barTrack.intro'))}</p><video src="${e(source.url)}" muted playsinline preload="auto" hidden></video><canvas tabindex="0" role="img" aria-label="${e(t('barTrack.canvasAria'))}"></canvas><label>${e(t('barTrack.videoPosition'))} <input id="bar-scrub" type="range" min="${rangeStart}" max="${Math.max(rangeStart, rangeEnd - 0.01)}" step="0.066667" value="${initialTime}"></label><output id="bar-time">${e(formatNumber(initialTime, 2))} s</output><div class="bar-fields"><label>${e(t('barTrack.centerX'))}<input id="bar-x" type="number" min="0" max="100" step="0.1"></label><label>${e(t('barTrack.centerY'))}<input id="bar-y" type="number" min="0" max="100" step="0.1"></label><label>${e(t('barTrack.radius'))}<input id="bar-radius" type="number" min="0.1" max="40" step="0.1"></label><label>${e(t('barTrack.diameter'))}<input id="bar-diameter" type="number" min="5" max="100" step="0.1" placeholder="${e(t('barTrack.diameterPlaceholder'))}"></label><label>${e(t('barTrack.trackUntil'))}<input id="bar-end" type="number" min="0.3" max="${rangeEnd}" step="0.01" value="${Math.min(rangeEnd - 0.01, initialTime + 30).toFixed(2)}"></label></div><label class="bar-confirm"><input id="bar-static" type="checkbox">${e(t('barTrack.stationary'))}</label><button id="bar-start" class="primary" disabled>${e(t('barTrack.start'))}</button><p id="bar-progress" role="status">${e(t('barTrack.loading'))}</p><p id="bar-error" role="alert" class="error"></p><div id="bar-review" hidden><p>${e(t('barTrack.reviewIntro'))}</p><label class="bar-confirm"><input id="bar-verified" type="checkbox">${e(t('barTrack.verified'))}</label><button id="bar-save" class="primary" disabled>${e(t('barTrack.save'))}</button></div>`;
   document.body.append(dialog);
   dialog.showModal();
   const video = dialog.querySelector('video')!,
@@ -91,7 +92,7 @@ export function openBarCalibration(
       ctx.stroke();
     }
     dialog.querySelector('#bar-time')!.textContent =
-      video.currentTime.toFixed(2) + ' s';
+      formatNumber(video.currentTime, 2) + ' s';
   }
   video.addEventListener('loadeddata', () => {
     canvas.width = 640;
@@ -113,8 +114,8 @@ export function openBarCalibration(
     }
     start.disabled = false;
     status.textContent = automatic
-      ? 'Automatic candidate prefilled. Verify the marked plate and enter its measured diameter.'
-      : 'Mark the plate center, then its outer edge.';
+      ? t('barTrack.prefilled')
+      : t('barTrack.markCenter');
     draw();
   });
   video.addEventListener('seeked', draw);
@@ -131,7 +132,7 @@ export function openBarCalibration(
       input('y').value = (y * 100).toFixed(2);
       input('radius').value = '';
       selectingEdge = true;
-      status.textContent = 'Now mark the outer edge of this plate.';
+      status.textContent = t('barTrack.markEdge');
     } else {
       input('radius').value = (
         Math.hypot(
@@ -140,8 +141,7 @@ export function openBarCalibration(
         ) * 100
       ).toFixed(2);
       selectingEdge = false;
-      status.textContent =
-        'Enter the real diameter and confirm the camera setup.';
+      status.textContent = t('barTrack.enterDiameter');
     }
     draw();
   };
@@ -161,8 +161,7 @@ export function openBarCalibration(
       +input('y').value < 0 ||
       +input('y').value > 100
     ) {
-      error.textContent =
-        'Mark the plate, enter its diameter, and confirm the camera setup.';
+      error.textContent = t('barTrack.enterDiameter');
       return;
     }
     controller = new AbortController();
@@ -184,21 +183,26 @@ export function openBarCalibration(
         },
         controller.signal,
         (p) => {
-          status.textContent = `Tracking plate: ${Math.round(p * 100)}%`;
+          status.textContent = t('barTrack.trackingPlate', {
+            percent: formatNumber(p * 100, 0),
+          });
         },
       );
-      if (result.points.length < 3)
-        throw new Error(
-          'The plate could not be followed reliably. Choose a clearer starting frame and mark the plate again.',
-        );
+      if (result.points.length < 3) throw new Error('errors.plateTrackLost');
       draft = result;
-      status.textContent = `${result.stoppedEarly ? 'Confidence fell; partial track only. ' : ''}Tracked ${result.start.toFixed(2)}–${result.end.toFixed(2)} s. Review before saving.`;
+      status.textContent = `${result.stoppedEarly ? t('barTrack.confidenceFell') : ''}${t(
+        'barTrack.done',
+        {
+          start: formatNumber(result.start, 2),
+          end: formatNumber(result.end, 2),
+        },
+      )}`;
       dialog.querySelector<HTMLElement>('#bar-review')!.hidden = false;
       draw();
     } catch (cause) {
       if (!closed)
         error.textContent =
-          cause instanceof Error ? cause.message : 'Tracking failed.';
+          cause instanceof Error ? td(cause.message) : t('barTrack.failed');
     } finally {
       controller = null;
       start.disabled = false;

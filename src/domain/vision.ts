@@ -4,6 +4,7 @@ import { detectExercise, type ExerciseSelection } from './exercises';
 import type { AutomaticBar } from './automatic-bar';
 import { estimatePhases, type LiftPhases } from './lift-phases';
 import type { BarTrack } from './bar-track';
+import { source } from '../i18n';
 export interface Landmark {
   x: number;
   y: number;
@@ -23,7 +24,14 @@ export interface MotionEvent {
   id: string;
   time: number;
   title: string;
+  /**
+   * The rendered English `detail`, kept so a record written by an older build
+   * still reads correctly. `values` carries the numbers that were interpolated
+   * into it, which lets the UI rebuild the sentence in the active language
+   * without the analysis having to be recomputed.
+   */
   detail: string;
+  values?: number[];
   kind: 'measurement' | 'hypothesis';
 }
 export interface AngleRange {
@@ -44,7 +52,7 @@ export interface VisionAnalysis {
   sampledFrames: number;
   usableFrames: number;
   coverage: number;
-  side: 'left' | 'right';
+  side: Side;
   status: 'tracked' | 'insufficient';
   ranges: {
     elbow: AngleRange | null;
@@ -71,6 +79,8 @@ export const SIDES = {
   left: [11, 13, 15, 23, 25, 27],
   right: [12, 14, 16, 24, 26, 28],
 } as const;
+/** Which side of the athlete was measured. Persisted, so keep the values. */
+export type Side = keyof typeof SIDES;
 export const VISIBILITY = 0.65;
 export function visible(point: Landmark | undefined): point is Landmark {
   return (
@@ -203,6 +213,7 @@ export function analyzePoseSamples(
         time: hip.maxTime,
         title: 'Greatest observed hip extension',
         detail: `Projected hip angle ${hip.max}°. This is a measured image-plane angle, not proof of full extension.`,
+        values: [hip.max],
         kind: 'measurement',
       });
     if (knee.max - knee.min >= 15)
@@ -211,6 +222,7 @@ export function analyzePoseSamples(
         time: knee.minTime,
         title: 'Deepest observed knee flexion',
         detail: `Projected knee angle ${knee.min}°. Inspect this frame to locate the receiving position.`,
+        values: [knee.min],
         kind: 'measurement',
       });
     if (elbow.max - elbow.min >= 15)
@@ -219,6 +231,7 @@ export function analyzePoseSamples(
         time: elbow.minTime,
         title: 'Greatest observed elbow flexion',
         detail: `Projected elbow angle ${elbow.min}°. Occlusion and camera perspective can affect this estimate.`,
+        values: [elbow.min],
         kind: 'measurement',
       });
     const overhead = usable.find((v, index) => {
@@ -240,6 +253,7 @@ export function analyzePoseSamples(
         title: 'Extended arm above shoulder',
         detail:
           'The visible wrist stays above the shoulder with an extended elbow for three samples. This alone does not verify an overhead catch or a Snatch.',
+        values: [],
         kind: 'measurement',
       });
     // A hypothesis needs meaningful hip extension, a later overhead position, and 3 sustained samples.
@@ -269,6 +283,7 @@ export function analyzePoseSamples(
           time: early.frame.time,
           title: 'Possible arm bend before extension',
           detail: `Elbow flexion was visible approximately ${Math.round((hip.maxTime - early.frame.time) * 1000)} ms before the largest observed hip angle. Experimental rule; review the frames before changing technique.`,
+          values: [Math.round((hip.maxTime - early.frame.time) * 1000)],
           kind: 'hypothesis',
         });
     }
@@ -296,8 +311,7 @@ export function analyzePoseSamples(
       ? {
           id: exerciseId,
           source: 'manual',
-          reason:
-            'Selected manually. Change it if this recording contains a different exercise.',
+          reason: source('exerciseReason.manual'),
         }
       : detectExercise(analysis);
   analysis.wristBar = estimateWristBar(analysis);

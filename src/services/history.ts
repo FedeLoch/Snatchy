@@ -54,8 +54,7 @@ export function loadHistory(storage: StoragePort): HistoryResult {
     if (!Array.isArray(parsed))
       return {
         records: [],
-        warning:
-          'Saved history could not be read. New lifts can still be analyzed.',
+        warning: 'history.readFailed',
       };
     const unique = new Map<string, LiftRecord>();
     for (const record of parsed.filter(validRecord))
@@ -66,14 +65,13 @@ export function loadHistory(storage: StoragePort): HistoryResult {
     return {
       records,
       warning: parsed.some((v) => !validRecord(v))
-        ? 'Some saved lifts could not be read. Your valid results are still available.'
+        ? 'history.partiallyRead'
         : '',
     };
   } catch {
     return {
       records: [],
-      warning:
-        'History is unavailable in this browser. You can still analyze a lift.',
+      warning: 'history.unavailable',
     };
   }
 }
@@ -85,7 +83,7 @@ export function saveHistory(
     storage.setItem(HISTORY_KEY, JSON.stringify(records.slice(0, MAX_HISTORY)));
     return '';
   } catch {
-    return 'This result is available for this session, but could not be saved on this device.';
+    return 'history.notSaved';
   }
 }
 export function addRecord(

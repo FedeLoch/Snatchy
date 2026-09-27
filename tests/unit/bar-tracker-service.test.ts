@@ -92,16 +92,16 @@ it('rejects invalid calibration, missing context and textureless selection', asy
       new AbortController().signal,
       vi.fn(),
     ),
-  ).rejects.toThrow('diameter');
+  ).rejects.toThrow('errors.barCalibration.invalidSeed');
   contextUnavailable = true;
   await expect(
     trackBar(source, seed, new AbortController().signal, vi.fn()),
-  ).rejects.toThrow('decoding');
+  ).rejects.toThrow('errors.frameDecoding');
   contextUnavailable = false;
   blankAfter = 0;
   await expect(
     trackBar(source, seed, new AbortController().signal, vi.fn()),
-  ).rejects.toThrow('visible detail');
+  ).rejects.toThrow('errors.plateNotVisible');
 });
 it('cancels before start and between frames without retaining video', async () => {
   const controller = new AbortController();

@@ -32,7 +32,25 @@ import {
   type Theme,
 } from './services/theme';
 import { LiftPlayer, type PlayerState } from './ui/player';
+import { settings as settingsView } from './ui/settings';
+import { setLang, t, td, formatNumber } from './i18n';
+import {
+  applyLanguage,
+  loadLanguage,
+  preferredLanguage,
+  saveLanguage,
+  systemLanguage,
+  type Language,
+} from './services/language';
+import { languageEndonym } from './i18n/catalogs';
 import { escapeHtml as e, icon } from './ui/html';
+import {
+  checkName,
+  demoMeasurement,
+  drillName,
+  drillText,
+  phaseName,
+} from './ui/labels';
 import { movementVisual } from './ui/movement-visuals';
 import * as views from './ui/views';
 const root = document.querySelector<HTMLDivElement>('#app')!;
@@ -69,6 +87,13 @@ let selected: string | null = 'arms';
 let overlay = true;
 let theme = preferredTheme(storage);
 applyTheme(document, theme);
+let language = preferredLanguage(storage);
+// `setLang` first: the title and every screen below read from the catalog, so
+// applying the language attribute without switching the catalog would label a
+// page as French while rendering it in English.
+setLang(language);
+applyLanguage(document, language);
+document.title = t('app.documentTitle');
 let loadingVideo = false;
 let announceTimer: ReturnType<typeof setTimeout> | undefined;
 function announce(message: string) {
@@ -102,7 +127,7 @@ function draw(content: string, focus = true) {
       .querySelector('main')
       ?.insertAdjacentHTML(
         'afterbegin',
-        '<div class="history-undo" role="status">Lift removed from history.<button data-action="undo-history">Undo removal</button></div>',
+        `<div class="history-undo" role="status">${e(t('status.liftRemoved'))}<button data-action="undo-history">${e(t('status.undo'))}</button></div>`,
       );
   if (focus && !suppressFocus) {
     document.querySelector<HTMLElement>('main')?.focus({ preventScroll: true });
@@ -161,7 +186,7 @@ function route() {
       draw(
         views.history(
           records,
-          'That analysis is no longer available.',
+          t('history.missingAnalysis'),
           visionRows(visionRecords),
         ),
       );
@@ -180,11 +205,11 @@ function route() {
     if (record.analysis.repetitions?.length) {
       const nav = document.createElement('nav');
       nav.className = 'rep-selector';
-      nav.setAttribute('aria-label', 'Detected repetitions');
+      nav.setAttribute('aria-label', t('repetitions.aria'));
       nav.innerHTML = record.analysis.repetitions
         .map(
           (rep, i) =>
-            `<button class="rep-pill" data-action="select-rep" data-id="${record.id}" data-rep="${i}" aria-pressed="${rep === analysis}">Rep ${i + 1}<small>${rep.interval!.start.toFixed(1)}–${rep.interval!.end.toFixed(1)} s</small></button>`,
+            `<button class="rep-pill" data-action="select-rep" data-id="${record.id}" data-rep="${i}" aria-pressed="${rep === analysis}">${e(t('repetitions.label', { n: i + 1 }))}<small>${formatNumber(rep.interval!.start, 1)}–${formatNumber(rep.interval!.end, 1)} s</small></button>`,
         )
         .join('');
       root.querySelector('.analysis-layout')?.before(nav);
@@ -196,7 +221,7 @@ function route() {
     active = records.find((r) => r.id === route.slice(7)) ?? null;
     if (!active) {
       page = 'history';
-      draw(views.history(records, 'That saved result is no longer available.'));
+      draw(views.history(records, t('history.missingResult')));
       return;
     }
     movement = requireMovement(active.analysis.movementId);
@@ -207,6 +232,11 @@ function route() {
     return;
   }
   active = null;
+  if (route === 'settings') {
+    page = 'settings';
+    draw(settingsView(loadLanguage(storage), systemLanguage()));
+    return;
+  }
   page = route === 'capture' || route === 'history' ? route : 'home';
   if (page !== 'capture') {
     releaseVideo(pendingVideo);
@@ -238,7 +268,7 @@ function renderResult() {
     video.addEventListener('error', () => {
       player?.pause();
       document.querySelector('#media-error')!.textContent =
-        'This clip could not be played. Import another video or return to the demo.';
+        t('result.notPlayable');
     });
   }
   updateReading();
@@ -263,13 +293,16 @@ function updatePlayback(state: PlayerState) {
     slider.value = String(state.time);
     slider.setAttribute(
       'aria-valuetext',
-      `${state.time.toFixed(2)} seconds, ${phase.name}`,
+      t('result.scrubberValue', {
+        time: formatNumber(state.time, 2),
+        phase: phaseName(phase.name),
+      }),
     );
   }
   const time = document.querySelector('#time-label');
-  if (time) time.textContent = state.time.toFixed(2) + ' s';
+  if (time) time.textContent = formatNumber(state.time, 2) + ' s';
   const label = document.querySelector('#phase-label');
-  if (label) label.textContent = phase.name;
+  if (label) label.textContent = phaseName(phase.name);
   document
     .querySelectorAll<HTMLButtonElement>('[data-action="phase"]')
     .forEach((b) => {
@@ -280,14 +313,20 @@ function updatePlayback(state: PlayerState) {
   );
   if (play) {
     play.innerHTML = icon(state.playing ? 'pause' : 'play');
-    play.setAttribute('aria-label', state.playing ? 'Pause lift' : 'Play lift');
+    play.setAttribute(
+      'aria-label',
+      t(state.playing ? 'result.pause' : 'result.play'),
+    );
   }
   const speed = document.querySelector<HTMLButtonElement>(
     '[data-action="speed"]',
   );
   if (speed) {
-    speed.textContent = state.speed + '×';
-    speed.setAttribute('aria-label', `Playback speed, ${state.speed} times`);
+    speed.textContent = formatNumber(state.speed) + '×';
+    speed.setAttribute(
+      'aria-label',
+      t('result.speedAria', { speed: formatNumber(state.speed) }),
+    );
   }
   const loop = document.querySelector<HTMLButtonElement>(
     '[data-action="loop"]',
@@ -303,8 +342,8 @@ function updateReading() {
   const reading = document.querySelector('#reading');
   if (reading)
     reading.innerHTML = issue
-      ? `<span class="reading-dot"></span><div><strong>${e(issue.name)}</strong><span>${e(issue.measurement)}</span></div><b>${issue.time.toFixed(2)}<small> s</small></b>`
-      : '<p>Select a phase or observation to inspect your lift.</p>';
+      ? `<span class="reading-dot"></span><div><strong>${e(checkName(issue.name))}</strong><span>${e(demoMeasurement(issue.measurement))}</span></div><b>${formatNumber(issue.time, 2)}<small> s</small></b>`
+      : `<p>${e(t('result.readingEmpty'))}</p>`;
 }
 function selectIssue(id: string, toggle = true) {
   if (!active || !player) return;
@@ -326,8 +365,11 @@ function selectIssue(id: string, toggle = true) {
   updateReading();
   announce(
     selected
-      ? `${issue.name}, demo frame ${issue.time.toFixed(2)} seconds`
-      : 'Observation collapsed',
+      ? t('status.demoFrameSelected', {
+          name: checkName(issue.name),
+          time: formatNumber(issue.time, 2),
+        })
+      : t('status.observationCollapsed'),
   );
 }
 
@@ -346,7 +388,8 @@ async function analyzeUpload() {
         const bar = root.querySelector<HTMLProgressElement>('progress');
         if (bar) bar.value = progress;
         const status = root.querySelector('#vision-progress-label');
-        if (status) status.textContent = label;
+        // The service reports a catalog key; the label is shown translated.
+        if (status) status.textContent = td(label);
       },
     });
     if (controller.signal.aborted) return;
@@ -366,15 +409,18 @@ async function analyzeUpload() {
     }
     warning = saveVisionHistory(storage, visionRecords);
     work = null;
+    if (warning) {
+      draw(views.capture(movement, null, exerciseChoice));
+      root.querySelector('#capture-error')!.textContent = td(warning);
+      return;
+    }
     go('vision/' + record.id);
   } catch (error) {
     if (controller.signal.aborted) return;
     work = null;
     draw(views.capture(movement, pendingVideo, exerciseChoice));
     root.querySelector('#capture-error')!.textContent =
-      error instanceof Error
-        ? error.message
-        : 'Video analysis failed. Try another clip.';
+      error instanceof Error ? td(error.message) : t('errors.analysisFailed');
   }
 }
 async function importFile(file: File) {
@@ -384,8 +430,9 @@ async function importFile(file: File) {
   work = controller;
   loadingVideo = true;
   document.querySelector('#capture-error')!.textContent = '';
-  document.querySelector('#capture-status')!.textContent =
-    'Opening your video…';
+  document.querySelector('#capture-status')!.textContent = t(
+    'capture.openingVideo',
+  );
   document
     .querySelectorAll<HTMLButtonElement>(
       '[data-action="import"],[data-action="record"],[data-action="replace"]',
@@ -403,7 +450,7 @@ async function importFile(file: File) {
   } catch (error) {
     if (controller.signal.aborted) return;
     document.querySelector('#capture-error')!.textContent =
-      error instanceof Error ? error.message : 'Could not open this video.';
+      error instanceof Error ? td(error.message) : t('errors.couldNotOpen');
   } finally {
     if (!controller.signal.aborted) {
       loadingVideo = false;
@@ -423,7 +470,7 @@ function drill(id: string, trigger: HTMLElement) {
   if (!d) return;
   const dialog = document.createElement('dialog');
   dialog.setAttribute('aria-labelledby', 'drill-title');
-  dialog.innerHTML = `<button class="dialog-close" aria-label="Close drill">${icon('close')}</button><div class="eyebrow">TAKE IT INTO YOUR NEXT SET</div><h2 id="drill-title">${e(d.name)}</h2><p>${e(d.instruction)}</p><blockquote>${e(d.cue)}</blockquote><button class="primary">Got it ${icon('check')}</button>`;
+  dialog.innerHTML = `<button class="dialog-close" aria-label="${e(t('drill.close'))}">${icon('close')}</button><div class="eyebrow">${e(t('drill.eyebrow'))}</div><h2 id="drill-title">${e(drillName(d.id, d.name))}</h2><p>${e(drillText(d.id, 'instruction', d.instruction))}</p><blockquote>${e(drillText(d.id, 'cue', d.cue))}</blockquote><button class="primary">${e(t('drill.gotIt'))} ${icon('check')}</button>`;
   dialog
     .querySelectorAll('button')
     .forEach((b) => (b.onclick = () => dialog.close()));
@@ -454,7 +501,7 @@ root.addEventListener('click', (event) => {
         `[data-action="select-rep"][data-id="${id}"][data-rep="${rep}"]`,
       )
       ?.focus({ preventScroll: true });
-    announce(`Rep ${rep + 1} selected.`);
+    announce(t('repetitions.selected', { n: rep + 1 }));
   } else if (action === 'remove-history') {
     const rowIndex = Array.from(
       root.querySelectorAll('.history-remove'),
@@ -472,8 +519,7 @@ root.addEventListener('click', (event) => {
         ? saveVisionHistory(storage, nextVision)
         : saveHistory(storage, nextDemo);
     if (failure) {
-      warning =
-        'Could not remove this lift from device storage. Please try again.';
+      warning = t('errors.couldNotRemove');
       refreshInPlace(rowIndex);
       return;
     }
@@ -504,8 +550,7 @@ root.addEventListener('click', (event) => {
       removed.kind === 'vision'
         ? saveVisionHistory(storage, nextVision)
         : saveHistory(storage, nextDemo);
-    if (failure)
-      warning = 'Could not restore this lift. Please try Undo again.';
+    if (failure) warning = t('errors.couldNotRestore');
     else {
       visionRecords = nextVision;
       records = nextDemo;
@@ -521,7 +566,9 @@ root.addEventListener('click', (event) => {
     if (video) {
       video.playbackRate =
         video.playbackRate === 1 ? 0.5 : video.playbackRate === 0.5 ? 0.25 : 1;
-      target.textContent = `Playback speed: ${video.playbackRate}×`;
+      target.textContent = t('capture.playbackSpeed', {
+        speed: formatNumber(video.playbackRate),
+      });
     }
   } else if (action === 'cancel') {
     dispose();
@@ -545,7 +592,8 @@ root.addEventListener('click', (event) => {
     overlay = !overlay;
     target.setAttribute('aria-pressed', String(overlay));
     target.innerHTML =
-      icon('eye') + `<span>Pose ${overlay ? 'on' : 'off'}</span>`;
+      icon('eye') +
+      `<span>${e(t(overlay ? 'result.poseOn' : 'result.poseOff'))}</span>`;
     if (player) updatePlayback(player.state);
   } else if (action === 'theme') {
     // Applied in place rather than through route(), so an in-flight analysis
@@ -553,18 +601,15 @@ root.addEventListener('click', (event) => {
     const next: Theme = theme === 'dark' ? 'light' : 'dark';
     theme = next;
     applyTheme(document, theme);
-    target.setAttribute(
-      'aria-label',
-      `Switch to ${next === 'dark' ? 'light' : 'dark'} theme`,
-    );
-    target.setAttribute(
-      'title',
-      `Switch to ${next === 'dark' ? 'light' : 'dark'} theme`,
-    );
+    const switchTo = t('theme.switchTo', {
+      theme: t(`theme.${next === 'dark' ? 'light' : 'dark'}`),
+    });
+    target.setAttribute('aria-label', switchTo);
+    target.setAttribute('title', switchTo);
     target.innerHTML = icon(next === 'dark' ? 'sun' : 'moon');
     const failure = saveTheme(storage, theme);
     if (failure) warning = failure;
-    announce(`${theme === 'dark' ? 'Dark' : 'Light'} theme on.`);
+    announce(t('theme.on', { theme: t(`theme.${theme}`) }));
   } else if (action === 'issue') selectIssue(id);
   else if (action === 'jump') {
     selectIssue(id, false);
@@ -590,6 +635,35 @@ root.addEventListener('change', (event) => {
   const input = event.target as HTMLInputElement;
   if (input.type === 'file' && input.files?.[0])
     void importFile(input.files[0]);
+  if (input.id === 'language') {
+    const next: Language | null =
+      input.value === 'system' ? null : (input.value as Language);
+    const failure = next ? saveLanguage(storage, next) : '';
+    // Clearing the key returns the picker to following the operating system.
+    if (!next) {
+      try {
+        localStorage.removeItem('snatchy-language-v1');
+      } catch {
+        /* A blocked store simply keeps the session choice. */
+      }
+    }
+    language = next ?? systemLanguage();
+    setLang(language);
+    applyLanguage(document, language);
+    document.title = t('app.documentTitle');
+    if (failure) warning = failure;
+    // A full re-render is needed: every screen reads from the catalog, and
+    // staying on settings keeps the visitor's place while they read.
+    route();
+    root
+      .querySelector<HTMLSelectElement>('#language')
+      ?.focus({ preventScroll: true });
+    // The endonym, not the code: a translated sentence should not read
+    // "Language changed to fr.".
+    announce(
+      t('settings.languageChanged', { language: languageEndonym(language) }),
+    );
+  }
   if (input.id === 'movement') {
     exerciseChoice = input.value;
     if (input.value !== 'auto') movement = requireMovement(input.value);
@@ -621,7 +695,7 @@ root.addEventListener('change', (event) => {
     root
       .querySelector<HTMLElement>('#result-exercise')
       ?.focus({ preventScroll: true });
-    announce('Exercise updated. Phases and score recalculated.');
+    announce(t('status.exerciseUpdated'));
   }
 });
 root.addEventListener('input', (event) => {
@@ -658,8 +732,11 @@ matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
   const toggle = root.querySelector<HTMLElement>('[data-action="theme"]');
   if (toggle) {
     const next: Theme = theme === 'dark' ? 'light' : 'dark';
-    toggle.setAttribute('aria-label', `Switch to ${next} theme`);
-    toggle.setAttribute('title', `Switch to ${next} theme`);
+    const switchTo = t('theme.switchTo', {
+      theme: t(`theme.${next === 'dark' ? 'light' : 'dark'}`),
+    });
+    toggle.setAttribute('aria-label', switchTo);
+    toggle.setAttribute('title', switchTo);
     toggle.innerHTML = icon(next === 'dark' ? 'sun' : 'moon');
   }
 });

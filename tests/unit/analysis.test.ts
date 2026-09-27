@@ -29,7 +29,7 @@ describe('movement registry', () => {
   });
   it('rejects unknown and planned movements', () => {
     expect(getMovement('unknown')).toBeUndefined();
-    expect(() => requireMovement('jerk')).toThrow('not available');
+    expect(() => requireMovement('jerk')).toThrow('errors.movementUnavailable');
     expect(() => requireMovement('unknown')).toThrow();
   });
   it('has unique ids and all demo drill references resolve', () => {

@@ -1,5 +1,9 @@
 import { exerciseById } from '../domain/exercises';
-import { PHASE_NAMES } from '../domain/lift-phases';
+import {
+  CHECK_NAMES,
+  PHASE_NAMES,
+  type CheckName,
+} from '../domain/lift-phases';
 import type { VisionRecord, VisionAnalysis } from '../domain/vision';
 import type { StoragePort } from './history';
 export const VISION_HISTORY_KEY = 'snatchy-vision-history-v1';
@@ -222,22 +226,24 @@ export function isVisionRecord(value: unknown): value is VisionRecord {
         : null)
     )
       return false;
-    const supports: Record<string, boolean> = {
-      'Arms through the pull':
+    // Keyed off the same constants the analysis writes, so a rename cannot
+    // silently start rejecting every saved record.
+    const supports: Record<CheckName, boolean> = {
+      [CHECK_NAMES[0]]:
         lift.phases[1].start !== null ||
         (exerciseById(a.exercise?.id ?? '')?.start === 'high-hang' &&
           lift.phases[3].start !== null),
-      'Hip extension':
+      [CHECK_NAMES[1]]:
         lift.phases[3].start !== null || lift.phases[4].start !== null,
-      'Knee extension':
+      [CHECK_NAMES[2]]:
         lift.phases[3].start !== null || lift.phases[4].start !== null,
-      'Receiving arm extension':
-        lift.phases[5].start !== null &&
-        exerciseById(a.exercise?.id ?? 'snatch')?.family !== 'clean',
-      'Front-rack arm flexion':
+      [CHECK_NAMES[3]]:
         lift.phases[5].start !== null &&
         exerciseById(a.exercise?.id ?? '')?.family === 'clean',
-      'Standing recovery': lift.phases[6].start !== null,
+      [CHECK_NAMES[4]]:
+        lift.phases[5].start !== null &&
+        exerciseById(a.exercise?.id ?? 'snatch')?.family !== 'clean',
+      [CHECK_NAMES[5]]: lift.phases[6].start !== null,
     };
     if (lift.checks.some((c) => supports[c.name] !== true)) return false;
   }
@@ -359,7 +365,7 @@ export function saveVisionHistory(
     );
     return '';
   } catch {
-    return 'This analysis is available for this session, but the summary could not be saved on this device.';
+    return 'history.analysisNotSaved';
   }
 }
 

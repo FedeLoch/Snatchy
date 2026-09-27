@@ -35,7 +35,6 @@ export function availableMovements(): Movement[] {
 }
 export function requireMovement(id: string): Movement {
   const movement = getMovement(id);
-  if (!movement?.available)
-    throw new Error('This movement is not available yet.');
+  if (!movement?.available) throw new Error('errors.movementUnavailable');
   return movement;
 }

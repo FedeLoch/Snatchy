@@ -50,6 +50,7 @@ An illustrated demo is optional and separate. To add one, supply a movement-spec
 - The playback controller is independent of animation style and DOM templates.
 - Templates escape dynamic strings; identifiers are validated before they become DOM IDs.
 - Analysis and provider availability are distinct from catalog entries.
+- Layout hooks are stable classes, never translated strings or rendered text.
 
 A framework, backend, account system and native wrapper are intentionally deferred. Add them when a concrete requirement makes the additional complexity useful.
 
@@ -62,6 +63,25 @@ The interface ships two themes. `services/theme.ts` owns the `'dark' | 'light'` 
 `style.css` declares the dark ramp once, shared with the media surfaces, and lets `[data-theme='light']` re-hue only the page. Media surfaces (`.video-stage`, `.framing`, `.processing-visual`, `.demo-hero`, `.bar-content`, `.cv-stage`, `.bar-calibration`) are excluded from the light block, so overlay chrome stays legible over arbitrary footage. They also set `color: var(--text)` explicitly: an inherited `color` resolves from the nearest ancestor's computed value, so without it text inside a pinned surface picks up the light theme's text colour from `<body>` and disappears.
 
 Colours that SVG presentation attributes cannot reach are expressed as `figure-*` and `chart-*` classes instead of `var()`, so figures follow the same ramp. The `theme` action is rendered by the shared shell, labelled by the theme it switches _to_, and is covered in both themes by accessibility tests that assert zero axe violations.
+
+## Languages
+
+The interface ships in English, Spanish and French. `src/i18n/` owns the whole contract: one nested JSON catalog per language, addressed by flat dotted keys, statically imported so `t()` stays synchronous. A key that does not exist in the active catalog falls back to English and finally to the key itself, so a missing translation renders a readable key instead of throwing. `MessageKey` is derived from the English catalog's shape, which turns a typo like `t('ui.nav.hom')` into a compile error.
+
+`services/language.ts` mirrors the theming service: the `'snatchy-language-v1'` storage key, and the preference order — a stored choice wins, otherwise `navigator.languages`, then `navigator.language`, then `Intl`'s resolved locale. A regional tag resolves by its base subtag, so `es-MX` is Spanish and an unsupported locale falls back to English. Storage takes an explicit port and tolerates denial, so a blocked `localStorage` degrades to a session-only choice with a notice rather than failing. `LANGUAGE_OPTIONS` holds the picker endonyms, which are shown in their own language so a visitor who cannot read the current one can still find theirs.
+
+Two rules make the switch safe for saved data:
+
+- **Persisted text stays in the base language.** Analysis results are written to disk, so a record produced on a Spanish phone must still be readable when it is reopened in French, and `services/vision-history.ts` compares saved validation rules against English. Use `source()` for anything persisted; use `t()` for display only. Where a value is worth translating later, persist a key beside the text (`MeasuredPhase.evidenceKey`, `partialEvidenceKey`, `BarPathModel.exerciseId`) and re-translate at render time. Persisted identifiers — phase IDs, check IDs, movement IDs, event types — are never translated.
+- **Errors return keys, not sentences.** Services throw catalog keys so a message that appears after a language change is still translated. Display sites resolve them with `td()`, which passes already-translated text through unchanged, so a legacy record that stored an English sentence still renders.
+
+Rendering uses the active locale for numbers, dates, units and the `<html lang>` attribute, but never for data: SVG path coordinates and numeric input values stay raw, since a French thousands separator inside a `d` attribute silently stops the shape from drawing.
+
+The same rule applies to CSS hooks, in reverse: a layout hook must never be a translated string. The bottom navigation used to be positioned with `nav[aria-label='Main navigation']`, so the fixed bottom bar silently dropped into normal flow below the footer the moment the visitor switched away from English — no error, just a broken menu. It now carries a stable `class="app-nav"`, and its `aria-label` stays translated for assistive tech. Any selector that matches an attribute a visitor can see has to use a class or another stable token instead.
+
+`tests/unit/i18n-catalogs.test.ts` checks the three catalogs for key parity, placeholder parity and untranslated copies; the handful of values that are legitimately identical across languages are listed in an explicit allowlist rather than left to drift unnoticed. `tests/unit/localization.test.ts` covers the runtime and the render-time label mappings, and `tests/e2e/app.spec.ts` covers a stored choice outranking the browser, browser detection, and persistence across reloads. Playwright pins `locale: 'en-US'` because the other specs assert English copy while the app follows the browser.
+
+Spanish keeps the competition names `Snatch` and `Clean`; French uses the French Federation's `Tir balancé`, `Épaulé` and `Jeté`. Both non-English catalogs are machine-authored and still deserve a native read-through.
 
 ## Demo motion
 

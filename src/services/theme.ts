@@ -27,7 +27,7 @@ export function saveTheme(storage: StoragePort, theme: Theme): string {
     storage.setItem(THEME_KEY, theme);
     return '';
   } catch {
-    return 'This theme applies to this session only.';
+    return 'theme.sessionOnly';
   }
 }
 export function systemTheme(): Theme {

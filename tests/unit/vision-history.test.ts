@@ -45,7 +45,9 @@ it('bounds history and survives inaccessible, malformed and absent storage', () 
     },
   };
   expect(loadVisionHistory(denied)).toEqual([]);
-  expect(saveVisionHistory(denied, [record()])).toContain('could not be saved');
+  expect(saveVisionHistory(denied, [record()])).toBe(
+    'history.analysisNotSaved',
+  );
 });
 it('validates result identity, ranges, timestamps and events', () => {
   const r = record();

@@ -85,7 +85,7 @@ it('decodes and samples the source duration, returns measured failure for blank 
   expect(result.frames[14].time).toBeCloseTo(14 / 15);
   expect(workers[0].terminate).toHaveBeenCalled();
   expect(video.getAttribute('src')).toBeNull();
-  expect(progress).toHaveBeenLastCalledWith(1, 'Analysis complete');
+  expect(progress).toHaveBeenLastCalledWith(1, 'status.analysisComplete');
 });
 it.each([0.1, 121])(
   'rejects unsupported duration %s without starting a worker',
@@ -132,7 +132,9 @@ it('times out a stuck worker', async () => {
     signal: controller.signal,
     onProgress: vi.fn(),
   });
-  const assertion = expect(promise).rejects.toThrow('timed out');
+  const assertion = expect(promise).rejects.toThrow(
+    'errors.vision.analysisTimedOut',
+  );
   await vi.advanceTimersByTimeAsync(45000);
   await assertion;
   expect(workers[0].terminate).toHaveBeenCalled();
@@ -143,14 +145,16 @@ it('times out a decoder and handles a decoder error', async () => {
     signal: controller.signal,
     onProgress: vi.fn(),
   });
-  let assertion = expect(promise).rejects.toThrow('decoding timed out');
+  let assertion = expect(promise).rejects.toThrow(
+    'errors.vision.decodeTimedOut',
+  );
   await vi.advanceTimersByTimeAsync(15000);
   await assertion;
   promise = analyzeVideo(source, {
     signal: controller.signal,
     onProgress: vi.fn(),
   });
-  assertion = expect(promise).rejects.toThrow('decoded');
+  assertion = expect(promise).rejects.toThrow('errors.vision.decodeFailed');
   await vi.advanceTimersByTimeAsync(0);
   video.dispatchEvent(new Event('error'));
   await assertion;
@@ -187,7 +191,7 @@ it('rejects missing dimensions and unavailable frame context', async () => {
   Object.defineProperty(video, 'videoWidth', { value: 0, configurable: true });
   await expect(
     analyzeVideo(source, { signal: controller.signal, onProgress: vi.fn() }),
-  ).rejects.toThrow('dimensions');
+  ).rejects.toThrow('errors.vision.noDimensions');
 });
 
 it('waits for frame presentation, bounds missing callbacks, and cancels cleanly', async () => {

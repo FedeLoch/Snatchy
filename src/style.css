@@ -42,7 +42,7 @@
   --reference-muted: #a8622a;
   --phase-idle: #46586b;
 
-  --warning: #f0c995;
+  --warning: var(--warning);
   --warning-wash: rgb(240 201 149 / 14%);
   --warning-line: rgb(240 201 149 / 40%);
 
@@ -96,9 +96,9 @@
   --reference-muted: #8f5314;
   --phase-idle: #b3c0cc;
 
-  --warning: #b36b1a;
-  --warning-wash: rgb(179 107 26 / 15%);
-  --warning-line: rgb(179 107 26 / 50%);
+  --warning: #8a4a10;
+  --warning-wash: rgb(138 74 16 / 15%);
+  --warning-line: rgb(138 74 16 / 50%);
 
   --shell: rgb(10 15 22 / 45%);
   --shell-soft: rgb(10 15 22 / 16%);
@@ -731,12 +731,17 @@ p {
 select {
   color: var(--text);
   border: 1px solid var(--line-strong);
-  background: var(--panel-raised) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center / 16px 16px;
+  background: var(--panel-raised)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right 12px center / 16px 16px;
   padding: 10px 40px 10px 12px;
   border-radius: 2px;
   min-height: 44px;
   appearance: none;
-  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
 }
 select:hover:not(:disabled) {
   border-color: var(--accent-fill);
@@ -1358,7 +1363,7 @@ select:disabled {
   max-width: 280px;
   margin: 0;
 }
-nav[aria-label='Main navigation'] {
+.app-nav {
   position: fixed;
   bottom: 0;
   left: 50%;
@@ -1374,7 +1379,7 @@ nav[aria-label='Main navigation'] {
   padding: 8px 12px max(10px, env(safe-area-inset-bottom));
   border-radius: 8px 8px 0 0;
 }
-nav a {
+.app-nav a {
   flex: 1;
   color: var(--muted);
   display: flex;
@@ -1385,11 +1390,11 @@ nav a {
   min-height: 49px;
   font-size: 10px;
 }
-nav a .icon {
+.app-nav a .icon {
   width: 20px;
   height: 20px;
 }
-nav a[aria-current='page'] {
+.app-nav a[aria-current='page'] {
   color: var(--accent);
 }
 .app-footer {
@@ -1401,7 +1406,9 @@ nav a[aria-current='page'] {
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  font: 10px/1.8 ui-monospace, monospace;
+  font:
+    10px/1.8 ui-monospace,
+    monospace;
   color: var(--muted);
 }
 .creator-link {
@@ -1422,11 +1429,62 @@ nav a[aria-current='page'] {
   border: 1px solid var(--line-strong);
   border-radius: 20px;
   font-size: 10px;
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
 }
 .donate-link:hover {
   background: var(--accent-wash);
   border-color: var(--accent);
+}
+.settings-section {
+  border-top: 1px solid var(--line);
+  padding: 22px 0 4px;
+}
+.settings-section:last-of-type {
+  border-bottom: 1px solid var(--line);
+}
+.settings-section h2 {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  margin-bottom: 10px;
+}
+.settings-section p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+.settings-section .movement-field {
+  margin-top: 0;
+}
+.settings-section .field-hint {
+  margin-bottom: 0;
+}
+.settings-privacy {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.settings-privacy .icon {
+  width: 14px;
+  flex: none;
+  margin-top: 3px;
+  color: var(--accent);
+}
+.settings-section .text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.settings-support .primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  text-decoration: none;
 }
 dialog {
   background: var(--panel-2);
@@ -1735,7 +1793,7 @@ dialog blockquote {
   .framing .athlete {
     height: 250px;
   }
-  nav[aria-label='Main navigation'] {
+  .app-nav {
     width: 100%;
     border-radius: 0;
   }

@@ -8,7 +8,7 @@ import {
   saveVisionHistory,
   loadVisionHistory,
 } from '../../src/services/vision-history';
-import { historyScore, scoreVerdict } from '../../src/domain/score-summary';
+import { historyScore, scoreBand } from '../../src/domain/score-summary';
 import { estimateWristBar, wristMetrics } from '../../src/domain/wrist-bar';
 import { bodyMeasurements } from '../../src/domain/body-measurements';
 it('distinguishes overhead snatches, rack cleans and power receiving, and leaves static footage unresolved', () => {
@@ -81,7 +81,7 @@ it('persists wrist estimates, body summaries and manual selection with partial h
   expect(saved.body!.meanVisible).toBe(33);
   expect(historyScore(saved).partial).toBe(true);
   for (const score of [0, 40, 60, 80, 100, null])
-    expect(scoreVerdict(score)).toBeTruthy();
+    expect(scoreBand(score)).toBeTruthy();
   expect(
     historyScore({
       ...saved,

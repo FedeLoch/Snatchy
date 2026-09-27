@@ -1,11 +1,9 @@
 import type { VideoSource } from '../domain/types';
 export const MAX_VIDEO_BYTES = 250 * 1024 * 1024;
 export function validateVideo(file: Pick<File, 'type' | 'size'>): string {
-  if (!file.type.startsWith('video/'))
-    return 'Choose a video file, such as MP4, MOV, or WebM.';
-  if (file.size === 0) return 'This video is empty. Choose another recording.';
-  if (file.size > MAX_VIDEO_BYTES)
-    return 'Choose a video smaller than 250 MB. A short clip of one lift works best.';
+  if (!file.type.startsWith('video/')) return 'errors.media.wrongType';
+  if (file.size === 0) return 'errors.media.empty';
+  if (file.size > MAX_VIDEO_BYTES) return 'errors.media.tooLarge';
   return '';
 }
 export async function prepareVideo(
@@ -32,21 +30,17 @@ export async function prepareVideo(
       };
       const cancel = () => {
         cleanup();
-        reject(new DOMException('Video cancelled', 'AbortError'));
+        reject(new DOMException('errors.media.cancelled', 'AbortError'));
       };
-      const timer = setTimeout(
-        () => fail('This video took too long to open. Try a shorter MP4 clip.'),
-        10000,
-      );
+      const timer = setTimeout(() => fail('errors.media.openTimedOut'), 10000);
       video.onloadedmetadata = () => {
         const length = video.duration;
         if (!Number.isFinite(length) || length <= 0)
-          return fail('This video has no playable duration. Try another clip.');
+          return fail('errors.media.noDuration');
         cleanup();
         resolve(length);
       };
-      video.onerror = () =>
-        fail('This browser cannot play that video. Try an MP4 or WebM clip.');
+      video.onerror = () => fail('errors.media.cannotPlay');
       signal?.addEventListener('abort', cancel, { once: true });
       video.src = url;
     });

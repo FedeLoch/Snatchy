@@ -75,7 +75,7 @@ describe('persistent history', () => {
       },
     };
     expect(loadHistory(denied).warning).not.toBe('');
-    expect(saveHistory(denied, [record()])).toContain('session');
+    expect(saveHistory(denied, [record()])).toBe('history.notSaved');
   });
   it('caps writes and prepends records without duplicate ids', () => {
     const records = Array.from({ length: 35 }, (_, i) =>

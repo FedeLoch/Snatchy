@@ -61,4 +61,4 @@ export interface VideoSource {
   name: string;
   duration: number;
 }
-export type Page = 'home' | 'capture' | 'history' | 'result';
+export type Page = 'home' | 'capture' | 'history' | 'result' | 'settings';

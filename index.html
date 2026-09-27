@@ -13,11 +13,13 @@
     />
     <title>Snatchy — Understand your lift</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <script>
-      // Resolve the theme before first paint. Without this the page renders
-      // dark and then repaints, which is visible on reload. Keep the key in
-      // sync with THEME_KEY in src/services/theme.ts.
+      // Resolve the theme and language before first paint. Without this the page
+      // renders dark and then repaints, which is visible on reload, and the
+      // document would claim English while the visitor asked for something else.
+      // Keep both keys in sync with THEME_KEY in src/services/theme.ts and
+      // LANGUAGE_KEY in src/services/language.ts.
       (function () {
         try {
           var stored = localStorage.getItem('snatchy-theme-v1');
@@ -29,6 +31,20 @@
                 : 'dark';
         } catch (e) {
           document.documentElement.dataset.theme = 'dark';
+        }
+        try {
+          var lang = localStorage.getItem('snatchy-language-v1');
+          if (lang !== 'en' && lang !== 'es' && lang !== 'fr') {
+            var nav =
+              (navigator.languages && navigator.languages[0]) ||
+              navigator.language ||
+              '';
+            lang = String(nav).slice(0, 2).toLowerCase();
+          }
+          document.documentElement.lang =
+            lang === 'es' || lang === 'fr' ? lang : 'en';
+        } catch (e) {
+          document.documentElement.lang = 'en';
         }
       })();
     </script>

@@ -40,6 +40,13 @@ GitHub Actions runs static checks, coverage thresholds, a production build, depe
 - The separate explicit demo is preserved: **83/100**, seven phase scores (**94, 91, 86, 72, 76, 84, 92**), all feedback/drills, and illustrative bar metrics (**6.4 cm, 1.24 m, 1.82 m/s**). Demo values remain clearly labeled and are never assigned to uploaded videos.
 - Saved real measurement summaries remain separate from simulated demo results.
 - Accessible navigation, focus restoration, large touch controls, reduced-motion support, and recoverable errors.
+- Three languages — English, Spanish, French — chosen in Settings or followed from the operating system. The choice is remembered, and every screen, result, error and accessibility label switches with it.
+
+## Languages
+
+Open **Settings** (the last tab in the bottom navigation) to pick English, Español or Français, or to keep following your device's language. Snatchy ships all three catalogs, so the interface, analysis results, error messages and screen-reader labels are translated, and numbers, dates and units follow the chosen language. Nothing is uploaded to translate anything: a missing translation falls back to English.
+
+Saved results are stored in English and translated when you open them, so a lift analysed on an English phone reads correctly on a French one, and each record keeps its own meaning in every language. Spanish keeps the competition names _Snatch_ and _Clean_; French uses _Tir balancé_, _Épaulé_ and _Jeté_. The Spanish and French catalogs are machine-authored, so please report awkward wording at [github.com/FedeLoch/Snatchy/issues](https://github.com/FedeLoch/Snatchy/issues).
 
 ## Architecture
 

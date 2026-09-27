@@ -71,10 +71,7 @@ export function createTemplate(
   radius: number,
 ): number[] {
   const template = patch(frame, x, y, radius);
-  if (!template)
-    throw new Error(
-      'The selected plate has too little visible detail or is cut off. Choose a clear, textured plate with space around it.',
-    );
+  if (!template) throw new Error('errors.plateNotVisible');
   return template;
 }
 export function matchTemplate(

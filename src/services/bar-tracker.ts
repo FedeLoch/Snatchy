@@ -33,9 +33,7 @@ export async function trackBar(
     seed.end - seed.time < 0.3 ||
     seed.end - seed.time > 30
   )
-    throw new Error(
-      'Choose a valid plate diameter and a tracking interval of 0.3–30 seconds.',
-    );
+    throw new Error('errors.barCalibration.invalidSeed');
   const video = document.createElement('video');
   video.muted = true;
   video.playsInline = true;
@@ -52,7 +50,7 @@ export async function trackBar(
     canvas.width = Math.round(video.videoWidth * scale);
     canvas.height = Math.round(video.videoHeight * scale);
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) throw new Error('Frame decoding unavailable.');
+    if (!ctx) throw new Error('errors.frameDecoding');
     const radius = seed.radius * canvas.width;
     let x = seed.x * canvas.width,
       y = seed.y * canvas.height;

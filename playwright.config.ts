@@ -8,6 +8,9 @@ export default defineConfig({
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: 'http://127.0.0.1:4173',
+    // The specs assert English copy, and the app otherwise follows the system
+    // locale, so the runner has to be pinned rather than inherited from CI.
+    locale: 'en-US',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },

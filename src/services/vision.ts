@@ -34,7 +34,7 @@ export function mediaEvent(
     };
     const failed = () => {
       cleanup();
-      reject(new Error('This video could not be decoded. Try an MP4 clip.'));
+      reject(new Error('errors.vision.decodeFailed'));
     };
     const aborted = () => {
       cleanup();
@@ -42,7 +42,7 @@ export function mediaEvent(
     };
     const timer = setTimeout(() => {
       cleanup();
-      reject(new Error('Video decoding timed out. Try a shorter clip.'));
+      reject(new Error('errors.vision.decodeTimedOut'));
     }, 15000);
     video.addEventListener(event, done, { once: true });
     video.addEventListener('error', failed, { once: true });
@@ -93,13 +93,8 @@ export async function analyzeVideo(
   const { signal, onProgress } = options;
   signal.throwIfAborted();
   if (source.duration > MAX_ANALYSIS_SECONDS)
-    throw new Error(
-      'Record up to two minutes at a time. Detected repetitions are analyzed separately.',
-    );
-  if (source.duration < 0.8)
-    throw new Error(
-      'Use a clip at least 0.8 seconds long so enough frames can be measured.',
-    );
+    throw new Error('errors.vision.tooLong');
+  if (source.duration < 0.8) throw new Error('errors.vision.tooShort');
   const worker = new Worker(
     new URL('../workers/pose.worker.ts', import.meta.url),
     { type: 'module' },
@@ -125,16 +120,13 @@ export async function analyzeVideo(
       const receive = (event: MessageEvent<Reply>) => {
         if (event.data.id !== current) return;
         cleanup();
-        if (event.data.error) reject(new Error(event.data.error));
+        if (event.data.error)
+          reject(new Error('errors.vision.inferenceFailed'));
         else resolve(event.data);
       };
       const fail = () => {
         cleanup();
-        reject(
-          new Error(
-            'The local pose model could not start. Try a current Chrome or Safari browser.',
-          ),
-        );
+        reject(new Error('errors.vision.modelFailed'));
       };
       const abort = () => {
         cleanup();
@@ -142,11 +134,7 @@ export async function analyzeVideo(
       };
       const timer = setTimeout(() => {
         cleanup();
-        reject(
-          new Error(
-            'Pose analysis timed out. Try a shorter clip or a faster device.',
-          ),
-        );
+        reject(new Error('errors.vision.analysisTimedOut'));
       }, 45000);
       worker.addEventListener('message', receive);
       worker.addEventListener('error', fail, { once: true });
@@ -155,7 +143,7 @@ export async function analyzeVideo(
     });
   }
   try {
-    onProgress(0, 'Loading the local pose model');
+    onProgress(0, 'vision.loadingModel');
     await request({ type: 'init', origin: location.origin });
     await mediaEvent(video, 'loadeddata', signal, () => {
       video.src = source.url;
@@ -163,15 +151,13 @@ export async function analyzeVideo(
     });
     const width = video.videoWidth,
       height = video.videoHeight;
-    if (!width || !height)
-      throw new Error('Video dimensions are unavailable. Try another clip.');
+    if (!width || !height) throw new Error('errors.vision.noDimensions');
     const canvas = document.createElement('canvas');
     const scale = Math.min(1, 640 / Math.max(width, height));
     canvas.width = Math.round(width * scale);
     canvas.height = Math.round(height * scale);
     const context = canvas.getContext('2d');
-    if (!context)
-      throw new Error('This browser cannot decode video frames for analysis.');
+    if (!context) throw new Error('errors.noFrameDecoding');
     const frames: PoseSample[] = [];
     const count = Math.ceil(source.duration * SAMPLE_RATE);
     for (let index = 0; index < count; index++) {
@@ -209,7 +195,7 @@ export async function analyzeVideo(
       options.exerciseId ?? 'auto',
     );
     analysis.repetitions = analyzeRepetitions(analysis);
-    onProgress(1, 'Analysis complete');
+    onProgress(1, 'status.analysisComplete');
     return analysis;
   } finally {
     worker.terminate();

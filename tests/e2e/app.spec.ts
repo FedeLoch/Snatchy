@@ -233,7 +233,7 @@ test('all main screens and the drill dialog pass accessibility checks', async ({
   // Pin the theme: Playwright defaults to a light colour scheme, and the light
   // palette is covered separately below.
   await page.emulateMedia({ colorScheme: 'dark' });
-  for (const route of ['/#home', '/#capture', '/#history']) {
+  for (const route of ['/#home', '/#capture', '/#history', '/#settings']) {
     await page.goto(route);
     const result = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
@@ -320,7 +320,13 @@ test('light mode passes accessibility checks and does not overflow', async ({
     { id: 'custom', createdAt: 1234, source: 'demo', analysis },
   );
   await page.emulateMedia({ colorScheme: 'light' });
-  for (const route of ['/#home', '/#capture', '/#history', '/#result/custom']) {
+  for (const route of [
+    '/#home',
+    '/#capture',
+    '/#history',
+    '/#settings',
+    '/#result/custom',
+  ]) {
     await page.goto(route);
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     expect(
@@ -370,4 +376,122 @@ test('saved movement data controls rendering instead of hardcoded scores', async
   await expect(
     page.getByRole('button', { name: 'Setup, score 90', exact: true }),
   ).toBeVisible();
+});
+
+test('a stored language choice outranks the browser locale and survives reload', async ({
+  page,
+}) => {
+  // A French browser with an English choice stored. The app must follow the
+  // stored choice, because the visitor picked it on purpose.
+  // Guarded, so the seed applies to the first load only: it must not undo the
+  // choice the visitor makes further down, which is what reload has to prove.
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('snatchy-language-v1'))
+      localStorage.setItem('snatchy-language-v1', 'en');
+  });
+  await page.goto('/#settings');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(page.getByRole('heading', { name: 'Settings.' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible();
+
+  await page.selectOption('#language', 'fr');
+  // The picker re-renders in place and announces the change to screen readers.
+  await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
+  await expect(page.locator('#announcer')).toHaveText(
+    'Langue changée : Français.',
+  );
+  await expect(page.getByRole('heading', { name: 'Réglages.' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Réglages' })).toBeVisible();
+
+  await page.goto('/#home');
+  // The hero is two lines, so match the lead rather than the whole name.
+  await expect(page.locator('h1')).toContainText('Chaque mouvement.');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
+  // The hero is two lines, so match the lead rather than the whole name.
+  await expect(page.locator('h1')).toContainText('Chaque mouvement.');
+  expect(
+    await page.evaluate(() => localStorage.getItem('snatchy-language-v1')),
+  ).toBe('fr');
+});
+
+test.describe('a browser that prefers Spanish', () => {
+  test.use({ locale: 'es-ES' });
+
+  test('is followed until the visitor picks a different language', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+    await expect(page.locator('h1')).toContainText('Cada levantamiento.');
+
+    await page.goto('/#settings');
+    await expect(page.getByRole('heading', { name: 'Ajustes.' })).toBeVisible();
+    // The system row has to name the language the app is actually using.
+    await expect(page.locator('#language option[value="system"]')).toHaveText(
+      'Sistema (Español)',
+    );
+    await expect(
+      page.locator('#language option[value="system"]'),
+    ).toHaveJSProperty('selected', true);
+
+    await page.selectOption('#language', 'en');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(
+      page.getByRole('heading', { name: 'Settings.' }),
+    ).toBeVisible();
+    // The stored choice now outranks the Spanish browser after a reload.
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(
+      page.getByRole('heading', { name: 'Settings.' }),
+    ).toBeVisible();
+    await page.goto('/#home');
+    await expect(page.locator('h1')).toContainText('Every lift.');
+  });
+});
+
+test('the bottom navigation stays pinned to the viewport in every language', async ({
+  page,
+}) => {
+  // The bar is positioned with `position: fixed`, and the stylesheet matches it
+  // by class rather than by its translated aria-label. Selecting on the label
+  // left the bar sitting in normal flow after a language switch.
+  const nav = page.locator('nav.app-nav');
+  const viewport = page.viewportSize()!;
+  const pinned = async () => {
+    await expect(nav).toHaveCSS('position', 'fixed');
+    const box = (await nav.boundingBox())!;
+    expect(box.y + box.height).toBeGreaterThanOrEqual(viewport.height - 2);
+  };
+  await page.goto('/');
+  await pinned();
+  await page.goto('/#settings');
+  await page.selectOption('#language', 'fr');
+  await pinned();
+  await page.selectOption('#language', 'es');
+  await pinned();
+  await page.reload();
+  await pinned();
+  await expect(nav).toHaveAttribute('aria-label', 'Navegación principal');
+});
+
+test('settings is a bottom navigation tab instead of a header button', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const nav = page.locator('nav.app-nav');
+  await expect(nav.getByRole('link')).toHaveCount(4);
+  await expect(page.locator('.app-header a[href="#settings"]')).toHaveCount(0);
+  await nav.getByRole('link', { name: 'Settings' }).click();
+  await expect(page).toHaveURL(/#settings$/);
+  await expect(page.getByRole('heading', { name: 'Settings.' })).toBeVisible();
+  await expect(nav.getByRole('link', { name: 'Settings' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await expect(page.locator('.app-nav a[aria-current="page"]')).toHaveCount(1);
+  // The back link keeps the visitor's place, and the tab still wins the
+  // landmark over the header shortcut that used to sit above it.
+  await expect(nav.getByRole('link', { name: 'Settings' })).toHaveCount(1);
 });

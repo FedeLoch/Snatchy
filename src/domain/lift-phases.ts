@@ -1,5 +1,12 @@
 import { exerciseById } from './exercises';
 import { anglesAt, SIDES, visible, type VisionAnalysis } from './vision';
+import { source } from '../i18n';
+/**
+ * Phase and check names are persisted and validated against these exact
+ * English strings by services/vision-history.ts, so they are stable identifiers
+ * rather than display text. Localisation keys them by name instead of replacing
+ * them; see ui/labels.ts.
+ */
 export const PHASE_NAMES = [
   'Setup',
   'First pull',
@@ -9,17 +16,39 @@ export const PHASE_NAMES = [
   'Catch',
   'Recovery',
 ] as const;
+
+export const CHECK_NAMES = [
+  'Arms through the pull',
+  'Hip extension',
+  'Knee extension',
+  'Front-rack arm flexion',
+  'Receiving arm extension',
+  'Standing recovery',
+] as const;
+
+export type PhaseName = (typeof PHASE_NAMES)[number];
+export type CheckName = (typeof CHECK_NAMES)[number];
+
 export interface MeasuredPhase {
-  name: (typeof PHASE_NAMES)[number];
+  name: PhaseName;
   start: number | null;
   end: number | null;
+  /**
+   * The English explanation, kept so a record written by an older build still
+   * reads correctly. The `*Key` fields are the catalog entries the sentence was
+   * built from, which lets the UI re-render it in the reader's language
+   * without re-running the analysis. A record with no key falls back to
+   * `evidence` as-is.
+   */
   evidence: string;
+  evidenceKey?: string;
+  partialEvidenceKey?: string;
   coverage: number | null;
   estimated?: boolean;
   applicable?: boolean;
 }
 export interface MovementCheck {
-  name: string;
+  name: CheckName;
   value: number;
   target: number;
   unit: string;
@@ -39,10 +68,15 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     name,
     start: null,
     end: null,
-    evidence:
+    evidence: source(
       name === 'Transition'
-        ? 'No distinct knee rebend was resolved. It may be obscured by the view or absent as a separate phase in this variation.'
-        : 'Not resolved from the available pose evidence.',
+        ? 'phaseEvidence.transitionUnresolved'
+        : 'phaseEvidence.unresolved',
+    ),
+    evidenceKey:
+      name === 'Transition'
+        ? 'phaseEvidence.transitionUnresolved'
+        : 'phaseEvidence.unresolved',
     coverage: null,
   }));
   const result: LiftPhases = {
@@ -61,8 +95,8 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
   if (highHang)
     for (const i of [1, 2]) {
       phases[i].applicable = false;
-      phases[i].evidence =
-        'Not applicable to a high-hang start. Analysis begins with the upper pull.';
+      phases[i].evidence = source('phaseEvidence.highHangInapplicable');
+      phases[i].evidenceKey = 'phaseEvidence.highHangInapplicable';
     }
   const [shoulder, , wrist, hip] = SIDES[a.side];
   const data = a.frames
@@ -109,11 +143,12 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
   const set = (
     index: number,
     frame: number,
-    evidence: string,
+    evidenceKey: string,
     estimated = false,
   ) => {
     phases[index].start = data[frame].time;
-    phases[index].evidence = evidence;
+    phases[index].evidence = source(evidenceKey);
+    phases[index].evidenceKey = evidenceKey;
     if (estimated) phases[index].estimated = true;
   };
   const setup = data.findIndex(
@@ -153,24 +188,14 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
   );
   if (pull < 0 && catchIndex < 0) return result;
   if (pull >= 0) {
-    set(
-      0,
-      setup,
-      'Hands below hips with flexed knees or a hip hinge before upward movement. A hang start is allowed; floor contact is not established.',
-    );
-    set(
-      1,
-      pull,
-      'Wrist rises from the starting position for three observed samples. Lift-off is a pose estimate, not bar contact detection.',
-    );
+    set(0, setup, 'phaseEvidence.setup');
+    set(1, pull, 'phaseEvidence.firstPull');
   }
   if (catchIndex >= 0)
     set(
       5,
       catchIndex,
-      clean
-        ? 'Hands near shoulders with flexed elbows for three observed samples. Estimated front-rack receiving position.'
-        : 'Extended arm above shoulder for three samples with flexed knees. Estimated receiving position.',
+      clean ? 'phaseEvidence.catchRack' : 'phaseEvidence.catchOverhead',
     );
   let extension = -1;
   if (pull >= 0) {
@@ -203,11 +228,7 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     catchIndex > extension &&
     continuous(extension, catchIndex)
   )
-    set(
-      4,
-      extension,
-      'Largest combined hip/knee extension before the receiving position.',
-    );
+    set(4, extension, 'phaseEvidence.turnover');
   // Preserve independently recognizable phases; do not invent a missing knee rebend.
   for (
     let i = pull + 1;
@@ -227,12 +248,8 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
       data[i].knee! - data[dip].knee! >= 6 &&
       data[extension].knee! - data[dip].knee! >= 10
     ) {
-      set(
-        2,
-        i,
-        'First local knee-extension peak before a measurable knee rebend.',
-      );
-      set(3, dip, 'Knee rebend minimum followed by renewed extension.');
+      set(2, i, 'phaseEvidence.transition');
+      set(3, dip, 'phaseEvidence.secondPull');
       break;
     }
   }
@@ -253,12 +270,7 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
         data[extension].wrist.y < v.wrist.y - 0.015,
     );
     if (upperPull >= 0)
-      set(
-        3,
-        upperPull,
-        'Timing estimate: hands approach hip level during measured hip extension before turnover. A separate knee rebend was not resolved; this is not a bar-contact measurement.',
-        true,
-      );
+      set(3, upperPull, 'phaseEvidence.secondPullEstimated', true);
   }
   let bottom = catchIndex;
   if (catchIndex >= 0)
@@ -287,20 +299,13 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     set(
       6,
       recovery,
-      clean
-        ? 'Standing recovery while the hands remain in the front-rack region.'
-        : 'Knees extend from the receiving position while the arm remains overhead.',
+      clean ? 'phaseEvidence.recoveryRack' : 'phaseEvidence.recoveryOverhead',
     );
   if (highHang && pull >= 0) {
     phases[1].start = null;
-    phases[1].evidence =
-      'Not applicable to a high-hang start; no floor-to-knee first pull is assumed.';
-    set(
-      3,
-      pull,
-      'Upper-pull onset from the selected high-hang starting position.',
-      true,
-    );
+    phases[1].evidence = source('phaseEvidence.highHangNoFloorPull');
+    phases[1].evidenceKey = 'phaseEvidence.highHangNoFloorPull';
+    set(3, pull, 'phaseEvidence.highHangUpperPull', true);
   }
   for (let i = 0; i < phases.length; i++) {
     const phase = phases[i];
@@ -319,13 +324,13 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
         : null;
       if (phase.coverage !== null && phase.coverage < 1) {
         phase.estimated = true;
-        phase.evidence +=
-          ' Some joint measurements are unavailable in this interval; timing uses the remaining observed samples.';
+        phase.evidence += ' ' + source('phaseEvidence.partialCoverage');
+        phase.partialEvidenceKey = 'phaseEvidence.partialCoverage';
       }
     }
   }
   const addCheck = (
-    name: string,
+    name: CheckName,
     value: number,
     target: number,
     time: number,
@@ -359,7 +364,7 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
         v.elbow! < min.elbow! ? v : min,
       );
       addCheck(
-        'Arms through the pull',
+        CHECK_NAMES[0],
         armFrame.elbow!,
         160,
         armFrame.time,
@@ -372,14 +377,14 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     (phases[3].start !== null || phases[4].start !== null)
   ) {
     addCheck(
-      'Hip extension',
+      CHECK_NAMES[1],
       data[extension].hip!,
       165,
       data[extension].time,
       'Hip angle at the measured end of the recognized pull.',
     );
     addCheck(
-      'Knee extension',
+      CHECK_NAMES[2],
       data[extension].knee!,
       165,
       data[extension].time,
@@ -388,7 +393,7 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
   }
   if (catchIndex >= 0)
     addCheck(
-      clean ? 'Front-rack arm flexion' : 'Receiving arm extension',
+      clean ? CHECK_NAMES[3] : CHECK_NAMES[4],
       clean ? 180 - data[catchIndex].elbow! : data[catchIndex].elbow!,
       clean ? 60 : 165,
       data[catchIndex].time,
@@ -409,7 +414,7 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
           );
   if (finish)
     addCheck(
-      'Standing recovery',
+      CHECK_NAMES[5],
       finish.knee!,
       165,
       finish.time,

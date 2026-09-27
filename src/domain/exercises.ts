@@ -1,4 +1,5 @@
 import { anglesAt, SIDES, visible, type VisionAnalysis } from './vision';
+import { source } from '../i18n';
 export interface Exercise {
   id: string;
   name: string;
@@ -110,8 +111,9 @@ export function detectExercise(a: VisionAnalysis): ExerciseSelection {
   const unknown = {
     id: null,
     source: 'automatic' as const,
-    reason:
-      'Exercise not resolved. Select the movement manually to apply its phase and scoring rules.',
+    // Stored in the base language, not the device's, so the record reads the
+    // same everywhere. The catalog keys sit alongside for a future surface.
+    reason: source('exerciseReason.unresolved'),
   };
   if (data.length < 12) return unknown;
   const initial = data[0];
@@ -168,9 +170,10 @@ export function detectExercise(a: VisionAnalysis): ExerciseSelection {
   return {
     id: match?.id ?? null,
     source: 'automatic',
-    reason:
-      'Suggested from sustained ' +
-      (family === 'snatch' ? 'overhead' : 'front-rack') +
-      ' receiving position and initial hand height. Confirm or change it; floor contact and variation are not verified.',
+    reason: source(
+      family === 'snatch'
+        ? 'exerciseReason.suggestedOverhead'
+        : 'exerciseReason.suggestedRack',
+    ),
   };
 }

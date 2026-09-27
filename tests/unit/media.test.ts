@@ -26,19 +26,23 @@ afterEach(() => {
 });
 const file = () => new File(['video'], 'lift.mp4', { type: 'video/mp4' });
 it('validates video type, empty files and maximum size', () => {
-  expect(validateVideo({ type: 'text/plain', size: 3 })).toContain(
-    'video file',
+  // `validateVideo` reports a catalog key, not a sentence: the message is
+  // translated at the point of display.
+  expect(validateVideo({ type: 'text/plain', size: 3 })).toBe(
+    'errors.media.wrongType',
   );
-  expect(validateVideo({ type: 'video/mp4', size: 0 })).toContain('empty');
-  expect(
-    validateVideo({ type: 'video/mp4', size: MAX_VIDEO_BYTES + 1 }),
-  ).toContain('250 MB');
+  expect(validateVideo({ type: 'video/mp4', size: 0 })).toBe(
+    'errors.media.empty',
+  );
+  expect(validateVideo({ type: 'video/mp4', size: MAX_VIDEO_BYTES + 1 })).toBe(
+    'errors.media.tooLarge',
+  );
   expect(validateVideo({ type: 'video/mp4', size: MAX_VIDEO_BYTES })).toBe('');
 });
 it('validates before allocating a URL', async () => {
   await expect(
     prepareVideo(new File(['x'], 'x.txt', { type: 'text/plain' })),
-  ).rejects.toThrow('video file');
+  ).rejects.toThrow('errors.media.wrongType');
   expect(URL.createObjectURL).not.toHaveBeenCalled();
 });
 it('loads metadata and returns local media without leaking the decoder', async () => {
@@ -58,7 +62,9 @@ it.each([0, Infinity, NaN])(
   'rejects unplayable duration %s and releases the URL',
   async (duration) => {
     const promise = prepareVideo(file());
-    const assertion = expect(promise).rejects.toThrow('duration');
+    const assertion = expect(promise).rejects.toThrow(
+      'errors.media.noDuration',
+    );
     Object.defineProperty(video, 'duration', { value: duration });
     video.dispatchEvent(new Event('loadedmetadata'));
     await assertion;
@@ -67,14 +73,16 @@ it.each([0, Infinity, NaN])(
 );
 it('handles decoder errors', async () => {
   const promise = prepareVideo(file());
-  const assertion = expect(promise).rejects.toThrow('cannot play');
+  const assertion = expect(promise).rejects.toThrow('errors.media.cannotPlay');
   video.dispatchEvent(new Event('error'));
   await assertion;
   expect(URL.revokeObjectURL).toHaveBeenCalled();
 });
 it('times out metadata and releases resources', async () => {
   const promise = prepareVideo(file());
-  const assertion = expect(promise).rejects.toThrow('too long');
+  const assertion = expect(promise).rejects.toThrow(
+    'errors.media.openTimedOut',
+  );
   await vi.advanceTimersByTimeAsync(10000);
   await assertion;
   expect(URL.revokeObjectURL).toHaveBeenCalled();

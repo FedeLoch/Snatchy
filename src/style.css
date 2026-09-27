@@ -1610,7 +1610,7 @@ dialog blockquote {
 }
 @media (max-width: 760px) {
   .app-header {
-    padding: 20px 23px 17px;
+    padding: calc(20px + env(safe-area-inset-top)) 23px 17px;
   }
   .brand {
     font-size: 27px;

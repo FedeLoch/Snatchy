@@ -96,7 +96,7 @@ export function visionRows(records: VisionRecord[]): string {
       const scoreAria = score.partial
         ? t('vision.scorePartial', { score: scoreLabel })
         : scoreLabel;
-      return `<div class="history-entry"><a class="lift-row" href="#vision/${r.id}" aria-label="${e(t('vision.openAnalysis'))}"><span class="lift-icon">${icon('eye')}</span><span class="lift-description"><strong>${e(name)}</strong><small>${e(formatDateTime(r.createdAt))}</small><small>${notes.map(e).join('<span class="row-dot">·</span>')}</small></span><span class="lift-score" aria-label="${e(scoreAria)}">${score.value === null ? '—' : formatNumber(score.value)}<small>/100</small></span>${icon('arrow')}</a><button class="history-remove" data-action="remove-history" data-kind="vision" data-id="${r.id}" aria-label="${e(t('vision.removeAnalysis'))}">${icon('close')}</button></div>`;
+      return `<div class="history-entry"><a class="lift-row" href="#vision/${r.id}" aria-label="${e(t('vision.openAnalysis'))}"><span class="lift-description"><strong>${e(name)}</strong><small>${e(formatDateTime(r.createdAt))}</small><small>${notes.map(e).join('<span class="row-dot">·</span>')}</small></span><span class="lift-score" aria-label="${e(scoreAria)}">${score.value === null ? '—' : formatNumber(score.value)}<small>/100</small></span>${icon('arrow')}</a><button class="history-remove" data-action="remove-history" data-kind="vision" data-id="${r.id}" aria-label="${e(t('vision.removeAnalysis'))}">${icon('close')}</button></div>`;
     })
     .join('')}</div>`;
 }

@@ -157,7 +157,9 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
         i,
         (x) => x.wrist.y > x.hipPoint.y + (highHang ? -0.04 : 0.03),
       ) &&
-      ((v.knee !== null && v.knee < 155) || (v.hip !== null && v.hip < 165)),
+      (highHang ||
+        (v.knee !== null && v.knee < 155) ||
+        (v.hip !== null && v.hip < 165)),
   );
   const pull =
     setup < 0

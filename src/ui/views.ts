@@ -1,3 +1,4 @@
+import { features } from '../services/features';
 import { availableMovements, getMovement } from '../domain/movements';
 import type {
   Analysis,
@@ -48,7 +49,7 @@ export function shell(content: string, page: Page, theme: Theme): string {
         `<a href="#${p}" ${page === p || (page === 'result' && p === 'capture') ? 'aria-current="page"' : ''}>${icon(p === 'capture' ? 'plus' : p === 'settings' ? 'gear' : p)}<span>${e(t(`app.nav.${p}`))}</span></a>`,
     )
     .join('');
-  return `<a href="#main" class="skip-link">${e(t('app.skipToContent'))}</a><header class="app-header"><a class="brand" href="#home" aria-label="${e(t('app.homeAria'))}"><img class="brand-logo" src="/logo-snatchy.png" alt="" aria-hidden="true"><span>${e(t('app.brand'))}<span>.</span></span></a><div class="edition">${e(t('app.techniqueLab'))} <span>${e(t('app.volume'))}</span></div><div class="header-tools"><span class="header-status"><i></i> ${e(t('app.localFirst'))}</span>${toggle}</div></header><main id="main" tabindex="-1">${content}</main><nav class="app-nav" aria-label="${e(t('app.mainNavigation'))}">${nav}</nav><div class="sr-only" id="announcer" role="status" aria-live="polite"></div>`;
+  return `<a href="#main" class="skip-link">${e(t('app.skipToContent'))}</a><header class="app-header"><a class="brand" href="#home" aria-label="${e(t('app.homeAria'))}"><img class="brand-logo" src="/logo-snatchy.png" alt="" aria-hidden="true"><span>${e(t('app.brand'))}<span>.</span></span></a><div class="edition">${e(t('app.techniqueLab'))} <span>${e(t('app.volume'))}</span></div><div class="header-tools"><span class="header-status"><i></i> ${e(t('app.localFirst'))}</span>${toggle}</div></header><main id="main" tabindex="-1">${content}</main><nav class="app-nav" aria-label="${e(t('app.mainNavigation'))}">${nav}${features().ads ? `<div class="sponsor-slot"><span>${e(t('coaching.adPlaceholder'))}</span><button data-action="ad-settings">${e(t('coaching.manage'))}</button></div>` : ''}</nav><div class="sr-only" id="announcer" role="status" aria-live="polite"></div>`;
 }
 
 function rows(records: LiftRecord[], allRecords: LiftRecord[] = []): string {

@@ -1,3 +1,4 @@
+import { setFeature } from './services/features';
 import { analyzePoseSamples } from './domain/vision';
 import { exerciseById } from './domain/exercises';
 import { analyzeVideo } from './services/vision';
@@ -489,7 +490,9 @@ root.addEventListener('click', (event) => {
   if (!target) return;
   const action = target.dataset.action,
     id = target.dataset.id ?? '';
-  if (action === 'select-rep') {
+  if (action === 'ad-settings') {
+    go('settings');
+  } else if (action === 'select-rep') {
     const rep = Number(target.dataset.rep);
     selectedReps.set(id, rep);
     const y = window.scrollY;
@@ -636,6 +639,18 @@ root.addEventListener('change', (event) => {
   const input = event.target as HTMLInputElement;
   if (input.type === 'file' && input.files?.[0])
     void importFile(input.files[0]);
+  if (input.id === 'optional-ads' || input.id === 'coaching-preview') {
+    const saved = setFeature(
+      input.id === 'optional-ads' ? 'ads' : 'coachingPreview',
+      input.checked,
+    );
+    const id = input.id;
+    suppressFocus = true;
+    route();
+    suppressFocus = false;
+    root.querySelector<HTMLElement>('#' + id)?.focus({ preventScroll: true });
+    announce(t(saved ? 'coaching.saved' : 'coaching.sessionOnly'));
+  }
   if (input.id === 'language') {
     const next: Language | null =
       input.value === 'system' ? null : (input.value as Language);

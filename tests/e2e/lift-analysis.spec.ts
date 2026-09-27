@@ -273,3 +273,48 @@ for (const trace of recordedTraces) {
     ).toEqual([]);
   });
 }
+
+test('optional ads can be disabled and coaching preview shows a sample-bound reference vector', async ({
+  page,
+}) => {
+  await page.goto('/#settings');
+  await expect(page.locator('.sponsor-slot')).toBeVisible();
+  await page.getByLabel('Show optional ads', { exact: true }).uncheck();
+  await expect(page.locator('.sponsor-slot')).toHaveCount(0);
+  await page.getByLabel('Enable coaching preview', { exact: true }).check();
+  await page.reload();
+  await expect(
+    page.getByLabel('Show optional ads', { exact: true }),
+  ).not.toBeChecked();
+  await expect(
+    page.getByLabel('Enable coaching preview', { exact: true }),
+  ).toBeChecked();
+  await poseFixture(page);
+  const check = page
+    .locator('.measured-issue')
+    .filter({ hasText: 'Arms through the pull' });
+  await check.locator('summary').first().click();
+  await expect(check.locator('.coaching-preview')).toContainText('Snatch pull');
+  await check
+    .getByRole('button', { name: 'Show reference angle in video', exact: true })
+    .click();
+  await expect(page.locator('.coaching-vector')).toHaveCount(1);
+  await expect(page.locator('#coaching-reference-note')).toBeVisible();
+  await page.locator('#cv-video').evaluate((el) => {
+    (el as HTMLVideoElement).currentTime = 1.5;
+  });
+  await expect(page.locator('.coaching-vector')).toHaveCount(0);
+  await page
+    .getByRole('button', { name: 'Hide reference angle', exact: true })
+    .click();
+  await expect(page.locator('#coaching-reference-note')).toBeHidden();
+  await page.reload();
+  await expect(
+    page
+      .getByRole('button', {
+        name: 'Show reference angle in video',
+        exact: true,
+      })
+      .first(),
+  ).toBeDisabled();
+});

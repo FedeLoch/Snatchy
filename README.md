@@ -150,3 +150,9 @@ npx cap sync android
 On the physical phone, verify demo score/feedback, gallery import, video playback, pose overlay, phase seeking, automatic wrist paths, exercise detection/manual correction, history removal/undo and offline analysis. Update Android System WebView if model loading fails. If direct camera capture is unavailable, record with the phone’s Camera app and import the clip from the gallery. Device codecs, camera-picker behavior and worker/WASM support need real-device testing; desktop Chromium/WebKit tests are not a substitute.
 
 Native app storage is separate from browser storage. Your browser’s saved lift history will not automatically appear in the APK. Clearing app data or uninstalling removes locally saved analyses.
+
+## Coaching and optional ads (preview)
+
+Settings now includes optional advertising (on by default) and a free coaching preview (off by default). The advertising space appears below the navigation and can be disabled immediately. It is a placeholder; no ad network or tracking is connected.
+
+Enable the coaching preview to see exercise suggestions inside measured feedback and display the check’s angle threshold as a dashed guide on the original video. The guide is a 2D reference at the measured moment, not an ideal movement prediction. No billing or subscription is active. See [coaching, advertising and recognition notes](docs/COACHING.md) for behavior, sources and the remaining production integration work.

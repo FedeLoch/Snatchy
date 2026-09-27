@@ -159,22 +159,22 @@ export const phaseEvidence = (phase: {
  * validation, but keying all of them keeps one mechanism: the catalog can be
  * corrected or extended later without a data migration.
  */
-const MOVEMENT_LABELS: Record<string, MessageKey> = {
-  snatch: 'movements.snatch',
-  'power-snatch': 'movements.power-snatch',
-  'hang-snatch': 'movements.hang-snatch',
-  'high-hang-snatch': 'movements.high-hang-snatch',
-  clean: 'movements.clean',
-  'power-clean': 'movements.power-clean',
-  'hang-clean': 'movements.hang-clean',
-  'hang-power-clean': 'movements.hang-power-clean',
-  'high-hang-clean': 'movements.high-hang-clean',
-  'high-hang-power-clean': 'movements.high-hang-power-clean',
-  'muscle-clean': 'movements.muscle-clean',
-  jerk: 'movements.jerk',
-  'clean-and-jerk': 'movements.clean-and-jerk',
-  'back-squat': 'movements.back-squat',
-  'front-squat': 'movements.front-squat',
+const MOVEMENT_EN_NAMES: Record<string, string> = {
+  snatch: 'Snatch',
+  'power-snatch': 'Power Snatch',
+  'hang-snatch': 'Hang Snatch',
+  'high-hang-snatch': 'High-Hang Snatch',
+  clean: 'Clean',
+  'power-clean': 'Power Clean',
+  'hang-clean': 'Hang Clean',
+  'hang-power-clean': 'Hang Power Clean',
+  'high-hang-clean': 'High-Hang Clean',
+  'high-hang-power-clean': 'High-Hang Power Clean',
+  'muscle-clean': 'Muscle Clean',
+  jerk: 'Jerk',
+  'clean-and-jerk': 'Clean & Jerk',
+  'back-squat': 'Back Squat',
+  'front-squat': 'Front Squat',
 };
 
 const DRILL_LABELS: Record<string, MessageKey> = {
@@ -212,7 +212,7 @@ const ISSUE_TEXT_LABELS: Record<
 
 /** Movement or exercise display name, from the id stored on the record. */
 export const movementName = (id: string | undefined, fallback = ''): string =>
-  id ? (MOVEMENT_LABELS[id] ? t(MOVEMENT_LABELS[id]) : fallback) : fallback;
+  id ? (MOVEMENT_EN_NAMES[id] ?? fallback) : fallback;
 
 export const drillName = (id: string, fallback: string): string =>
   byName(DRILL_LABELS, id, fallback);

@@ -155,19 +155,30 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     (v, i) =>
       sustained(
         i,
-        (x) => x.wrist.y > x.hipPoint.y + (highHang ? -0.04 : 0.03),
+        (x) =>
+          x.wrist.y >
+          x.hipPoint.y +
+            (highHang ? -Math.abs(x.hipPoint.y - x.shoulder.y) * 0.35 : 0.03),
       ) &&
       (highHang ||
         (v.knee !== null && v.knee < 155) ||
         (v.hip !== null && v.hip < 165)),
   );
+  // A hang lift dips before rising: compare with the lowest preceding hand
+  // position, rather than requiring the pull to rise above the standing setup.
+  let lowestWrist = 0;
+  const baseline = data.map((v, i) => {
+    if (setup < 0 || i < setup) return 0;
+    lowestWrist = Math.max(lowestWrist, v.wrist.y);
+    return lowestWrist;
+  });
   const pull =
     setup < 0
       ? -1
       : data.findIndex(
           (v, i) =>
             i > setup &&
-            sustained(i, (x) => x.wrist.y < data[setup].wrist.y - 0.035) &&
+            sustained(i, (x) => x.wrist.y < baseline[i] - 0.035) &&
             v.wrist.y > v.shoulder.y &&
             continuous(setup, i),
         );
@@ -204,7 +215,13 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     const limit = catchIndex >= 0 ? catchIndex : data.length;
     for (let i = pull + 1; i < limit; i++) {
       if (!continuous(pull, i)) break;
-      if (data[i].hip === null || data[i].knee === null) continue;
+      if (
+        data[i].hip === null ||
+        data[i].knee === null ||
+        data[i].hip! < 155 ||
+        data[i].knee! < 155
+      )
+        continue;
       if (
         extension < 0 ||
         data[i].hip! + data[i].knee! >

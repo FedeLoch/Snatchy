@@ -149,8 +149,11 @@ export function detectExercise(a: VisionAnalysis): ExerciseSelection {
   if (!knees.length) return unknown;
   const power = Math.min(...knees) > 130;
   const start =
-    Math.abs(initial.wrist.y - initial.hipPoint.y) < 0.055 &&
-    (initial.knee ?? 0) > 145
+    Math.abs(initial.wrist.y - initial.hipPoint.y) <
+      Math.max(
+        0.055,
+        Math.abs(initial.hipPoint.y - initial.shoulder.y) * 0.35,
+      ) && (initial.knee ?? 0) > 145
       ? 'high-hang'
       : initial.wrist.y < initial.kneePoint.y - 0.02
         ? 'hang'

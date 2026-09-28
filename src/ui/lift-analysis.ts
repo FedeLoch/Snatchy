@@ -34,11 +34,7 @@ export function techniqueScore(
   const missing = lift.phases
     .filter((p) => p.start === null && p.applicable !== false)
     .map((p) => p.name);
-  const partial =
-    lift.score !== null &&
-    (missing.length > 0 ||
-      lift.checks.length < 5 ||
-      lift.phases.some((p) => p.estimated));
+  const partial = lift.score !== null && lift.checks.length < 5;
   const deltaHtml = comparison
     ? comparison.isFirstRecord
       ? ''
@@ -47,7 +43,7 @@ export function techniqueScore(
         : ''
     : '';
   return `<aside class="measured-score" aria-label="${e(t('checksPanel.experimentalAria'))}"><div class="score" data-measured-score>${lift.score === null || lift.score === undefined ? '—' : formatNumber(lift.score)}${partial ? '<sup class="partial-score-mark" aria-hidden="true">*</sup>' : ''}<small>/ 100</small></div><span class="micro">${e(t('checksPanel.experimentalTitle'))}</span><p class="footnote">${lift.score === null || lift.score === undefined ? e(t('checksPanel.notEnoughEvidence')) : e(t('checksPanel.metCount', { met: formatNumber(lift.checks.filter((c) => c.passed).length), total: formatNumber(lift.checks.length) }))}</p>${deltaHtml}${
-    partial
+    partial || missing.length > 0 || lift.phases.some((p) => p.estimated)
       ? `<details class="partial-score-note"><summary aria-label="${e(t('checksPanel.partialAria'))}" title="${e(t('checksPanel.partialAria'))}"><span class="partial-badge-text" aria-hidden="true">ⓘ</span></summary><div class="partial-score-popover"><p>${e(
           t('checksPanel.partialCounts', {
             resolved: formatNumber(

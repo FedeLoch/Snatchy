@@ -21,7 +21,7 @@ export function detectRepetitions(a: VisionAnalysis): RepWindow[] {
     return {
       time: f.time,
       y: valid ? w.y : null,
-      low: valid && w.y > h.y + 0.03,
+      low: valid && w.y > h.y - Math.abs(h.y - s.y) * 0.35,
       high:
         valid &&
         (w.y < s.y - 0.06 ||
@@ -30,17 +30,21 @@ export function detectRepetitions(a: VisionAnalysis): RepWindow[] {
     };
   });
   const windows: RepWindow[] = [];
-  let low = -1,
+  let startLow = -1,
+    low = -1,
     onset = -1,
     high = -1,
     lastHigh = -1,
     highCount = 0;
   const finish = (end: number) => {
     if (high >= 0 && low >= 0 && end - rows[low].time >= 0.5) {
-      const start = Math.max(windows.at(-1)?.end ?? 0, rows[low].time - 0.6);
+      const start = Math.max(
+        windows.at(-1)?.end ?? 0,
+        rows[startLow].time - 0.6,
+      );
       windows.push({ start, end: Math.min(a.duration, end) });
     }
-    low = onset = high = lastHigh = -1;
+    startLow = low = onset = high = lastHigh = -1;
     highCount = 0;
   };
   for (let i = 0; i < rows.length; i++) {
@@ -51,13 +55,14 @@ export function detectRepetitions(a: VisionAnalysis): RepWindow[] {
         finish(Math.min(r.time, rows[lastHigh].time + 0.3));
       else continue;
     }
+    if (r.low && startLow < 0) startLow = i;
     // Keep the final stationary low point, then freeze it once the ascent starts.
     if (r.low && (low < 0 || (onset < 0 && r.y! >= rows[low].y! - 0.025)))
       low = i;
     if (low >= 0 && onset < 0 && r.y !== null && rows[low].y! - r.y > 0.035)
       onset = i;
-    if (low >= 0 && r.time - rows[low].time > 12) {
-      low = onset = -1;
+    if (low >= 0 && onset < 0 && r.time - rows[low].time > 12) {
+      startLow = low = onset = -1;
       highCount = 0;
     }
     if (low >= 0 && onset >= 0 && r.high && rows[low].y! - r.y! > 0.15) {

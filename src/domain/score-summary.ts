@@ -1,12 +1,7 @@
 import type { VisionAnalysis } from './vision';
 export function partialScore(a: VisionAnalysis): boolean {
-  return (
-    !!a.lift &&
-    (a.lift.checks.length < 5 ||
-      a.lift.phases.some(
-        (p) => p.applicable !== false && (p.start === null || p.estimated),
-      ))
-  );
+  // Phase boundaries describe timing, not the availability of the five checks.
+  return !!a.lift && a.lift.checks.length < 5;
 }
 /**
  * The score band, as a stable identifier rather than a sentence. Returning the

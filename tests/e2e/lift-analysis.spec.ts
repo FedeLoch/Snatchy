@@ -114,7 +114,7 @@ test('partial scores list missing phases, remain accessible and survive reload',
     /^100\*\s*\/\s*100$/,
   );
   await expect(
-    page.getByLabel('Partial analysis', { exact: true }),
+    page.getByLabel('Analysis evidence and coverage', { exact: true }),
   ).toBeVisible();
   await page.locator('.partial-score-note summary').click();
   await expect(page.locator('.partial-score-note')).toContainText(
@@ -173,7 +173,7 @@ test('isolates multiple repetitions, switches measured results, and preserves pe
     .click({ timeout: 10000 });
   await expect(page.locator('[data-cv-phase="Catch"]')).toContainText('3.20 s');
   await expect(page.locator('[data-measured-score]')).toHaveText(
-    /^80\*\s*\/\s*100$/,
+    /^80\s*\/\s*100$/,
   );
   await page.locator('[data-cv-phase="Catch"]').click();
   await expect

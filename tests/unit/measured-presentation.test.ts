@@ -53,7 +53,7 @@ it('marks even a 100 score as partial and names missing phases', () => {
     '100',
   );
   expect(dom.querySelector('summary')?.getAttribute('aria-label')).toBe(
-    'Partial analysis',
+    'Analysis evidence and coverage',
   );
   // The disclosure shows only the glyph; the name lives on aria-label.
   expect(dom.querySelector('summary')?.textContent?.trim()).toBe('ⓘ');

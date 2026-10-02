@@ -209,7 +209,8 @@
     "notApplicableLong": "Not applicable",
     "unresolved": "Unresolved",
     "duration": "Duration: {time} s.",
-    "usablePoseFrames": "Usable pose frames: {percent}%."
+    "usablePoseFrames": "Usable pose frames: {percent}%.",
+    "coverageCount": "{resolved} / {total} applicable phases · estimated"
   },
   "checksPanel": {
     "title": "The details that matter",
@@ -252,7 +253,8 @@
     "summaryNoScore": "Body landmarks measured from your video. More phase evidence is needed for a movement score.",
     "summaryOne": "{count} measured check needs review. Start with {check} ({value}{unit}).",
     "summaryMany": "{count} measured checks need review. Start with {check} ({value}{unit}).",
-    "summaryAll": "All {count} measured angle checks met their thresholds. Review the phases and bar path for the full picture."
+    "summaryAll": "All {count} measured angle checks met their thresholds. Review the phases and bar path for the full picture.",
+    "coverageAria": "Analysis evidence and coverage"
   },
   "barPanel": {
     "title": "Follow the bar",
@@ -489,7 +491,10 @@
     "secondPullEstimated": "Timing estimate: hands approach hip level during measured hip extension before turnover. A separate knee rebend was not resolved; this is not a bar-contact measurement.",
     "recoveryRack": "Standing recovery while the hands remain in the front-rack region.",
     "recoveryOverhead": "Knees extend from the receiving position while the arm remains overhead.",
-    "partialCoverage": "Some joint measurements are unavailable in this interval; timing uses the remaining observed samples."
+    "partialCoverage": "Some joint measurements are unavailable in this interval; timing uses the remaining observed samples.",
+    "relativeExtension": "Both hip and knee angles open during the rising pull before receiving. Timing estimated from relative motion; the usual score targets still apply.",
+    "handUpperPull": "Hands reach hip height and continue rising before the end of the pull. Upper-pull timing estimated without a confirmed knee rebend.",
+    "kneeCrossing": "Hands pass knee height between the first and upper pull. Estimated knee-to-thigh interval; a knee rebend is not confirmed."
   },
   "movements": {
     "snatch": "Snatch",

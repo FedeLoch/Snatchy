@@ -142,7 +142,8 @@
     "title": "Los detalles que importan",
     "viewFrame": "Ver fotograma · {time} s",
     "whatMeasured": "Qué se midió",
-    "whatToReview": "Qué revisar"
+    "whatToReview": "Qué revisar",
+    "coverageAria": "Evidencia y cobertura del análisis"
   },
   "demoMeasurements": {
     "arms": "Ángulo de codo de 153° · 81 % de extensión de cadera",
@@ -355,7 +356,10 @@
     "transition": "Primer pico local de extensión de rodilla antes de una flexión de rodilla medible.",
     "transitionUnresolved": "No se ha resuelto ninguna flexión de rodilla clara. Puede quedar oculta por el ángulo de la vista o no existir como fase separada en esta variante.",
     "turnover": "Mayor extensión combinada de cadera y rodilla antes de la posición de recepción.",
-    "unresolved": "No se ha resuelto a partir de la evidencia de pose disponible."
+    "unresolved": "No se ha resuelto a partir de la evidencia de pose disponible.",
+    "relativeExtension": "La cadera y la rodilla se abren durante la tracción antes de la recepción. Tiempo estimado por movimiento relativo; se mantienen los objetivos de puntuación.",
+    "handUpperPull": "Las manos alcanzan la cadera y siguen subiendo antes del final de la tracción. Tiempo estimado sin confirmar la segunda flexión de rodillas.",
+    "kneeCrossing": "Las manos pasan las rodillas entre la primera tracción y la superior. Intervalo estimado hasta el muslo; no se confirma una segunda flexión."
   },
   "phases": {
     "catch": "Recepción",
@@ -375,7 +379,8 @@
     "timingEstimate": "Cronología estimada",
     "title": "Fases del movimiento",
     "unresolved": "Sin resolver",
-    "usablePoseFrames": "Fotogramas de pose utilizables: {percent} %."
+    "usablePoseFrames": "Fotogramas de pose utilizables: {percent} %.",
+    "coverageCount": "{resolved} / {total} fases aplicables · estimadas"
   },
   "radarPanel": {
     "aria": "Perfil de movimiento",

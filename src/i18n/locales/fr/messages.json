@@ -142,7 +142,8 @@
     "title": "Les détails qui comptent",
     "viewFrame": "Voir l'image · {time} s",
     "whatMeasured": "Ce qui a été mesuré",
-    "whatToReview": "Ce qu'il faut revoir"
+    "whatToReview": "Ce qu'il faut revoir",
+    "coverageAria": "Données et couverture de l’analyse"
   },
   "demoMeasurements": {
     "arms": "Angle du coude 153° · 81 % d'extension de hanche",
@@ -355,7 +356,10 @@
     "transition": "Premier pic local d'extension du genou avant une flexion mesurable des genoux.",
     "transitionUnresolved": "Aucune flexion distincte des genoux n'a été résolue. Elle peut être masquée par le point de vue ou ne pas exister comme phase distincte dans cette variante.",
     "turnover": "Extension combinée hanche/genou la plus importante avant la position de réception.",
-    "unresolved": "Non résolue à partir des preuves de pose disponibles."
+    "unresolved": "Non résolue à partir des preuves de pose disponibles.",
+    "relativeExtension": "La hanche et le genou s’ouvrent pendant la traction avant la réception. Temps estimé par mouvement relatif ; les seuils du score restent identiques.",
+    "handUpperPull": "Les mains atteignent les hanches et continuent à monter avant la fin de la traction. Temps estimé sans seconde flexion du genou confirmée.",
+    "kneeCrossing": "Les mains dépassent les genoux entre la première et la seconde traction. Intervalle genou-cuisse estimé ; la seconde flexion n’est pas confirmée."
   },
   "phases": {
     "catch": "Réception",
@@ -375,7 +379,8 @@
     "timingEstimate": "Estimation du minutage",
     "title": "Phases du mouvement",
     "unresolved": "Non résolue",
-    "usablePoseFrames": "Images de pose exploitables : {percent} %."
+    "usablePoseFrames": "Images de pose exploitables : {percent} %.",
+    "coverageCount": "{resolved} / {total} phases applicables · estimées"
   },
   "radarPanel": {
     "aria": "Profil du mouvement",

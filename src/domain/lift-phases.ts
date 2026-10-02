@@ -98,7 +98,7 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
       phases[i].evidence = source('phaseEvidence.highHangInapplicable');
       phases[i].evidenceKey = 'phaseEvidence.highHangInapplicable';
     }
-  const [shoulder, , wrist, hip] = SIDES[a.side];
+  const [shoulder, , wrist, hip, knee] = SIDES[a.side];
   const data = a.frames
     .map((f) => {
       const angles = anglesAt(f, a.side, a.width, a.height);
@@ -109,6 +109,7 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
         wrist: f.landmarks[wrist],
         shoulder: f.landmarks[shoulder],
         hipPoint: f.landmarks[hip],
+        kneePoint: f.landmarks[knee],
       };
     })
     .filter(
@@ -119,10 +120,25 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
         visible(v.hipPoint),
     );
   if (data.length < 12) return result;
+  // Scale image-plane travel thresholds to the athlete, so a more distant
+  // camera does not turn the same visible motion into a static pose.
+  const torso = data
+    .map((v) =>
+      Math.hypot(
+        ((v.shoulder.x - v.hipPoint.x) * a.width) / a.height,
+        v.shoulder.y - v.hipPoint.y,
+      ),
+    )
+    .sort((x, y) => x - y);
+  const motionScale = Math.max(
+    0.25,
+    Math.min(1, torso[Math.floor(torso.length / 2)] / 0.2),
+  );
+
   const continuous = (start: number, end: number) =>
     data
       .slice(start + 1, end + 1)
-      .every((v, i) => v.time - data[start + i].time <= 2.1 / a.sampleRate) &&
+      .every((v, i) => v.time - data[start + i].time <= 3.1 / a.sampleRate) &&
     !a.frames.some(
       (f) =>
         f.people > 1 && f.time > data[start].time && f.time < data[end].time,
@@ -138,8 +154,8 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     clean
       ? v.elbow !== null &&
         v.elbow < 120 &&
-        Math.abs(v.wrist.y - v.shoulder.y) < 0.1
-      : v.elbow! >= 155 && v.wrist.y < v.shoulder.y - 0.06;
+        Math.abs(v.wrist.y - v.shoulder.y) < 0.1 * motionScale
+      : v.elbow! >= 155 && v.wrist.y < v.shoulder.y - 0.06 * motionScale;
   const set = (
     index: number,
     frame: number,
@@ -158,7 +174,9 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
         (x) =>
           x.wrist.y >
           x.hipPoint.y +
-            (highHang ? -Math.abs(x.hipPoint.y - x.shoulder.y) * 0.35 : 0.03),
+            (highHang
+              ? -Math.abs(x.hipPoint.y - x.shoulder.y) * 0.35
+              : 0.03 * motionScale),
       ) &&
       (highHang ||
         (v.knee !== null && v.knee < 155) ||
@@ -178,7 +196,10 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
       : data.findIndex(
           (v, i) =>
             i > setup &&
-            sustained(i, (x) => x.wrist.y < baseline[i] - 0.035) &&
+            sustained(
+              i,
+              (x) => x.wrist.y < baseline[i] - 0.035 * motionScale,
+            ) &&
             v.wrist.y > v.shoulder.y &&
             continuous(setup, i),
         );
@@ -190,7 +211,9 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
       (muscle || v.knee < (power ? 178 : 150)) &&
       // Require movement into the receiving position or a later overhead rise;
       // a static overhead pose must not earn a movement score.
-      (data.slice(0, i).some((x) => x.wrist.y - v.wrist.y > 0.15) ||
+      (data
+        .slice(0, i)
+        .some((x) => x.wrist.y - v.wrist.y > 0.15 * motionScale) ||
         data.some(
           (x, j) =>
             j > i &&
@@ -211,6 +234,7 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
       clean ? 'phaseEvidence.catchRack' : 'phaseEvidence.catchOverhead',
     );
   let extension = -1;
+  let relativeExtension = false;
   if (pull >= 0) {
     const limit = catchIndex >= 0 ? catchIndex : data.length;
     for (let i = pull + 1; i < limit; i++) {
@@ -242,12 +266,46 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     )
       extension = -1;
   }
+  // Oblique views and imperfect lifts may never project to 155 degrees.
+  // Recognize a measured drive from relative opening of both joints, with
+  // rising hands and a subsequent receiving position. Scoring still uses the
+  // original targets, so a short extension is measured rather than omitted.
+  if (extension < 0 && pull >= 0 && catchIndex > pull + 2) {
+    for (let i = pull + 1; i < catchIndex; i++) {
+      const v = data[i];
+      if (!continuous(pull, i)) break;
+      if (
+        v.hip === null ||
+        v.knee === null ||
+        data[pull].hip === null ||
+        data[pull].knee === null ||
+        v.hip - data[pull].hip! < 8 ||
+        v.knee - data[pull].knee! < 8 ||
+        v.wrist.y >= data[pull].wrist.y - 0.035 * motionScale ||
+        v.wrist.y <= v.shoulder.y
+      )
+        continue;
+      if (
+        extension < 0 ||
+        v.hip + v.knee > data[extension].hip! + data[extension].knee!
+      )
+        extension = i;
+    }
+    relativeExtension = extension >= 0;
+  }
   if (
     extension >= 0 &&
     catchIndex > extension &&
     continuous(extension, catchIndex)
   )
-    set(4, extension, 'phaseEvidence.turnover');
+    set(
+      4,
+      extension,
+      relativeExtension
+        ? 'phaseEvidence.relativeExtension'
+        : 'phaseEvidence.turnover',
+      relativeExtension,
+    );
   // Preserve independently recognizable phases; do not invent a missing knee rebend.
   for (
     let i = pull + 1;
@@ -284,12 +342,61 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
         v.hip !== null &&
         data[pull].hip !== null &&
         v.hip >= data[pull].hip! + 5 &&
-        v.wrist.y <= v.hipPoint.y + 0.03 &&
+        v.wrist.y <= v.hipPoint.y + 0.03 * motionScale &&
         v.wrist.y > v.shoulder.y &&
-        data[extension].wrist.y < v.wrist.y - 0.015,
+        data[extension].wrist.y < v.wrist.y - 0.015 * motionScale,
     );
     if (upperPull >= 0)
       set(3, upperPull, 'phaseEvidence.secondPullEstimated', true);
+  }
+  // Hand height supplies an independent upper-pull cue when a rebend or
+  // hip-angle change is obscured. Require a sustained hip-level crossing
+  // followed by further upward motion; never divide the clip into fixed slots.
+  if (
+    phases[3].start === null &&
+    !highHang &&
+    pull >= 0 &&
+    extension > pull + 2
+  ) {
+    const upper = data.findIndex(
+      (v, i) =>
+        i > pull &&
+        i < extension &&
+        continuous(pull, i) &&
+        sustained(
+          i,
+          (x) =>
+            x.wrist.y <= x.hipPoint.y + 0.03 * motionScale &&
+            x.wrist.y > x.shoulder.y,
+        ) &&
+        data[extension].wrist.y < v.wrist.y - 0.015 * motionScale,
+    );
+    if (upper >= 0) set(3, upper, 'phaseEvidence.handUpperPull', true);
+  }
+  // A knee-height hand crossing can locate the knee-to-thigh interval even
+  // when the knee rebend cannot be resolved. Keep that weaker evidence explicit.
+  if (
+    phases[2].start === null &&
+    !highHang &&
+    pull >= 0 &&
+    phases[3].start !== null &&
+    visible(data[setup].kneePoint) &&
+    data[setup].wrist.y > data[setup].kneePoint.y + 0.02 * motionScale
+  ) {
+    const crossing = data.findIndex(
+      (v, i) =>
+        i > pull &&
+        v.time < phases[3].start! &&
+        continuous(pull, i) &&
+        sustained(
+          i,
+          (x) =>
+            visible(x.kneePoint) &&
+            x.wrist.y < x.kneePoint.y &&
+            x.wrist.y > x.hipPoint.y,
+        ),
+    );
+    if (crossing >= 0) set(2, crossing, 'phaseEvidence.kneeCrossing', true);
   }
   let bottom = catchIndex;
   if (catchIndex >= 0)
@@ -329,7 +436,8 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
   for (let i = 0; i < phases.length; i++) {
     const phase = phases[i];
     if (phase.start === null) continue;
-    phase.end = i === 6 ? a.duration : phases[i + 1].start;
+    phase.end =
+      phases.slice(i + 1).find((p) => p.start !== null)?.start ?? a.duration;
     if (phase.end !== null) {
       const frames = a.frames.filter(
         (f) => f.time >= phase.start! && f.time < phase.end!,

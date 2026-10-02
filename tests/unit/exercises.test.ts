@@ -97,14 +97,14 @@ it('persists wrist estimates, body summaries and manual selection with partial h
     false,
   );
 });
-it('uses both real wrist positions, leaves gaps and derives relative displacement and velocity', () => {
+it('uses both measured hand positions, leaves gaps and derives relative displacement and velocity', () => {
   const a = analyzePoseSamples(liftFrames(), 100, 100, 2);
   const frames = a.frames.slice(0, 4).map((f, i) => ({
     ...f,
     landmarks: f.landmarks.map((p, j) =>
-      j === 15
+      [15, 17, 19].includes(j)
         ? { ...p, x: 0.4, y: 0.8 - i * 0.05 }
-        : j === 16
+        : [16, 18, 20].includes(j)
           ? { ...p, x: 0.6, y: 0.8 - i * 0.05 }
           : p,
     ),
@@ -117,4 +117,24 @@ it('uses both real wrist positions, leaves gaps and derives relative displacemen
   expect(estimateWristBar({ ...a, frames }).points).toHaveLength(3);
   expect(wristMetrics({ ...t, points: [] })).toBeNull();
   expect(bodyMeasurements({ ...a, frames: [] }).meanVisible).toBe(0);
+});
+
+it('moves the bar proxy into the palms and withholds occluded hand samples', async () => {
+  const { handBarPoint } = await import('../../src/domain/wrist-bar');
+  const f = structuredClone(liftFrames()[0]);
+  for (const [w, pinky, index, x] of [
+    [15, 17, 19, 0.3],
+    [16, 18, 20, 0.7],
+  ]) {
+    f.landmarks[w] = { x, y: 0.5, visibility: 1 };
+    f.landmarks[pinky] = { x, y: 0.56, visibility: 1 };
+    f.landmarks[index] = { x, y: 0.56, visibility: 1 };
+  }
+  const point = handBarPoint(f, 1000, 500)!;
+  expect(point.x).toBeCloseTo(500);
+  expect(point.y).toBeCloseTo(270);
+  expect(point.left.y).not.toBe(250);
+  f.landmarks[19].visibility = 0.2;
+  expect(handBarPoint(f, 1000, 500)).toBeNull();
+  expect(handBarPoint({ ...f, people: 2 }, 1000, 500)).toBeNull();
 });

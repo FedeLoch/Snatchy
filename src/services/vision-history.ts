@@ -110,7 +110,7 @@ export function isVisionRecord(value: unknown): value is VisionRecord {
     const b = a.wristBar;
     if (
       !b ||
-      b.method !== 'wrist-midpoint' ||
+      !['wrist-midpoint', 'hand-midpoint'].includes(b.method) ||
       ![b.width, b.height].every((v) => Number.isFinite(v) && v > 0) ||
       !Number.isFinite(b.coverage) ||
       b.coverage < 0 ||

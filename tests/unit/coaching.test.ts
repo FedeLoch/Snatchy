@@ -4,11 +4,11 @@ import { analyzePoseSamples, SIDES } from '../../src/domain/vision';
 import { cleanFrames } from '../fixtures/clean-pose';
 import { liftFrames } from '../fixtures/lift-pose';
 import { loadFeatures, FEATURE_KEY } from '../../src/services/features';
-it('defaults ads on and coaching off, validates stored settings and tolerates unavailable storage', () => {
+it('defaults ads and coaching on, validates stored settings and tolerates unavailable storage', () => {
   localStorage.clear();
   expect(loadFeatures(localStorage)).toEqual({
     ads: true,
-    coachingPreview: false,
+    coachingPreview: true,
   });
   for (const value of ['null', '[]', 'oops', '{"ads":"false"}']) {
     localStorage.setItem(FEATURE_KEY, value);
@@ -20,7 +20,7 @@ it('defaults ads on and coaching off, validates stored settings and tolerates un
   );
   expect(loadFeatures(localStorage)).toEqual({
     ads: false,
-    coachingPreview: true,
+    coachingPreview: false,
   });
   expect(
     loadFeatures({
@@ -42,6 +42,8 @@ it('persists settings and keeps a session choice if storage is blocked', async (
     throw Error('blocked');
   });
   expect(setFeature('coachingPreview', true)).toBe(false);
+  expect(features().coachingPreview).toBe(false);
+  expect(setFeature('ads', true)).toBe(false);
   expect(features().coachingPreview).toBe(true);
   spy.mockRestore();
 });

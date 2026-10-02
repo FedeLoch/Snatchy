@@ -10,7 +10,7 @@ export function coachingCard(
   check: MovementCheck,
   canSeek: boolean,
 ): string {
-  if (!features().coachingPreview)
+  if (!features().ads)
     return `<div class="coaching-preview"><strong>${e(t('coaching.title'))}</strong><p>${e(t('coaching.offer'))}</p><a class="text-link" href="#settings">${e(t('coaching.enable'))} ↗</a></div>`;
   const group = coachingGroup(check.name);
   const family = exerciseById(a.exercise?.id ?? 'snatch')?.family ?? 'snatch';

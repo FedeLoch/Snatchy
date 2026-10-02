@@ -9,10 +9,10 @@ export function loadFeatures(storage: StoragePort): FeaturePreferences {
     const raw = JSON.parse(storage.getItem(FEATURE_KEY) ?? '{}');
     return {
       ads: typeof raw?.ads === 'boolean' ? raw.ads : true,
-      coachingPreview: raw?.coachingPreview === true,
+      coachingPreview: typeof raw?.ads === 'boolean' ? raw.ads : true,
     };
   } catch {
-    return { ads: true, coachingPreview: false };
+    return { ads: true, coachingPreview: true };
   }
 }
 let session: FeaturePreferences | undefined;
@@ -21,7 +21,7 @@ export function features(): FeaturePreferences {
     try {
       session = loadFeatures(localStorage);
     } catch {
-      session = { ads: true, coachingPreview: false };
+      session = { ads: true, coachingPreview: true };
     }
   }
   return { ...session };
@@ -31,6 +31,7 @@ export function setFeature(
   value: boolean,
 ): boolean {
   session = { ...features(), [key]: value };
+  session.coachingPreview = session.ads;
   try {
     localStorage.setItem(FEATURE_KEY, JSON.stringify(session));
     return true;

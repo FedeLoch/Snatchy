@@ -1,3 +1,4 @@
+import { handBarPoint } from '../domain/wrist-bar';
 import { features } from '../services/features';
 import { referenceVector } from '../domain/coaching';
 import type { MovementCheck } from '../domain/lift-phases';
@@ -223,10 +224,9 @@ export function bindVisionPlayback(
     overlay.innerHTML = enabled
       ? `<g class="figure-accent figure-accent-fill" stroke-width="${thickness}">${segments}${joints}</g>`
       : '';
-    const left = f.landmarks[15],
-      right = f.landmarks[16];
-    if (visible(left) && visible(right))
-      overlay.innerHTML += `<line class="figure-reference" x1="${left.x * a.width}" y1="${left.y * a.height}" x2="${right.x * a.width}" y2="${right.y * a.height}" stroke-width="${thickness * 2}"/><circle class="figure-reference-fill" cx="${((left.x + right.x) / 2) * a.width}" cy="${((left.y + right.y) / 2) * a.height}" r="${thickness * 3}"/>`;
+    const hand = handBarPoint(f, a.width, a.height);
+    if (hand)
+      overlay.innerHTML += `<g class="hand-bar-estimate"><line class="figure-reference" x1="${hand.left.x}" y1="${hand.left.y}" x2="${hand.right.x}" y2="${hand.right.y}" stroke-width="${thickness * 2}"/><circle class="figure-reference-fill" cx="${hand.x}" cy="${hand.y}" r="${thickness * 3}"/></g>`;
     const guide = reference ? referenceVector(a, f, reference) : null;
     if (guide)
       overlay.innerHTML += `<g class="coaching-vector" stroke="#60a5fa" stroke-width="${thickness * 2}" fill="none"><path stroke-dasharray="6 4" d="M${guide.start.x},${guide.start.y}L${guide.end.x},${guide.end.y}"/><circle cx="${guide.end.x}" cy="${guide.end.y}" r="${thickness * 3}"/></g>`;
@@ -296,7 +296,7 @@ export function bindVisionPlayback(
       (button.onclick = () => {
         video.pause();
         reference =
-          features().coachingPreview && button.dataset.coachingCheck
+          features().ads && button.dataset.coachingCheck
             ? a.lift?.checks.find(
                 (c) => c.name === button.dataset.coachingCheck,
               )

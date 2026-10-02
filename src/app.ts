@@ -639,11 +639,8 @@ root.addEventListener('change', (event) => {
   const input = event.target as HTMLInputElement;
   if (input.type === 'file' && input.files?.[0])
     void importFile(input.files[0]);
-  if (input.id === 'optional-ads' || input.id === 'coaching-preview') {
-    const saved = setFeature(
-      input.id === 'optional-ads' ? 'ads' : 'coachingPreview',
-      input.checked,
-    );
+  if (input.id === 'optional-ads') {
+    const saved = setFeature('ads', input.checked);
     const id = input.id;
     suppressFocus = true;
     route();

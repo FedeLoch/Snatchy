@@ -3020,13 +3020,23 @@ body:has(.sponsor-slot) .history-undo {
   border-radius: 10px;
   background: var(--surface);
 }
+.coaching-preview,
+.coaching-preview p,
+.coaching-preview li,
+.coaching-preview h3,
+.coaching-preview .text-link,
+.coaching-preview button {
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+}
 .coaching-preview h3 {
   margin: 14px 0 8px;
 }
 .coaching-preview ul {
   padding-left: 20px;
-  line-height: 1.7;
+  line-height: inherit;
 }
 .coaching-preview .tag {
-  font-size: 9px;
+  font: inherit;
 }

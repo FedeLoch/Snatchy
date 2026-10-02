@@ -76,12 +76,12 @@ test('real result exposes measured phases, seeking, checks and saved summaries',
     /^80\s*\/\s*100$/,
   );
 });
-test('automatic wrist metrics appear first, mobile score aligns with title, and history retains scores', async ({
+test('automatic hand metrics appear first, mobile score aligns with title, and history retains scores', async ({
   page,
 }) => {
   await poseFixture(page);
   const bar = page.getByRole('region', { name: 'Estimated bar path' });
-  await expect(bar).toContainText('WRIST-LINE ESTIMATE');
+  await expect(bar).toContainText('HAND-CENTER ESTIMATE');
   await expect(
     page.getByRole('button', { name: 'Calibrate and track bar' }),
   ).toHaveCount(0);
@@ -274,20 +274,25 @@ for (const trace of recordedTraces) {
   });
 }
 
-test('optional ads can be disabled and coaching preview shows a sample-bound reference vector', async ({
+test('ads gate coaching and reference vectors while preserving measurements', async ({
   page,
 }) => {
   await page.goto('/#settings');
   await expect(page.locator('.sponsor-slot')).toBeVisible();
   await page.getByLabel('Show optional ads', { exact: true }).uncheck();
   await expect(page.locator('.sponsor-slot')).toHaveCount(0);
-  await page.getByLabel('Enable coaching preview', { exact: true }).check();
   await page.reload();
   await expect(
     page.getByLabel('Show optional ads', { exact: true }),
   ).not.toBeChecked();
+  await poseFixture(page);
+  await expect(page.locator('[data-coaching-check]')).toHaveCount(0);
+  await expect(page.locator('[data-measured-score]')).toBeVisible();
+  await page.goto('/#settings');
+  await page.getByLabel('Show optional ads', { exact: true }).check();
+  await page.reload();
   await expect(
-    page.getByLabel('Enable coaching preview', { exact: true }),
+    page.getByLabel('Show optional ads', { exact: true }),
   ).toBeChecked();
   await poseFixture(page);
   const check = page
@@ -295,6 +300,20 @@ test('optional ads can be disabled and coaching preview shows a sample-bound ref
     .filter({ hasText: 'Arms through the pull' });
   await check.locator('summary').first().click();
   await expect(check.locator('.coaching-preview')).toContainText('Snatch pull');
+  const typography = await check.evaluate((el) => {
+    const base = getComputedStyle(el.querySelector('.issue-coaching-tip')!);
+    const suggestion = getComputedStyle(
+      el.querySelector('.coaching-preview li')!,
+    );
+    return [
+      base.fontFamily,
+      base.fontSize,
+      suggestion.fontFamily,
+      suggestion.fontSize,
+    ];
+  });
+  expect(typography.slice(0, 2)).toEqual(typography.slice(2));
+
   await check
     .getByRole('button', { name: 'Show reference angle in video', exact: true })
     .click();

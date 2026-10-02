@@ -35,13 +35,13 @@ it('changes the score and feedback when the recorded joint trajectory changes', 
     'details class="issue measured-issue" open',
   );
 });
-it('renders automatic wrist estimates without calibration controls or physical units', () => {
+it('renders automatic hand estimates without calibration controls or physical units', () => {
   const a = analyzePoseSamples(liftFrames(), 100, 100, 2);
-  expect(barPanel(a)).toContain('WRIST-LINE ESTIMATE');
+  expect(barPanel(a)).toContain('HAND-CENTER ESTIMATE');
   expect(barPanel(a)).toContain('% frame height / s');
   expect(barPanel(a)).not.toContain('data-action="track-bar"');
   expect(barPanel(analyzePoseSamples([], 100, 100, 2))).toContain(
-    'Both wrists must be visible',
+    'Both hands must be visible',
   );
 });
 
@@ -68,7 +68,7 @@ it('renders stick figure athlete silhouette and expected trace comparison in bar
   const a = analyzePoseSamples(liftFrames(), 100, 100, 2);
   const html = barPanel(a);
   expect(html).toContain('Expected trace');
-  expect(html).toContain('Your wrist path');
+  expect(html).toContain('Your estimated hand path');
   expect(html).toContain('viewBox="115 15 150 355"');
 });
 

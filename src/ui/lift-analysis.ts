@@ -181,7 +181,11 @@ export function barPanel(a: VisionAnalysis): string {
 
   const methodLabel = isManual
     ? t('barPanel.plateTrack')
-    : t('barPanel.wristLineEstimate');
+    : t(
+        wristTrack?.method === 'wrist-midpoint'
+          ? 'barPanel.legacyWristEstimate'
+          : 'barPanel.wristLineEstimate',
+      );
 
   if (!isExerciseResolved) {
     return `<section class="bar-section analysis-card" aria-label="${e(t('barPanel.pathAria'))}"><div class="section-title"><h2>${e(t('barPanel.title'))}</h2><span class="micro">${e(t('barPanel.exerciseNotResolved'))}</span></div><div class="bar-content measured-bar-content"><div class="bar-path-empty">${e(t('barPanel.selectExercise'))}</div></div></section>`;

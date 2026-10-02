@@ -1,4 +1,4 @@
-import { visible, type VisionAnalysis } from './vision';
+import { visible, type VisionAnalysis, type PoseSample } from './vision';
 import { barTrace, MOTION } from './snatch-motion';
 
 /** Smooth only presentation; preserve endpoints and never bridge missing samples. */
@@ -32,41 +32,50 @@ export interface WristBarPoint {
   y: number;
 }
 export interface WristBar {
-  method: 'wrist-midpoint';
+  method: 'wrist-midpoint' | 'hand-midpoint';
   width: number;
   height: number;
   coverage: number;
   points: WristBarPoint[];
 }
-export function estimateWristBar(a: VisionAnalysis): WristBar {
-  const rawPoints = a.frames
-    .filter(
-      (f) =>
-        f.people === 1 && visible(f.landmarks[15]) && visible(f.landmarks[16]),
-    )
-    .map((f) => {
-      const left = {
-          x: f.landmarks[15].x * a.width,
-          y: f.landmarks[15].y * a.height,
-        },
-        right = {
-          x: f.landmarks[16].x * a.width,
-          y: f.landmarks[16].y * a.height,
-        };
-      return {
-        time: f.time,
-        left,
-        right,
-        x: (left.x + right.x) / 2,
-        y: (left.y + right.y) / 2,
-      };
-    });
+/** Palm-center proxy from wrist, index and pinky landmarks, not bar detection.
+ * Require both visible hands; never silently replace an obscured hand with a wrist.
+ */
+export function handBarPoint(
+  f: PoseSample,
+  width: number,
+  height: number,
+): WristBarPoint | null {
+  if (f.people !== 1) return null;
+  const center = (ids: number[]) => {
+    const points = ids.map((i) => f.landmarks[i]);
+    if (!points.every(visible)) return null;
+    return {
+      x: points.reduce((sum, p) => sum + p.x * width, 0) / points.length,
+      y: points.reduce((sum, p) => sum + p.y * height, 0) / points.length,
+    };
+  };
+  const left = center([15, 17, 19]),
+    right = center([16, 18, 20]);
+  if (!left || !right) return null;
   return {
-    method: 'wrist-midpoint',
+    time: f.time,
+    left,
+    right,
+    x: (left.x + right.x) / 2,
+    y: (left.y + right.y) / 2,
+  };
+}
+export function estimateWristBar(a: VisionAnalysis): WristBar {
+  const points = a.frames
+    .map((f) => handBarPoint(f, a.width, a.height))
+    .filter((p): p is WristBarPoint => p !== null);
+  return {
+    method: 'hand-midpoint',
     width: a.width,
     height: a.height,
-    coverage: a.frames.length ? rawPoints.length / a.frames.length : 0,
-    points: rawPoints,
+    coverage: a.frames.length ? points.length / a.frames.length : 0,
+    points,
   };
 }
 export function wristMetrics(t: WristBar) {

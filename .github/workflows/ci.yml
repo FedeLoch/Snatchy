@@ -20,6 +20,12 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - run: npm run benchmark:pose -- pose-benchmark.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pose-benchmark
+          path: pose-benchmark.json
+          retention-days: 14
       - run: npm run check
       - run: npm audit --audit-level=high
       - uses: actions/upload-artifact@v4

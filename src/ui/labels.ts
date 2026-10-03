@@ -80,7 +80,15 @@ export const checkName = (name: string): string =>
 
 /** A saved record may predate its detail string; prefer the catalog. */
 export const checkDetail = (name: string, fallback: string): string =>
-  byName(CHECK_DETAIL_LABELS, name, fallback);
+  fallback.startsWith('Median elbow flexion')
+    ? t('checkDetail.frontRackSustained')
+    : fallback.startsWith('Median visible elbow angle')
+      ? t('checkDetail.receivingSustained')
+      : fallback.startsWith('Median knee angle')
+        ? t('checkDetail.recoverySustained')
+        : fallback.startsWith('Lowest three-sample median elbow angle')
+          ? t('checkDetail.armsThroughPullSustained')
+          : byName(CHECK_DETAIL_LABELS, name, fallback);
 
 export const sideName = (side: string): string =>
   byName(SIDE_LABELS, side, side);

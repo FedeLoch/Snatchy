@@ -1,3 +1,4 @@
+import { sustainedMinimum } from './pose-quality';
 import { exerciseById } from './exercises';
 import { anglesAt, SIDES, visible, type VisionAnalysis } from './vision';
 import { source } from '../i18n';
@@ -487,16 +488,20 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
       .slice(pull, pullEnd + 1)
       .filter((v) => v.elbow !== null);
     if (pullFrames.length >= 3) {
-      const armFrame = pullFrames.reduce((min, v) =>
-        v.elbow! < min.elbow! ? v : min,
+      const armFrame = sustainedMinimum(
+        pullFrames,
+        (v) => v.elbow,
+        a.sampleRate,
       );
-      addCheck(
-        CHECK_NAMES[0],
-        armFrame.elbow!,
-        160,
-        armFrame.time,
-        'Minimum visible elbow angle over the recognized pull interval. Unrecognized portions of the pull are excluded.',
-      );
+      if (armFrame) {
+        addCheck(
+          CHECK_NAMES[0],
+          armFrame.elbow!,
+          160,
+          armFrame.time,
+          'Lowest three-sample median elbow angle over the recognized pull interval. Isolated bends and unrecognized portions are excluded.',
+        );
+      }
     }
   }
   if (
@@ -518,34 +523,51 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
       'Knee angle at the measured end of the recognized pull.',
     );
   }
-  if (catchIndex >= 0)
+  const catchFrame =
+    catchIndex < 0
+      ? null
+      : sustainedMinimum(
+          data.slice(catchIndex, catchIndex + 3),
+          (v) => v.elbow,
+          a.sampleRate,
+        );
+  if (catchFrame)
     addCheck(
       clean ? CHECK_NAMES[3] : CHECK_NAMES[4],
-      clean ? 180 - data[catchIndex].elbow! : data[catchIndex].elbow!,
+      clean ? 180 - catchFrame.elbow! : catchFrame.elbow!,
       clean ? 60 : 165,
-      data[catchIndex].time,
+      catchFrame.time,
       clean
-        ? 'Elbow flexion (180° minus elbow angle) at the estimated front rack. This checks a receiving-position cue, not shoulder contact or competition validity.'
-        : 'Visible elbow angle at the estimated catch. Inspect the overlay before interpreting a shortfall as a fault.',
+        ? 'Median elbow flexion (180° minus elbow angle) over three receiving samples. This checks a receiving-position cue, not shoulder contact or competition validity.'
+        : 'Median visible elbow angle over three receiving samples. Inspect the overlay before interpreting a shortfall as a fault.',
     );
-  const finish =
+  const finishIndex =
     recovery < 0
-      ? undefined
-      : data
-          .slice(recovery)
-          .find(
-            (v, index) =>
-              continuous(recovery, recovery + index) &&
-              sustained(recovery + index, overhead) &&
-              v.knee! >= 160,
-          );
+      ? -1
+      : data.findIndex(
+          (_, i) =>
+            i >= recovery &&
+            continuous(recovery, i) &&
+            sustained(
+              i,
+              (x) => overhead(x) && x.knee !== null && x.knee >= 160,
+            ),
+        );
+  const finish =
+    finishIndex < 0
+      ? null
+      : sustainedMinimum(
+          data.slice(finishIndex, finishIndex + 3),
+          (v) => v.knee,
+          a.sampleRate,
+        );
   if (finish)
     addCheck(
       CHECK_NAMES[5],
       finish.knee!,
       165,
       finish.time,
-      'Knee angle in the recognized receiving-position recovery. This does not establish a competition-valid lift.',
+      'Median knee angle over three standing-recovery samples. This does not establish a competition-valid lift.',
     );
   result.score = result.checks.length
     ? Math.round(

@@ -1,3 +1,4 @@
+import { reliablePoseFrames, reliableSide } from './pose-quality';
 import { bodyMeasurements, type BodyMeasurements } from './body-measurements';
 import {
   estimateWristBar,
@@ -18,6 +19,8 @@ export interface PoseSample {
   time: number;
   people: number;
   landmarks: Landmark[];
+  /** Unfiltered source points, session-only; never stored in history. */
+  rawLandmarks?: Landmark[];
   /** Normalized pixel-detected shaft candidate; absent when ambiguous. */
   barShaft?: WristBarPoint;
 }
@@ -176,20 +179,8 @@ export function analyzePoseSamples(
   sampleRate = 15,
   exerciseId = 'snatch',
 ): VisionAnalysis {
-  const sideScores = (side: 'left' | 'right') =>
-    frames.reduce(
-      (total, f) =>
-        total +
-        (f.people === 1
-          ? SIDES[side].reduce(
-              (sum, i) =>
-                sum + (visible(f.landmarks[i]) ? f.landmarks[i].visibility : 0),
-              0,
-            )
-          : 0),
-      0,
-    );
-  const side = sideScores('left') >= sideScores('right') ? 'left' : 'right';
+  frames = reliablePoseFrames(frames, width, height, sampleRate);
+  const side = reliableSide(frames, width, height);
   const values = frames.map((frame) => ({
     frame,
     angles: anglesAt(frame, side, width, height),

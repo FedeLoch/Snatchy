@@ -6,9 +6,20 @@ import { resolve } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import { liftFrames } from '../fixtures/lift-pose';
 test.setTimeout(120000);
+// A sustained bend remains a scoring fault after isolated-frame rejection.
+function scoredLiftFrames() {
+  const frames = liftFrames();
+  for (const i of [5, 6, 7])
+    for (const id of [13, 14])
+      frames[i].landmarks[id] = {
+        ...frames[i].landmarks[id],
+        x: frames[i].landmarks[id].x + 0.1,
+      };
+  return frames;
+}
 async function poseFixture(
   page: import('@playwright/test').Page,
-  frames = liftFrames(),
+  frames = scoredLiftFrames(),
   file = 'plate.mp4',
   exercise = 'auto',
 ) {
@@ -160,7 +171,7 @@ test('isolates multiple repetitions, switches measured results, and preserves pe
     landmarks: [] as ReturnType<typeof liftFrames>[number]['landmarks'],
   }));
   for (const offset of [0, 33])
-    liftFrames().forEach((f, i) => {
+    scoredLiftFrames().forEach((f, i) => {
       frames[offset + i] = { ...f, time: (offset + i) / 15 };
     });
   await poseFixture(page, frames, 'lift.mp4');
@@ -298,7 +309,8 @@ test('ads gate coaching and reference vectors while preserving measurements', as
   const check = page
     .locator('.measured-issue')
     .filter({ hasText: 'Arms through the pull' });
-  await check.locator('summary').first().click();
+  if (!(await check.evaluate((el) => (el as HTMLDetailsElement).open)))
+    await check.locator('summary').first().click();
   await expect(check.locator('.coaching-preview')).toContainText('Snatch pull');
   const typography = await check.evaluate((el) => {
     const base = getComputedStyle(el.querySelector('.issue-coaching-tip')!);
@@ -370,4 +382,31 @@ test('pixel shaft measurements drive overlay and saved metrics without filling g
   await expect(bar.locator('.bar-metrics')).toHaveText(metrics, {
     useInnerText: true,
   });
+});
+
+test('raw overlay exposes rejected points without changing saved measurements', async ({
+  page,
+}) => {
+  const frames = liftFrames();
+  for (const id of [13, 14])
+    frames[1].landmarks[id] = {
+      ...frames[1].landmarks[id],
+      x: frames[1].landmarks[id].x - 0.28,
+    };
+  await poseFixture(page, frames);
+  await page.locator('#cv-video').evaluate((el) => {
+    (el as HTMLVideoElement).currentTime = 1 / 15;
+  });
+  const points = page.locator('.tracked-pose circle');
+  await expect(points).toHaveCount(31);
+  const score = await page.locator('[data-measured-score]').textContent();
+  await page
+    .getByRole('button', { name: 'Show raw landmarks', exact: true })
+    .click();
+  await expect(points).toHaveCount(33);
+  await expect(page.locator('[data-measured-score]')).toHaveText(score!);
+  await page
+    .getByRole('button', { name: 'Show filtered landmarks', exact: true })
+    .click();
+  await expect(points).toHaveCount(31);
 });

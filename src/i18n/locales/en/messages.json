@@ -193,7 +193,11 @@
     "kneeExtension": "Knee angle at the measured end of the recognized pull.",
     "frontRackFlexion": "Elbow flexion (180° minus elbow angle) at the estimated front rack. This checks a receiving-position cue, not shoulder contact or competition validity.",
     "receivingArmExtension": "Visible elbow angle at the estimated catch. Inspect the overlay before interpreting a shortfall as a fault.",
-    "standingRecovery": "Knee angle in the recognized receiving-position recovery. This does not establish a competition-valid lift."
+    "standingRecovery": "Knee angle in the recognized receiving-position recovery. This does not establish a competition-valid lift.",
+    "armsThroughPullSustained": "Lowest three-sample median elbow angle over the recognized pull interval. Isolated bends and unrecognized portions are excluded.",
+    "frontRackSustained": "Median elbow flexion over three receiving samples. This is a projected rack cue, not confirmation of shoulder contact.",
+    "receivingSustained": "Median elbow angle over three receiving samples. Review the overlay before interpreting a shortfall as a fault.",
+    "recoverySustained": "Median knee angle over three standing-recovery samples. This does not establish a competition-valid lift."
   },
   "drills": {
     "snatch-pull": "Snatch Pull",
@@ -254,7 +258,9 @@
     "summaryOne": "{count} measured check needs review. Start with {check} ({value}{unit}).",
     "summaryMany": "{count} measured checks need review. Start with {check} ({value}{unit}).",
     "summaryAll": "All {count} measured angle checks met their thresholds. Review the phases and bar path for the full picture.",
-    "coverageAria": "Analysis evidence and coverage"
+    "coverageAria": "Analysis evidence and coverage",
+    "nearThreshold": "Near threshold",
+    "nearThresholdNote": "This measurement is within 5° of the rule threshold. Small tracking differences can change the result; inspect the video before treating it as a technique fault."
   },
   "barPanel": {
     "title": "Follow the bar",
@@ -339,7 +345,10 @@
     "progressAria": "Video analysis progress",
     "loadingModel": "Loading the local pose model",
     "cancel": "Cancel analysis",
-    "firstRun": "First runs may take longer. Keep this tab open."
+    "firstRun": "First runs may take longer. Keep this tab open.",
+    "rawOverlay": "Show raw landmarks",
+    "filteredOverlay": "Show filtered landmarks",
+    "filterNote": "The raw overlay is for comparison only. Measurements exclude isolated tracking glitches; reference guides appear with the filtered overlay."
   },
   "repetitions": {
     "aria": "Detected repetitions",

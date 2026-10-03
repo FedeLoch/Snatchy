@@ -86,14 +86,13 @@ it('scores the pull without needing a catch, and the catch without needing setup
 });
 it('does not penalize unknown phases but still deducts for observed failed checks', () => {
   const frames = liftFrames().slice(0, 20);
-  frames[5].landmarks[13] = {
-    ...frames[5].landmarks[13],
-    x: frames[5].landmarks[13].x + 0.1,
-  };
-  frames[5].landmarks[14] = {
-    ...frames[5].landmarks[14],
-    x: frames[5].landmarks[14].x + 0.1,
-  };
+  for (const i of [5, 6, 7])
+    for (const joint of [13, 14])
+      frames[i].landmarks[joint] = {
+        ...frames[i].landmarks[joint],
+        x: frames[i].landmarks[joint].x + 0.1,
+      };
+
   const lift = analyzePoseSamples(frames, 100, 100, 2).lift!;
   expect(lift.checks).toHaveLength(4);
   expect(lift.score).toBe(75);

@@ -94,7 +94,11 @@
     "hipExtension": "Ángulo de cadera al final medido del tirón reconocido.",
     "kneeExtension": "Ángulo de rodilla al final medido del tirón reconocido.",
     "receivingArmExtension": "Ángulo visible del codo en la recepción estimada. Revisa la superposición antes de interpretar una carencia como un fallo.",
-    "standingRecovery": "Ángulo de rodilla en la recuperación desde la posición de recepción reconocida. Esto no establece una levantada válida en competición."
+    "standingRecovery": "Ángulo de rodilla en la recuperación desde la posición de recepción reconocida. Esto no establece una levantada válida en competición.",
+    "armsThroughPullSustained": "Menor mediana de tres muestras del ángulo del codo durante la tracción reconocida. Se excluyen flexiones aisladas y partes no reconocidas.",
+    "frontRackSustained": "Mediana de flexión del codo en tres muestras de recepción. Es una referencia proyectada, no confirma contacto con los hombros.",
+    "receivingSustained": "Mediana del ángulo del codo en tres muestras de recepción. Revisa la superposición antes de interpretar una diferencia como fallo.",
+    "recoverySustained": "Mediana del ángulo de rodilla en tres muestras de recuperación de pie. No establece la validez competitiva del levantamiento."
   },
   "checks": {
     "armsThroughPull": "Brazos a lo largo del tirón",
@@ -146,7 +150,9 @@
     "viewFrame": "Ver fotograma · {time} s",
     "whatMeasured": "Qué se midió",
     "whatToReview": "Qué revisar",
-    "coverageAria": "Evidencia y cobertura del análisis"
+    "coverageAria": "Evidencia y cobertura del análisis",
+    "nearThreshold": "Cerca del umbral",
+    "nearThresholdNote": "Esta medida está a menos de 5° del umbral. Pequeñas diferencias de seguimiento pueden cambiar el resultado; revisa el vídeo antes de considerarlo un fallo técnico."
   },
   "demoMeasurements": {
     "arms": "Ángulo de codo de 153° · 81 % de extensión de cadera",
@@ -572,7 +578,10 @@
     "trackingQuality": "Calidad del seguimiento",
     "twoDAngles": "Ángulos en 2D",
     "usableFrames": "Fotogramas utilizables",
-    "yourAnalyzedLiftVideo": "Tu vídeo de levantamiento analizado"
+    "yourAnalyzedLiftVideo": "Tu vídeo de levantamiento analizado",
+    "rawOverlay": "Mostrar puntos originales",
+    "filteredOverlay": "Mostrar puntos filtrados",
+    "filterNote": "La vista original sirve para comparar. Las mediciones excluyen errores aislados; las guías aparecen con la vista filtrada."
   },
   "coaching": {
     "title": "Asesoramiento",

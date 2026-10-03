@@ -10,14 +10,13 @@ import {
 it('changes the score and feedback when the recorded joint trajectory changes', () => {
   const clear = analyzePoseSamples(liftFrames(), 100, 100, 2);
   const bent = liftFrames();
-  bent[5].landmarks[13] = {
-    ...bent[5].landmarks[13],
-    x: bent[5].landmarks[13].x + 0.1,
-  };
-  bent[5].landmarks[14] = {
-    ...bent[5].landmarks[14],
-    x: bent[5].landmarks[14].x + 0.1,
-  };
+  for (const i of [5, 6, 7])
+    for (const joint of [13, 14])
+      bent[i].landmarks[joint] = {
+        ...bent[i].landmarks[joint],
+        x: bent[i].landmarks[joint].x + 0.1,
+      };
+
   const review = analyzePoseSamples(bent, 100, 100, 2);
   expect(clear.lift?.score).toBe(100);
   expect(review.lift?.score).toBe(80);

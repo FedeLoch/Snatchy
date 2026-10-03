@@ -21,7 +21,8 @@
     "prepare:vision": "node scripts/prepare-vision.mjs",
     "postinstall": "npm run prepare:vision",
     "predev": "npm run prepare:vision",
-    "prebuild": "npm run prepare:vision"
+    "prebuild": "npm run prepare:vision",
+    "benchmark:pose": "node scripts/benchmark-pose.mjs"
   },
   "engines": {
     "node": ">=22.12"

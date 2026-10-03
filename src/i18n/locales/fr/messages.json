@@ -94,7 +94,11 @@
     "hipExtension": "Angle de hanche à la fin mesurée de la traction reconnue.",
     "kneeExtension": "Angle de genou à la fin mesurée de la traction reconnue.",
     "receivingArmExtension": "Angle de coude visible à la réception estimée. Examinez la superposition avant d'interpréter un écart comme une faute.",
-    "standingRecovery": "Angle de genou pendant la récupération en position de réception reconnue. Cela n'établit pas un mouvement valide en compétition."
+    "standingRecovery": "Angle de genou pendant la récupération en position de réception reconnue. Cela n'établit pas un mouvement valide en compétition.",
+    "armsThroughPullSustained": "Plus faible médiane de trois échantillons de l’angle du coude pendant la traction reconnue. Les flexions isolées et les portions non reconnues sont exclues.",
+    "frontRackSustained": "Flexion médiane du coude sur trois échantillons de réception. Cet indice projeté ne confirme pas le contact avec les épaules.",
+    "receivingSustained": "Angle médian du coude sur trois échantillons de réception. Vérifiez la superposition avant de conclure à une faute.",
+    "recoverySustained": "Angle médian du genou sur trois échantillons de récupération debout. Cela ne confirme pas la validité du mouvement en compétition."
   },
   "checks": {
     "armsThroughPull": "Bras actifs pendant la traction",
@@ -146,7 +150,9 @@
     "viewFrame": "Voir l'image · {time} s",
     "whatMeasured": "Ce qui a été mesuré",
     "whatToReview": "Ce qu'il faut revoir",
-    "coverageAria": "Données et couverture de l’analyse"
+    "coverageAria": "Données et couverture de l’analyse",
+    "nearThreshold": "Proche du seuil",
+    "nearThresholdNote": "Cette mesure se situe à moins de 5° du seuil. De petites différences de suivi peuvent modifier le résultat ; vérifiez la vidéo avant de conclure à une faute technique."
   },
   "demoMeasurements": {
     "arms": "Angle du coude 153° · 81 % d'extension de hanche",
@@ -572,7 +578,10 @@
     "trackingQuality": "Qualité du suivi",
     "twoDAngles": "Angles 2D",
     "usableFrames": "Images exploitables",
-    "yourAnalyzedLiftVideo": "Votre vidéo de mouvement analysée"
+    "yourAnalyzedLiftVideo": "Votre vidéo de mouvement analysée",
+    "rawOverlay": "Afficher les points bruts",
+    "filteredOverlay": "Afficher les points filtrés",
+    "filterNote": "La vue brute sert à comparer. Les mesures excluent les anomalies isolées ; les guides apparaissent avec la vue filtrée."
   },
   "coaching": {
     "title": "Conseils techniques",

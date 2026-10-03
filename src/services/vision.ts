@@ -13,6 +13,7 @@ interface Reply {
   error?: string;
   people: number;
   landmarks: Landmark[];
+  barShaft?: PoseSample['barShaft'];
 }
 export function mediaEvent(
   video: HTMLVideoElement,
@@ -179,6 +180,7 @@ export async function analyzeVideo(
         time: video.currentTime,
         people: reply.people,
         landmarks: reply.landmarks,
+        barShaft: reply.barShaft,
       });
       onProgress(
         ((index + 1) / count) * 0.8,

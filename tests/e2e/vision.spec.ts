@@ -58,7 +58,7 @@ test('real local model detects a person, overlays actual frames, and saves measu
       .evaluate((v) => (v as HTMLVideoElement).playbackRate),
   ).toBe(0.5);
   await page.getByRole('button', { name: 'Tracked pose on' }).click();
-  await expect(page.locator('#cv-overlay g circle')).toHaveCount(0);
+  await expect(page.locator('#cv-overlay .tracked-pose circle')).toHaveCount(0);
   await page.getByRole('button', { name: 'Tracked pose off' }).click();
   await expect
     .poll(() => page.locator('#cv-overlay circle').count())

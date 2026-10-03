@@ -120,7 +120,9 @@ export function techniqueFeedback(
 export function barPanel(a: VisionAnalysis): string {
   const manualTrack = a.bar;
   const wristTrack =
-    a.wristBar ?? (a.frames.length ? estimateWristBar(a) : undefined);
+    a.shaftBar ??
+    a.wristBar ??
+    (a.frames.length ? estimateWristBar(a) : undefined);
   const isManual =
     manualTrack?.reviewed && (manualTrack.points.length ?? 0) >= 2;
   const track = isManual ? manualTrack : wristTrack;
@@ -182,9 +184,11 @@ export function barPanel(a: VisionAnalysis): string {
   const methodLabel = isManual
     ? t('barPanel.plateTrack')
     : t(
-        wristTrack?.method === 'wrist-midpoint'
-          ? 'barPanel.legacyWristEstimate'
-          : 'barPanel.wristLineEstimate',
+        wristTrack?.method === 'bar-shaft'
+          ? 'barPanel.shaftEstimate'
+          : wristTrack?.method === 'wrist-midpoint'
+            ? 'barPanel.legacyWristEstimate'
+            : 'barPanel.wristLineEstimate',
       );
 
   if (!isExerciseResolved) {
@@ -193,7 +197,7 @@ export function barPanel(a: VisionAnalysis): string {
 
   return `<section class="bar-section analysis-card" aria-label="${e(t('barPanel.pathAria'))}"><div class="section-title"><h2>${e(t('barPanel.title'))}</h2><span class="micro">${e(movementName(model.exerciseId, model.exerciseName).toUpperCase())} · ${e(methodLabel.toUpperCase())}</span></div><div class="bar-content measured-bar-content">${
     hasPath
-      ? `<svg class="measured-bar-path" viewBox="115 15 150 355" role="img" aria-label="${e(t('barPanel.wristPathAria', { movement: e(model.exerciseName) }))}"><path class="figure-silhouette" d="${model.silhouette.legs}" fill="none" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/><path class="figure-silhouette" d="${model.silhouette.arms}" fill="none" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><circle class="figure-silhouette-fill" cx="${model.silhouette.head[0]}" cy="${model.silhouette.head[1]}" r="13"/><path class="figure-axis" d="M194 30V354" stroke-dasharray="3 5" stroke-width="1.2"/><path class="figure-reference figure-reference-fill" d="${model.corridorPath}" fill-opacity="0.12" stroke-opacity="0.3" stroke-width="1" stroke-dasharray="2 3"/><path class="figure-reference" d="${model.refTracePath}" fill="none" stroke-width="2.2" stroke-dasharray="4 4" stroke-linecap="round"/><circle class="figure-reference-fill" cx="${model.refPoints[model.refPoints.length - 1][0]}" cy="${model.refPoints[model.refPoints.length - 1][1]}" r="3.5"/><path class="figure-accent" d="${measuredSvgPath}" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${startDot}${endDot}</svg><div class="bar-path-legend"><span class="legend-badge"><span class="legend-indicator legend-corridor-indicator"></span> ${e(t('barPanel.expectedTrace'))}</span><span class="legend-badge"><span class="legend-indicator legend-user-indicator"></span> ${e(isManual ? t('barPanel.yourBarPath') : t('barPanel.yourWristPath'))}</span></div>`
+      ? `<svg class="measured-bar-path" viewBox="115 15 150 355" role="img" aria-label="${e(t(isManual || wristTrack?.method === 'bar-shaft' ? 'barPanel.pathAria' : 'barPanel.wristPathAria', { movement: model.exerciseName }))}"><path class="figure-silhouette" d="${model.silhouette.legs}" fill="none" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/><path class="figure-silhouette" d="${model.silhouette.arms}" fill="none" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><circle class="figure-silhouette-fill" cx="${model.silhouette.head[0]}" cy="${model.silhouette.head[1]}" r="13"/><path class="figure-axis" d="M194 30V354" stroke-dasharray="3 5" stroke-width="1.2"/><path class="figure-reference figure-reference-fill" d="${model.corridorPath}" fill-opacity="0.12" stroke-opacity="0.3" stroke-width="1" stroke-dasharray="2 3"/><path class="figure-reference" d="${model.refTracePath}" fill="none" stroke-width="2.2" stroke-dasharray="4 4" stroke-linecap="round"/><circle class="figure-reference-fill" cx="${model.refPoints[model.refPoints.length - 1][0]}" cy="${model.refPoints[model.refPoints.length - 1][1]}" r="3.5"/><path class="figure-accent" d="${measuredSvgPath}" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${startDot}${endDot}</svg><div class="bar-path-legend"><span class="legend-badge"><span class="legend-indicator legend-corridor-indicator"></span> ${e(t('barPanel.expectedTrace'))}</span><span class="legend-badge"><span class="legend-indicator legend-user-indicator"></span> ${e(isManual || wristTrack?.method === 'bar-shaft' ? t('barPanel.yourBarPath') : t('barPanel.yourWristPath'))}</span></div>`
       : `<div class="bar-path-empty">${e(t('barPanel.bothWristsRequired'))}</div>`
   }<dl class="bar-metrics">${
     isManual && manualMetrics
@@ -201,5 +205,5 @@ export function barPanel(a: VisionAnalysis): string {
       : wristMetricsResult
         ? `<div><dt>${e(t('barPanel.horizontalDeviation'))}</dt><dd><span class="bar-value">${e(formatNumber(wristMetricsResult.horizontal, 1))}</span><small>${e(t('barPanel.frameWidth'))}</small></dd></div><div><dt>${e(t('barPanel.verticalRise'))}</dt><dd><span class="bar-value">${e(formatNumber(wristMetricsResult.rise, 1))}</span><small>${e(t('barPanel.frameHeight'))}</small></dd></div><div><dt>${e(t('barPanel.peakVelocity'))}</dt><dd><span class="bar-value">${wristMetricsResult.velocity !== null && wristMetricsResult.velocity !== undefined ? e(formatNumber(wristMetricsResult.velocity, 1)) : '—'}</span><small>${e(t('barPanel.frameHeightPerSecond'))}</small></dd></div>`
         : `<div><dt>${e(t('barPanel.horizontalDeviation'))}</dt><dd>—<small>${e(t('barPanel.frameWidth'))}</small></dd></div><div><dt>${e(t('barPanel.verticalRise'))}</dt><dd>—<small>${e(t('barPanel.frameHeight'))}</small></dd></div><div><dt>${e(t('barPanel.peakVelocity'))}</dt><dd>—<small>${e(t('barPanel.frameHeightPerSecond'))}</small></dd></div>`
-  }</dl></section>`;
+  }</dl>${!isManual ? `<p class="footnote bar-detection-note">${e(wristTrack?.method === 'bar-shaft' ? t('barPanel.shaftNote', { coverage: formatNumber(wristTrack.coverage * 100, 0) }) : wristTrack?.method === 'wrist-midpoint' ? t('barPanel.legacyWristEstimate') : t('barPanel.handFallback'))}</p>` : ''}</section>`;
 }

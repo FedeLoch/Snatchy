@@ -222,11 +222,13 @@ export function bindVisionPlayback(
       })
       .join('');
     overlay.innerHTML = enabled
-      ? `<g class="figure-accent figure-accent-fill" stroke-width="${thickness}">${segments}${joints}</g>`
+      ? `<g class="tracked-pose figure-accent figure-accent-fill" stroke-width="${thickness}">${segments}${joints}</g>`
       : '';
-    const hand = handBarPoint(f, a.width, a.height);
+    const hand = a.shaftBar
+      ? a.shaftBar.points.find((p) => Math.abs(p.time - f.time) < 0.001)
+      : handBarPoint(f, a.width, a.height);
     if (hand)
-      overlay.innerHTML += `<g class="hand-bar-estimate"><line class="figure-reference" x1="${hand.left.x}" y1="${hand.left.y}" x2="${hand.right.x}" y2="${hand.right.y}" stroke-width="${thickness * 2}"/><circle class="figure-reference-fill" cx="${hand.x}" cy="${hand.y}" r="${thickness * 3}"/></g>`;
+      overlay.innerHTML += `<g class="${a.shaftBar ? 'shaft-bar-estimate' : 'hand-bar-estimate'}"><line class="figure-reference" x1="${hand.left.x}" y1="${hand.left.y}" x2="${hand.right.x}" y2="${hand.right.y}" stroke-width="${thickness * 2}"/><circle class="figure-reference-fill" cx="${hand.x}" cy="${hand.y}" r="${thickness * 3}"/></g>`;
     const guide = reference ? referenceVector(a, f, reference) : null;
     if (guide)
       overlay.innerHTML += `<g class="coaching-vector" stroke="#60a5fa" stroke-width="${thickness * 2}" fill="none"><path stroke-dasharray="6 4" d="M${guide.start.x},${guide.start.y}L${guide.end.x},${guide.end.y}"/><circle cx="${guide.end.x}" cy="${guide.end.y}" r="${thickness * 3}"/></g>`;

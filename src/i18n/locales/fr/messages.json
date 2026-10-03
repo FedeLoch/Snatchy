@@ -33,7 +33,10 @@
     "yourWristPath": "Votre trajectoire estimée des mains",
     "exerciseNotResolved": "Exercice non résolu",
     "selectExercise": "Sélectionnez un exercice dans le menu déroulant ci-dessus pour voir la trajectoire de la barre pour ce mouvement.",
-    "legacyWristEstimate": "Ancienne estimation des poignets · réimportez la vidéo"
+    "legacyWristEstimate": "Ancienne estimation des poignets · réimportez la vidéo",
+    "shaftEstimate": "Estimation visuelle de la tige",
+    "shaftNote": "Une ligne ressemblant à la tige a été trouvée près de la prise dans {coverage}% des images. Les mesures utilisent uniquement ces détections ; les lacunes ne sont pas remplies par les mains. Cette détection expérimentale ne confirme pas l’identité de la barre.",
+    "handFallback": "Tige non détectée de façon fiable. Affichage de l’estimation du centre des mains."
   },
   "barTrack": {
     "canvasAria": "Image vidéo pour sélectionner la plaque. Cliquez sur le centre puis sur le bord, ou utilisez les champs de position ci-dessous.",

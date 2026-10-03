@@ -106,17 +106,23 @@ export function isVisionRecord(value: unknown): value is VisionRecord {
       ))
   )
     return false;
-  if (a.wristBar !== undefined) {
-    const b = a.wristBar;
+  for (const field of ['wristBar', 'shaftBar'] as const) {
+    if (a[field] === undefined) continue;
+    const b = a[field];
     if (
       !b ||
-      !['wrist-midpoint', 'hand-midpoint'].includes(b.method) ||
+      !(
+        field === 'shaftBar'
+          ? ['bar-shaft']
+          : ['wrist-midpoint', 'hand-midpoint']
+      ).includes(b.method) ||
       ![b.width, b.height].every((v) => Number.isFinite(v) && v > 0) ||
       !Number.isFinite(b.coverage) ||
       b.coverage < 0 ||
       b.coverage > 1 ||
       !Array.isArray(b.points) ||
       b.points.length > 1801 ||
+      (field === 'shaftBar' && (b.points.length < 6 || b.coverage < 0.3)) ||
       !b.points.every(
         (p, i) =>
           p &&

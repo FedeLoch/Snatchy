@@ -32,7 +32,7 @@ export interface WristBarPoint {
   y: number;
 }
 export interface WristBar {
-  method: 'wrist-midpoint' | 'hand-midpoint';
+  method: 'wrist-midpoint' | 'hand-midpoint' | 'bar-shaft';
   width: number;
   height: number;
   coverage: number;

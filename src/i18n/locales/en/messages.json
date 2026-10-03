@@ -274,7 +274,10 @@
     "bothWristsRequired": "Both hands must be visible. The palm-center line estimates the grip; it does not detect the bar itself.",
     "exerciseNotResolved": "Exercise not resolved",
     "selectExercise": "Select an exercise from the dropdown above to view the bar path for that movement.",
-    "legacyWristEstimate": "Saved wrist estimate · re-import for hand tracking"
+    "legacyWristEstimate": "Saved wrist estimate · re-import for hand tracking",
+    "shaftEstimate": "Pixel shaft estimate",
+    "shaftNote": "A contrasting shaft-like line was found near the grip in {coverage}% of frames. Measurements use only those detections; gaps are not filled with hand estimates. This is experimental line detection, not a verified barbell identification.",
+    "handFallback": "Shaft not reliably resolved. Showing the hand-center estimate instead."
   },
   "vision": {
     "openAnalysis": "Open measured pose analysis",

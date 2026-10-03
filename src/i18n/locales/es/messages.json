@@ -33,7 +33,10 @@
     "yourWristPath": "Tu trayectoria estimada de las manos",
     "exerciseNotResolved": "Ejercicio no resuelto",
     "selectExercise": "Selecciona un ejercicio del desplegable de arriba para ver la trayectoria de la barra para ese movimiento.",
-    "legacyWristEstimate": "Estimación de muñecas guardada · importa de nuevo"
+    "legacyWristEstimate": "Estimación de muñecas guardada · importa de nuevo",
+    "shaftEstimate": "Estimación visual del eje",
+    "shaftNote": "Se encontró una línea similar al eje cerca del agarre en el {coverage}% de los fotogramas. Las mediciones usan solo esas detecciones; no se rellenan huecos con las manos. Es una detección experimental, no una identificación verificada de la barra.",
+    "handFallback": "Eje no resuelto con fiabilidad. Se muestra la estimación del centro de las manos."
   },
   "barTrack": {
     "canvasAria": "Fotograma de vídeo para seleccionar la placa. Haz clic en el centro y luego en el borde, o usa los campos de posición de abajo.",

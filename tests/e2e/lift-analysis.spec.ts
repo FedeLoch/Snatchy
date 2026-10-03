@@ -15,7 +15,7 @@ async function poseFixture(
   await page.route('**/assets/pose.worker-*.js', (route) =>
     route.fulfill({
       contentType: 'application/javascript',
-      body: `const frames=${JSON.stringify(frames)};self.onmessage=event=>{const m=event.data;if(m.type==='init'){self.postMessage({id:m.id,people:0,landmarks:[]});return;}const f=frames[Math.min(frames.length-1,Math.round(m.time*15))];m.bitmap.close();self.postMessage({id:m.id,people:1,landmarks:f.landmarks});};`,
+      body: `const frames=${JSON.stringify(frames)};self.onmessage=event=>{const m=event.data;if(m.type==='init'){self.postMessage({id:m.id,people:0,landmarks:[]});return;}const f=frames[Math.min(frames.length-1,Math.round(m.time*15))];m.bitmap.close();self.postMessage({id:m.id,people:1,landmarks:f.landmarks,barShaft:f.barShaft});};`,
     }),
   );
   await page.goto('/#capture');
@@ -336,4 +336,38 @@ test('ads gate coaching and reference vectors while preserving measurements', as
       })
       .first(),
   ).toBeDisabled();
+});
+
+test('pixel shaft measurements drive overlay and saved metrics without filling gaps with hands', async ({
+  page,
+}) => {
+  const frames = liftFrames().map((f, i) => ({
+    ...f,
+    barShaft: [10, 11].includes(i)
+      ? undefined
+      : {
+          time: f.time,
+          left: { x: 0.2, y: 0.72 - i * 0.01 },
+          right: { x: 0.8, y: 0.72 - i * 0.01 },
+          x: 0.5,
+          y: 0.72 - i * 0.01,
+        },
+  }));
+  await poseFixture(page, frames);
+  const bar = page.getByRole('region', { name: 'Estimated bar path' });
+  await expect(bar).toContainText('PIXEL SHAFT ESTIMATE');
+  await expect(bar).toContainText('Measurements use only those detections');
+  await expect(page.locator('.shaft-bar-estimate')).toHaveCount(1);
+  await expect(page.locator('.hand-bar-estimate')).toHaveCount(0);
+  await page.locator('#cv-video').evaluate((el) => {
+    (el as HTMLVideoElement).currentTime = 0.7;
+  });
+  await expect(page.locator('.shaft-bar-estimate')).toHaveCount(0);
+  await expect(page.locator('.hand-bar-estimate')).toHaveCount(0);
+  const metrics = await bar.locator('.bar-metrics').innerText();
+  await page.reload();
+  await expect(bar).toContainText('PIXEL SHAFT ESTIMATE');
+  await expect(bar.locator('.bar-metrics')).toHaveText(metrics, {
+    useInnerText: true,
+  });
 });

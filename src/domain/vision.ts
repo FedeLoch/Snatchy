@@ -1,5 +1,9 @@
 import { bodyMeasurements, type BodyMeasurements } from './body-measurements';
-import { estimateWristBar, type WristBar } from './wrist-bar';
+import {
+  estimateWristBar,
+  type WristBar,
+  type WristBarPoint,
+} from './wrist-bar';
 import { detectExercise, type ExerciseSelection } from './exercises';
 import type { AutomaticBar } from './automatic-bar';
 import { estimatePhases, type LiftPhases } from './lift-phases';
@@ -14,6 +18,8 @@ export interface PoseSample {
   time: number;
   people: number;
   landmarks: Landmark[];
+  /** Normalized pixel-detected shaft candidate; absent when ambiguous. */
+  barShaft?: WristBarPoint;
 }
 export interface FrameAngles {
   elbow: number | null;
@@ -63,6 +69,7 @@ export interface VisionAnalysis {
   frames: PoseSample[];
   exercise?: ExerciseSelection;
   wristBar?: WristBar;
+  shaftBar?: WristBar;
   body?: BodyMeasurements;
   lift?: LiftPhases;
   bar?: BarTrack;
@@ -315,6 +322,34 @@ export function analyzePoseSamples(
         }
       : detectExercise(analysis);
   analysis.wristBar = estimateWristBar(analysis);
+  const shaftPoints = frames.flatMap((f) =>
+    f.barShaft
+      ? [
+          {
+            time: f.time,
+            left: {
+              x: f.barShaft.left.x * width,
+              y: f.barShaft.left.y * height,
+            },
+            right: {
+              x: f.barShaft.right.x * width,
+              y: f.barShaft.right.y * height,
+            },
+            x: f.barShaft.x * width,
+            y: f.barShaft.y * height,
+          },
+        ]
+      : [],
+  );
+  if (shaftPoints.length >= 6 && shaftPoints.length / frames.length >= 0.3)
+    analysis.shaftBar = {
+      method: 'bar-shaft',
+      width,
+      height,
+      coverage: shaftPoints.length / frames.length,
+      points: shaftPoints,
+    };
+
   analysis.body = bodyMeasurements(analysis);
   analysis.lift = estimatePhases(analysis);
   return analysis;

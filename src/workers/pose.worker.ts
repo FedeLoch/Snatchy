@@ -1,5 +1,8 @@
+import { detectBarShaft } from '../domain/shaft-detector';
+import { grayscale } from '../domain/bar-track';
 import { FilesetResolver, PoseLandmarker } from '@mediapipe/tasks-vision';
 import type { Landmark } from '../domain/vision';
+let canvas: OffscreenCanvas | null = null;
 let detector: PoseLandmarker | null = null;
 self.onmessage = async (
   event: MessageEvent<{
@@ -42,7 +45,36 @@ self.onmessage = async (
               visibility: p.visibility ?? 0,
             }))
           : [];
-      self.postMessage({ id, people: result.landmarks.length, landmarks });
+      let barShaft = null;
+      // Pixel tracking is optional: unsupported canvas readback must not
+      // discard the pose analysis or its clearly labeled hand fallback.
+      try {
+        canvas ??= new OffscreenCanvas(bitmap.width, bitmap.height);
+        if (canvas.width !== bitmap.width || canvas.height !== bitmap.height) {
+          canvas.width = bitmap.width;
+          canvas.height = bitmap.height;
+        }
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (ctx && result.landmarks.length === 1) {
+          ctx.drawImage(bitmap, 0, 0);
+          barShaft = detectBarShaft(
+            grayscale(
+              ctx.getImageData(0, 0, canvas.width, canvas.height).data,
+              canvas.width,
+              canvas.height,
+            ),
+            { time, people: 1, landmarks },
+          );
+        }
+      } catch {
+        barShaft = null;
+      }
+      self.postMessage({
+        id,
+        people: result.landmarks.length,
+        landmarks,
+        barShaft: barShaft ?? undefined,
+      });
     }
   } catch (error) {
     self.postMessage({

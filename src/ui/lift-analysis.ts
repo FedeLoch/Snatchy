@@ -1,14 +1,9 @@
 import { coachingCard } from './coaching';
-import {
-  estimateWristBar,
-  wristMetrics,
-  smoothWristPath,
-} from '../domain/wrist-bar';
+import { estimateWristBar, wristMetrics } from '../domain/wrist-bar';
 import { exerciseById } from '../domain/exercises';
 import { estimatePhases } from '../domain/lift-phases';
 import { getBarPathModel } from '../domain/bar-models';
 import { barMetrics } from '../domain/bar-track';
-import { mapFrameToSilhouette } from '../utils/coordinate-map';
 import type { VisionAnalysis } from '../domain/vision';
 import type { ExerciseComparison } from '../services/comparison';
 import { escapeHtml as e, icon } from './html';
@@ -42,7 +37,7 @@ export function techniqueScore(
         ? `<div class="score-comparison"><span class="improvement-delta ${comparison.overallDeltaPct > 0 ? 'up' : 'down'}" title="${comparison.overallDeltaPct > 0 ? '+' : ''}${comparison.overallDeltaPct.toFixed(1)}%">${icon(comparison.overallDeltaPct > 0 ? 'arrowUp' : 'arrowDown')}${comparison.overallDeltaPct > 0 ? '+' : ''}${comparison.overallDeltaPct.toFixed(1)}%</span></div>`
         : ''
     : '';
-  return `<aside class="measured-score" aria-label="${e(t('checksPanel.experimentalAria'))}"><div class="score" data-measured-score>${lift.score === null || lift.score === undefined ? '—' : formatNumber(lift.score)}${partial ? '<sup class="partial-score-mark" aria-hidden="true">*</sup>' : ''}<small>/ 100</small></div><span class="micro">${e(t('checksPanel.experimentalTitle'))}</span><p class="footnote">${lift.score === null || lift.score === undefined ? e(t('checksPanel.notEnoughEvidence')) : e(t('checksPanel.metCount', { met: formatNumber(lift.checks.filter((c) => c.passed).length), total: formatNumber(lift.checks.length) }))}</p>${deltaHtml}${
+  return `<aside class="measured-score" aria-label="${e(t('checksPanel.experimentalAria'))}"><div class="score" data-measured-score>${lift.score === null || lift.score === undefined ? '—' : formatNumber(lift.score)}${partial ? '<sup class="partial-score-mark" aria-hidden="true">*</sup>' : ''}<small>/ 100</small></div><span class="micro">${e(t('checksPanel.experimentalTitle'))}</span>${partial ? `<p class="footnote">${e(t('vision.partialAnalysis'))} · ${lift.checks.length}/5</p>` : ''}<p class="footnote">${lift.score === null || lift.score === undefined ? e(t('checksPanel.notEnoughEvidence')) : e(t('checksPanel.metCount', { met: formatNumber(lift.checks.filter((c) => c.passed).length), total: formatNumber(lift.checks.length) }))}</p>${deltaHtml}${
     partial || missing.length > 0 || lift.phases.some((p) => p.estimated)
       ? `<details class="partial-score-note"><summary aria-label="${e(t('checksPanel.coverageAria'))}" title="${e(t('checksPanel.coverageAria'))}"><span class="partial-badge-text" aria-hidden="true">ⓘ</span></summary><div class="partial-score-popover"><p>${e(
           t('checksPanel.partialCounts', {
@@ -118,11 +113,27 @@ export function techniqueFeedback(
 }
 
 export function barPanel(a: VisionAnalysis): string {
-  const manualTrack = a.bar;
-  const wristTrack =
+  const phases = a.lift?.phases ?? [];
+  const pullStart =
+    phases.find((p) => p.name === 'First pull' && p.applicable !== false)
+      ?.start ?? phases.find((p) => p.name === 'Second pull')?.start;
+  const catchTime = phases.find((p) => p.name === 'Catch')?.start;
+  const hasWindow =
+    pullStart != null && catchTime != null && catchTime > pullStart;
+  const inPull = <T extends { time: number }>(points: T[]) =>
+    hasWindow
+      ? points.filter((p) => p.time >= pullStart! && p.time <= catchTime!)
+      : [];
+  const manualTrack = a.bar
+    ? { ...a.bar, points: inPull(a.bar.points) }
+    : undefined;
+  const rawWristTrack =
     a.shaftBar ??
     a.wristBar ??
     (a.frames.length ? estimateWristBar(a) : undefined);
+  const wristTrack = rawWristTrack
+    ? { ...rawWristTrack, points: inPull(rawWristTrack.points) }
+    : undefined;
   const isManual =
     manualTrack?.reviewed && (manualTrack.points.length ?? 0) >= 2;
   const track = isManual ? manualTrack : wristTrack;
@@ -136,13 +147,14 @@ export function barPanel(a: VisionAnalysis): string {
   const isExerciseResolved = !!exercise;
 
   let measuredSvgPath = '';
+  let minDisplayX = 115,
+    maxDisplayX = 265;
   let startDot = '';
   let endDot = '';
 
   if (track && track.points.length >= 2) {
-    const sourceDims = { width: track.width, height: track.height };
     const targetDims = {
-      centerX: 218,
+      centerX: model.refPoints[0][0],
       centerY: model.startY,
       topY: model.topY,
       corridorHalfWidth: 9,
@@ -150,19 +162,19 @@ export function barPanel(a: VisionAnalysis): string {
     const py = track.points.map((p) => p.y);
     const dataRange = { minY: Math.min(...py), maxY: Math.max(...py) };
 
-    const displayPoints = isManual
-      ? track.points
-      : smoothWristPath(track.points, a.sampleRate);
+    const displayPoints = track.points;
     displayPoints.forEach((p, i) => {
-      const { x: svgX, y: svgY } = mapFrameToSilhouette(
-        p.x,
-        p.y,
-        sourceDims,
-        targetDims,
-        dataRange,
-      );
+      // One scale preserves the measured shape; the observed start anchors
+      // horizontal position independently of framing within the camera image.
+      const scale =
+        (targetDims.centerY - targetDims.topY) /
+        Math.max(1, dataRange.maxY - dataRange.minY);
+      const svgX = targetDims.centerX + (p.x - track.points[0].x) * scale;
+      const svgY = targetDims.topY + (p.y - dataRange.minY) * scale;
+      minDisplayX = Math.min(minDisplayX, svgX - 8);
+      maxDisplayX = Math.max(maxDisplayX, svgX + 8);
       const isBreak =
-        i > 0 && p.time - track.points[i - 1].time > 2.1 / a.sampleRate;
+        i > 0 && p.time - track.points[i - 1].time > 1.6 / a.sampleRate;
       measuredSvgPath += `${i === 0 || isBreak ? 'M' : 'L'}${svgX.toFixed(1)},${svgY.toFixed(1)} `;
 
       if (i === 0) {
@@ -197,9 +209,9 @@ export function barPanel(a: VisionAnalysis): string {
 
   return `<section class="bar-section analysis-card" aria-label="${e(t('barPanel.pathAria'))}"><div class="section-title"><h2>${e(t('barPanel.title'))}</h2><span class="micro">${e(movementName(model.exerciseId, model.exerciseName).toUpperCase())} · ${e(methodLabel.toUpperCase())}</span></div><div class="bar-content measured-bar-content">${
     hasPath
-      ? `<svg class="measured-bar-path" viewBox="115 15 150 355" role="img" aria-label="${e(t(isManual || wristTrack?.method === 'bar-shaft' ? 'barPanel.pathAria' : 'barPanel.wristPathAria', { movement: model.exerciseName }))}"><path class="figure-silhouette" d="${model.silhouette.legs}" fill="none" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/><path class="figure-silhouette" d="${model.silhouette.arms}" fill="none" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><circle class="figure-silhouette-fill" cx="${model.silhouette.head[0]}" cy="${model.silhouette.head[1]}" r="13"/><path class="figure-axis" d="M194 30V354" stroke-dasharray="3 5" stroke-width="1.2"/><path class="figure-reference figure-reference-fill" d="${model.corridorPath}" fill-opacity="0.12" stroke-opacity="0.3" stroke-width="1" stroke-dasharray="2 3"/><path class="figure-reference" d="${model.refTracePath}" fill="none" stroke-width="2.2" stroke-dasharray="4 4" stroke-linecap="round"/><circle class="figure-reference-fill" cx="${model.refPoints[model.refPoints.length - 1][0]}" cy="${model.refPoints[model.refPoints.length - 1][1]}" r="3.5"/><path class="figure-accent" d="${measuredSvgPath}" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${startDot}${endDot}</svg><div class="bar-path-legend"><span class="legend-badge"><span class="legend-indicator legend-corridor-indicator"></span> ${e(t('barPanel.expectedTrace'))}</span><span class="legend-badge"><span class="legend-indicator legend-user-indicator"></span> ${e(isManual || wristTrack?.method === 'bar-shaft' ? t('barPanel.yourBarPath') : t('barPanel.yourWristPath'))}</span></div>`
-      : `<div class="bar-path-empty">${e(t('barPanel.bothWristsRequired'))}</div>`
-  }<dl class="bar-metrics">${
+      ? `<svg class="measured-bar-path" viewBox="${minDisplayX.toFixed(1)} 15 ${(maxDisplayX - minDisplayX).toFixed(1)} 355" role="img" aria-label="${e(t(isManual || wristTrack?.method === 'bar-shaft' ? 'barPanel.pathAria' : 'barPanel.wristPathAria', { movement: model.exerciseName }))}"><path class="figure-silhouette" d="${model.silhouette.legs}" fill="none" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/><path class="figure-silhouette" d="${model.silhouette.arms}" fill="none" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><circle class="figure-silhouette-fill" cx="${model.silhouette.head[0]}" cy="${model.silhouette.head[1]}" r="13"/><path class="figure-axis" d="M194 30V354" stroke-dasharray="3 5" stroke-width="1.2"/><path class="figure-reference figure-reference-fill" d="${model.corridorPath}" fill-opacity="0.12" stroke-opacity="0.3" stroke-width="1" stroke-dasharray="2 3"/><path class="figure-reference" d="${model.refTracePath}" fill="none" stroke-width="2.2" stroke-dasharray="4 4" stroke-linecap="round"/><circle class="figure-reference-fill" cx="${model.refPoints[model.refPoints.length - 1][0]}" cy="${model.refPoints[model.refPoints.length - 1][1]}" r="3.5"/><path class="figure-accent" d="${measuredSvgPath}" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${startDot}${endDot}</svg><div class="bar-path-legend"><span class="legend-badge"><span class="legend-indicator legend-corridor-indicator"></span> ${e(t('barPanel.expectedTrace'))}</span><span class="legend-badge"><span class="legend-indicator legend-user-indicator"></span> ${e(isManual || wristTrack?.method === 'bar-shaft' ? t('barPanel.yourBarPath') : t('barPanel.yourWristPath'))}</span></div>`
+      : `<div class="bar-path-empty">${e(t(hasWindow ? 'barPanel.bothWristsRequired' : 'barPanel.pullWindowUnavailable'))}</div>`
+  }<p class="footnote">${e(t('barPanel.pullWindowNote'))}</p><dl class="bar-metrics">${
     isManual && manualMetrics
       ? `<div><dt>${e(t('barPanel.horizontalDeviation'))}</dt><dd><span class="bar-value">${e(formatNumber(manualMetrics.horizontalCm, 1))}</span><small>cm</small></dd></div><div><dt>${e(t('barPanel.verticalRise'))}</dt><dd><span class="bar-value">${e(formatNumber(manualMetrics.verticalM, 2))}</span><small>m</small></dd></div><div><dt>${e(t('barPanel.peakVelocity'))}</dt><dd><span class="bar-value">${manualMetrics.peakVelocity !== null && manualMetrics.peakVelocity !== undefined ? e(formatNumber(manualMetrics.peakVelocity, 2)) : '—'}</span><small>m/s</small></dd></div>`
       : wristMetricsResult

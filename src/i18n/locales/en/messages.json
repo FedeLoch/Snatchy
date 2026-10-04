@@ -283,7 +283,9 @@
     "legacyWristEstimate": "Saved wrist estimate · re-import for hand tracking",
     "shaftEstimate": "Pixel shaft estimate",
     "shaftNote": "A contrasting shaft-like line was found near the grip in {coverage}% of frames. Measurements use only those detections; gaps are not filled with hand estimates. This is experimental line detection, not a verified barbell identification.",
-    "handFallback": "Shaft not reliably resolved. Showing the hand-center estimate instead."
+    "handFallback": "Shaft not reliably resolved. Showing the hand-center estimate instead.",
+    "pullWindowNote": "Pull through catch only. Setup, recovery and lowering are excluded. The dashed path is an illustration, not a calibrated target for this camera angle.",
+    "pullWindowUnavailable": "The pull and catch boundaries are not both resolved. No full-recording path is substituted."
   },
   "vision": {
     "openAnalysis": "Open measured pose analysis",

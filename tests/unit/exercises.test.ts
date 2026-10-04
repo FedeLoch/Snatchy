@@ -138,3 +138,14 @@ it('moves the bar proxy into the palms and withholds occluded hand samples', asy
   expect(handBarPoint(f, 1000, 500)).toBeNull();
   expect(handBarPoint({ ...f, people: 2 }, 1000, 500)).toBeNull();
 });
+
+it('does not classify standing preparation before a floor pull as high hang', () => {
+  const floor = liftFrames();
+  const standing = cleanFrames(false, true)[0];
+  const frames = [
+    ...Array.from({ length: 5 }, () => structuredClone(standing)),
+    ...floor,
+  ].map((f, i) => ({ ...f, time: i / 15 }));
+  const base = analyzePoseSamples(floor, 100, 100, 2);
+  expect(detectExercise({ ...base, frames }).id).toBe('snatch');
+});

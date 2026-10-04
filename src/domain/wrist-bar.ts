@@ -38,6 +38,38 @@ export interface WristBar {
   coverage: number;
   points: WristBarPoint[];
 }
+/** Reject only isolated jumps bracketed by nearby, mutually consistent samples.
+ * No interpolation: retained measurements keep their original coordinates.
+ */
+export function reliableBarPoints(
+  points: WristBarPoint[],
+  width: number,
+  height: number,
+  sampleRate: number,
+): WristBarPoint[] {
+  const distance = (a: WristBarPoint, b: WristBarPoint) =>
+    Math.hypot(a.x - b.x, a.y - b.y);
+  const minimumJump = Math.hypot(width, height) * 0.08;
+  return points.filter((p, i) => {
+    const before = points[i - 1],
+      after = points[i + 1];
+    if (
+      !before ||
+      !after ||
+      p.time - before.time <= 0 ||
+      after.time - p.time <= 0 ||
+      p.time - before.time > 1.6 / sampleRate ||
+      after.time - p.time > 1.6 / sampleRate
+    )
+      return true;
+    const neighbors = distance(before, after);
+    return !(
+      distance(p, before) > Math.max(minimumJump, neighbors * 3) &&
+      distance(p, after) > Math.max(minimumJump, neighbors * 3)
+    );
+  });
+}
+
 /** Palm-center proxy from wrist, index and pinky landmarks, not bar detection.
  * Require both visible hands; never silently replace an obscured hand with a wrist.
  */
@@ -67,9 +99,10 @@ export function handBarPoint(
   };
 }
 export function estimateWristBar(a: VisionAnalysis): WristBar {
-  const points = a.frames
+  const candidates = a.frames
     .map((f) => handBarPoint(f, a.width, a.height))
     .filter((p): p is WristBarPoint => p !== null);
+  const points = reliableBarPoints(candidates, a.width, a.height, a.sampleRate);
   return {
     method: 'hand-midpoint',
     width: a.width,

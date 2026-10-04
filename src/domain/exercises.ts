@@ -117,7 +117,10 @@ export function detectExercise(a: VisionAnalysis): ExerciseSelection {
   };
   if (data.length < 12) return unknown;
   const initial = data[0];
-  const moved = data.some((v) => initial.wrist.y - v.wrist.y > 0.12);
+  const moved =
+    Math.max(...data.map((v) => v.wrist.y)) -
+      Math.min(...data.map((v) => v.wrist.y)) >
+    0.12;
   if (!moved) return unknown;
   const sustained = (i: number, predicate: (v: typeof initial) => boolean) =>
     i + 2 < data.length &&
@@ -148,7 +151,7 @@ export function detectExercise(a: VisionAnalysis): ExerciseSelection {
     .map((v) => v.knee!);
   if (!knees.length) return unknown;
   const power = Math.min(...knees) > 130;
-  const start =
+  const position = (initial: (typeof data)[number]) =>
     Math.abs(initial.wrist.y - initial.hipPoint.y) <
       Math.max(
         0.055,
@@ -158,6 +161,24 @@ export function detectExercise(a: VisionAnalysis): ExerciseSelection {
       : initial.wrist.y < initial.kneePoint.y - 0.02
         ? 'hang'
         : 'floor';
+  // Standing preparation is not the lift's starting position. Require a
+  // continuous three-sample position before receiving, and prefer evidence of
+  // the lower start over later positions that every floor pull passes through.
+  const starts = new Set<string>();
+  for (let i = 0; i + 2 < receiver; i++) {
+    const candidate = position(data[i]);
+    if (sustained(i, (v) => position(v) === candidate)) starts.add(candidate);
+  }
+  const start = starts.has('floor')
+    ? 'floor'
+    : starts.has('high-hang') && position(initial) === 'high-hang'
+      ? 'high-hang'
+      : starts.has('hang')
+        ? 'hang'
+        : starts.has('high-hang')
+          ? 'high-hang'
+          : null;
+  if (!start) return unknown;
   // Muscle vs power requires more than an image-plane knee angle; leave muscle as a manual choice.
   const match =
     exercises.find(

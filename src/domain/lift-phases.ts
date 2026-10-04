@@ -168,7 +168,7 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     phases[index].evidenceKey = evidenceKey;
     if (estimated) phases[index].estimated = true;
   };
-  const setup = data.findIndex(
+  let setup = data.findIndex(
     (v, i) =>
       sustained(
         i,
@@ -191,7 +191,7 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     lowestWrist = Math.max(lowestWrist, v.wrist.y);
     return lowestWrist;
   });
-  const pull =
+  let pull =
     setup < 0
       ? -1
       : data.findIndex(
@@ -223,6 +223,37 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
             x.knee! > v.knee! + 20,
         )),
   );
+  // Locate the active ascent into receiving, rather than an earlier setup
+  // adjustment. Three-sample velocities reduce single-frame hand jitter.
+  if (catchIndex > 3 && pull >= 0) {
+    const speed = data.map((_, i) =>
+      i > 0 && i + 1 < data.length && continuous(i - 1, i + 1)
+        ? (data[i - 1].wrist.y - data[i + 1].wrist.y) /
+          (data[i + 1].time - data[i - 1].time)
+        : 0,
+    );
+    let peak = pull;
+    for (let i = pull; i < catchIndex; i++)
+      if (speed[i] > speed[peak]) peak = i;
+    if (speed[peak] > 0) {
+      let onset = peak;
+      while (
+        onset > pull &&
+        speed[onset - 1] > speed[peak] * 0.15 &&
+        continuous(onset - 1, peak)
+      )
+        onset--;
+      // Only supersede a long preparation interval, retaining the existing
+      // detector for uninterrupted short lifts and uncertain motion.
+      if (
+        data[onset].time - data[pull].time > 0.4 &&
+        data[onset].wrist.y - data[catchIndex].wrist.y > 0.08 * motionScale
+      ) {
+        pull = onset;
+        setup = Math.max(0, onset - 1);
+      }
+    }
+  }
   if (pull < 0 && catchIndex < 0) return result;
   if (pull >= 0) {
     set(0, setup, 'phaseEvidence.setup');
@@ -403,30 +434,33 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
   if (catchIndex >= 0)
     for (let i = catchIndex; i < data.length && overhead(data[i]); i++) {
       if (!continuous(catchIndex, i)) break;
-      if (data[i].knee !== null && data[i].knee! < data[bottom].knee!)
-        bottom = i;
+      if (data[i].hipPoint.y > data[bottom].hipPoint.y) bottom = i;
     }
+  const risingFromReceive = (x: (typeof data)[number]) =>
+    overhead(x) &&
+    x.knee !== null &&
+    x.hipPoint.y < data[bottom].hipPoint.y - 0.015 * motionScale &&
+    (x.knee > (muscle ? 159 : data[bottom].knee! + (power ? 5 : 12)) ||
+      (x.knee >= 155 &&
+        x.hipPoint.y < data[bottom].hipPoint.y - 0.06 * motionScale));
   const recovery =
     bottom < 0
       ? -1
       : data.findIndex(
           (v, i) =>
             i > bottom &&
-            continuous(bottom, i) &&
-            sustained(
-              i,
-              (x) =>
-                overhead(x) &&
-                x.knee! >
-                  (muscle ? 159 : data[bottom].knee! + (power ? 5 : 12)),
+            !a.frames.some(
+              (f) =>
+                f.people > 1 && f.time > data[bottom].time && f.time < v.time,
             ) &&
-            v.knee! > (muscle ? 159 : data[bottom].knee! + (power ? 5 : 12)),
+            sustained(i, risingFromReceive),
         );
   if (recovery >= 0)
     set(
       6,
       recovery,
       clean ? 'phaseEvidence.recoveryRack' : 'phaseEvidence.recoveryOverhead',
+      !continuous(bottom, recovery),
     );
   if (highHang && pull >= 0) {
     phases[1].start = null;

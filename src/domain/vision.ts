@@ -2,6 +2,7 @@ import { reliablePoseFrames, reliableSide } from './pose-quality';
 import { bodyMeasurements, type BodyMeasurements } from './body-measurements';
 import {
   estimateWristBar,
+  reliableBarPoints,
   type WristBar,
   type WristBarPoint,
 } from './wrist-bar';
@@ -313,7 +314,7 @@ export function analyzePoseSamples(
         }
       : detectExercise(analysis);
   analysis.wristBar = estimateWristBar(analysis);
-  const shaftPoints = frames.flatMap((f) =>
+  const shaftCandidates = frames.flatMap((f) =>
     f.barShaft
       ? [
           {
@@ -331,6 +332,12 @@ export function analyzePoseSamples(
           },
         ]
       : [],
+  );
+  const shaftPoints = reliableBarPoints(
+    shaftCandidates,
+    width,
+    height,
+    sampleRate,
   );
   if (shaftPoints.length >= 6 && shaftPoints.length / frames.length >= 0.3)
     analysis.shaftBar = {

@@ -40,7 +40,7 @@ it('renders automatic hand estimates without calibration controls or physical un
   expect(barPanel(a)).toContain('% frame height / s');
   expect(barPanel(a)).not.toContain('data-action="track-bar"');
   expect(barPanel(analyzePoseSamples([], 100, 100, 2))).toContain(
-    'Both hands must be visible',
+    'No full-recording path is substituted',
   );
 });
 
@@ -68,7 +68,7 @@ it('renders stick figure athlete silhouette and expected trace comparison in bar
   const html = barPanel(a);
   expect(html).toContain('Expected trace');
   expect(html).toContain('Your estimated hand path');
-  expect(html).toContain('viewBox="115 15 150 355"');
+  expect(html).toContain('viewBox=');
 });
 
 it('keeps the bar path traces unfilled and the corridor band filled', () => {
@@ -85,4 +85,32 @@ it('keeps the bar path traces unfilled and the corridor band filled', () => {
   expect(html).toMatch(/class="figure-accent-fill"/);
   expect(html).toMatch(/class="figure-silhouette-fill"/);
   expect(html).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+});
+
+it('keeps the chart independent of horizontal camera framing', () => {
+  const a = analyzePoseSamples(liftFrames(), 100, 100, 2);
+  const moved = structuredClone(a);
+  for (const p of moved.wristBar!.points) {
+    p.x += 20;
+    p.left.x += 20;
+    p.right.x += 20;
+  }
+  expect(barPanel(moved)).toEqual(barPanel(a));
+});
+
+it('excludes setup and lowering points from both the plotted path and metrics', () => {
+  const a = analyzePoseSamples(liftFrames(), 100, 100, 2);
+  const baseline = barPanel(a);
+  const changed = structuredClone(a);
+  const pull = a.lift!.phases[1].start!;
+  const caught = a.lift!.phases[5].start!;
+  for (const p of changed.wristBar!.points)
+    if (p.time < pull || p.time > caught) {
+      p.x += 1000;
+      p.y += 1000;
+    }
+  expect(barPanel(changed)).toEqual(baseline);
+  changed.lift!.phases[5].start = null;
+  expect(barPanel(changed)).not.toContain('class="measured-bar-path"');
+  expect(barPanel(changed)).toContain('No full-recording path is substituted');
 });

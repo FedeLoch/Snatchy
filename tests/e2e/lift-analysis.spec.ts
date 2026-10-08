@@ -1,3 +1,4 @@
+import { strengthFrames } from '../fixtures/strength-pose';
 import { cleanFrames } from '../fixtures/clean-pose';
 import { recordedTraces, recordedFrames } from '../fixtures/recorded-pose';
 import { analyzePoseSamples } from '../../src/domain/vision';
@@ -394,6 +395,13 @@ test('raw overlay exposes rejected points without changing saved measurements', 
       x: frames[1].landmarks[id].x - 0.28,
     };
   await poseFixture(page, frames);
+  await expect
+    .poll(() =>
+      page
+        .locator('#cv-video')
+        .evaluate((el) => (el as HTMLVideoElement).readyState),
+    )
+    .toBeGreaterThanOrEqual(2);
   await page.locator('#cv-video').evaluate((el) => {
     (el as HTMLVideoElement).currentTime = 1 / 15;
   });
@@ -410,3 +418,25 @@ test('raw overlay exposes rejected points without changing saved measurements', 
     .click();
   await expect(points).toHaveCount(31);
 });
+
+for (const exercise of [
+  'deadlift',
+  'romanian-deadlift',
+  'barbell-row',
+] as const) {
+  test(`${exercise} upload uses its own phases and retains the score`, async ({
+    page,
+  }) => {
+    await poseFixture(page, strengthFrames(exercise), 'plate.mp4', exercise);
+    await expect(page.locator('[data-cv-phase]')).toHaveCount(5);
+    await expect(page.locator('[data-cv-phase="Catch"]')).toHaveCount(0);
+    await expect(page.locator('[data-measured-score]')).toContainText('/');
+    await expect(page.locator('.measured-issue')).toHaveCount(
+      exercise === 'deadlift' ? 3 : 2,
+    );
+    const score = await page.locator('[data-measured-score]').textContent();
+    await page.reload();
+    await expect(page.locator('[data-cv-phase]')).toHaveCount(5);
+    await expect(page.locator('[data-measured-score]')).toHaveText(score!);
+  });
+}

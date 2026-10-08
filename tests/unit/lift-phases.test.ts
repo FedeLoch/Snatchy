@@ -143,3 +143,15 @@ it('uses phase-specific joints instead of discarding the pull when elbows are ob
   );
   expect(a.lift!.checks).toHaveLength(4);
 });
+
+it('recognizes a short rebend immediately before extension as estimated timing', () => {
+  const knees = [
+    110, 110, 110, 120, 130, 135, 140, 145, 150, 155, 165, 150, 175, 170, 150,
+    120, 95, 85, 85, 95, 115, 140, 165, 175, 175, 175,
+  ];
+  const lift = analyzePoseSamples(liftFrames(knees), 100, 100, 26 / 15).lift!;
+  expect(lift.phases[2].start).toBe(10 / 15);
+  expect(lift.phases[3].start).toBe(11 / 15);
+  expect(lift.phases[2].estimated).toBe(true);
+  expect(lift.phases[4].start).toBe(12 / 15);
+});

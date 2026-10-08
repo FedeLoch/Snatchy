@@ -1,3 +1,4 @@
+import { syncNativeAds } from './services/native-ads';
 import { setFeature } from './services/features';
 import { analyzePoseSamples } from './domain/vision';
 import { exerciseById } from './domain/exercises';
@@ -123,6 +124,7 @@ function dispose() {
 }
 function draw(content: string, focus = true) {
   root.innerHTML = views.shell(content, page, theme);
+  void syncNativeAds();
   if (removed)
     root
       .querySelector('main')

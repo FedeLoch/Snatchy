@@ -82,7 +82,7 @@ The camera button uses the native video picker with `capture="environment"`. Cam
 
 ## Build an Android APK for your phone
 
-An APK is for **Android**. An iPhone needs a separate iOS/Xcode build. No APK or Android device build has been produced or tested in this repository yet; the web checks do not establish Android WebView compatibility.
+An APK is for **Android**. An iPhone needs a separate iOS/Xcode build. An Android debug APK was built and tested in the local Android emulator on 7 October 2026, including a live Google demo banner and the ads on/off setting. Physical-phone validation is still required. See [the beta validation notes](docs/validation/2026-10-07-android-beta.md).
 
 ### 1. Install the Android build tools
 
@@ -153,7 +153,7 @@ Native app storage is separate from browser storage. Your browser’s saved lift
 
 ## Coaching and optional ads (preview)
 
-Optional advertising is on by default and unlocks coaching suggestions and reference vectors. Disabling ads locks coaching while keeping scores and measurements available. The separate coaching switch has been removed. The advertising space appears below the navigation and can be disabled immediately. It is a placeholder; no ad network or tracking is connected.
+Optional advertising is on by default and unlocks coaching suggestions and reference vectors. Disabling ads locks coaching while keeping scores and measurements available. The separate coaching switch has been removed. The advertising space appears below the navigation and can be disabled immediately. The web version shows a placeholder. The Android APK connects to Google Mobile Ads using Google demo IDs only: these are test ads and earn no revenue. The native banner is below the navigation, disappears when disabled, and does not upload lift videos. Ad SDK network requests are separate from local video analysis.
 
 Keep optional ads enabled to see exercise suggestions inside measured feedback and display the check’s angle threshold as a dashed guide on the original video. The guide is a 2D reference at the measured moment, not an ideal movement prediction. No billing or subscription is active. See [coaching, advertising and recognition notes](docs/COACHING.md) for behavior, sources and the remaining production integration work.
 
@@ -182,3 +182,19 @@ This is an experimental line detector, not a trained barbell classifier. Backgro
 ### Reliable pose measurements
 
 New analyses preserve raw points for an optional overlay comparison, reject isolated geometric glitches, prefer complete joint chains when selecting a side per rep, and require sustained elbow evidence. Receiving and recovery checks use actual median samples. Near-threshold feedback is explicitly flagged. See [pose reliability and benchmark instructions](docs/POSE-RELIABILITY.md). Run `npm run benchmark:pose` to reproduce diagnostics; real-video accuracy errors remain unavailable until independent annotations are supplied.
+
+### Android demo ads and publication
+
+The current Android build uses Google's demo application ID and banner unit. No AdMob account is needed to exercise test banners. The app displays the test-ad status, handles loading failures without blocking analysis, and keeps coaching available while the ads preference is enabled, even if a demo ad fails to load.
+
+**This is a test APK, not a monetized production release.** Before production advertising, create an AdMob account/app/banner unit, replace the demo IDs in `android/app/src/main/AndroidManifest.xml` and `src/services/native-ads.ts`, implement the production consent/privacy-options flow, and update your privacy policy and Play data-safety declaration for the SDK. Non-personalized ad requests are not a substitute for consent. Never simply disable the testing flag and publish the demo configuration. See [Google test-ad guidance](https://developers.google.com/admob/android/test-ads).
+
+Build with JDK 21 and Android SDK 36 available, then run `npm run build`, `npx cap sync android`, and `cd android && ./gradlew assembleDebug`. The APK is `android/app/build/outputs/apk/debug/app-debug.apk`. Install it on your Android phone for beta testing; generate and sign a separate release artifact for publication.
+
+### Experimental strength exercises
+
+Select **Deadlift**, **Romanian Deadlift**, or **Bent-over Barbell Row** manually in the Movement selector before analyzing. Automatic movement classification currently covers snatch and clean variants only.
+
+These exercises have their own five-phase timelines, repetition windows, measured bar-path view, saved scores, and feedback. Deadlift checks arm, hip, and knee extension; Romanian deadlift checks arm and hip extension; rows check torso consistency and elbow flexion. Scores use only available checks, with partial coverage indicated when checks are missing. These are experimental 2D heuristics, not a validated coaching or spinal-safety assessment. Record a clear side view with the whole body visible and include the return portion of each repetition.
+
+Validation includes synthetic pose regressions and browser upload/history tests. Real deadlift, Romanian deadlift, and row footage still needs validation before claiming measurement accuracy for these exercises. Rebuild the APK using the Android instructions above to include them.

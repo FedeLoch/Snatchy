@@ -1,0 +1,209 @@
+{
+  "kind": "synthetic antialiased shaft references; not real-video ground truth",
+  "before": {
+    "detected": 16,
+    "total": 16,
+    "meanPositionErrorPx": 0.4482878575307083,
+    "meanAngleErrorDegrees": 0.9999999999999968
+  },
+  "after": {
+    "detected": 16,
+    "total": 16,
+    "meanPositionErrorPx": 0.08560765390293401,
+    "meanAngleErrorDegrees": 0.20000000000000215
+  },
+  "samples": [
+    {
+      "offset": 2.3,
+      "angle": -7.2,
+      "before": {
+        "positionErrorPx": 0.3109562092634519,
+        "angleErrorDegrees": 1.2000000000000037
+      },
+      "after": {
+        "positionErrorPx": 0.06677115880701479,
+        "angleErrorDegrees": 0.20000000000000373
+      }
+    },
+    {
+      "offset": 2.3,
+      "angle": -2.3,
+      "before": {
+        "positionErrorPx": 0.30274093049085593,
+        "angleErrorDegrees": 0.6999999999999877
+      },
+      "after": {
+        "positionErrorPx": 0.052141501440814864,
+        "angleErrorDegrees": 0.19999999999999352
+      }
+    },
+    {
+      "offset": 2.3,
+      "angle": 1.7,
+      "before": {
+        "positionErrorPx": 0.30274093049085593,
+        "angleErrorDegrees": 1.299999999999988
+      },
+      "after": {
+        "positionErrorPx": 0.05077101880499413,
+        "angleErrorDegrees": 0.20000000000000306
+      }
+    },
+    {
+      "offset": 2.3,
+      "angle": 5.2,
+      "before": {
+        "positionErrorPx": 0.3109562092634519,
+        "angleErrorDegrees": 0.7999999999999954
+      },
+      "after": {
+        "positionErrorPx": 0.05856192929356041,
+        "angleErrorDegrees": 0.1999999999999975
+      }
+    },
+    {
+      "offset": 3.7,
+      "angle": -7.2,
+      "before": {
+        "positionErrorPx": 0.27808758147308765,
+        "angleErrorDegrees": 1.2000000000000028
+      },
+      "after": {
+        "positionErrorPx": 0.02204806865496778,
+        "angleErrorDegrees": 0.20000000000000284
+      }
+    },
+    {
+      "offset": 3.7,
+      "angle": -2.3,
+      "before": {
+        "positionErrorPx": 0.29451813901830803,
+        "angleErrorDegrees": 0.6999999999999953
+      },
+      "after": {
+        "positionErrorPx": 0.04643083093196765,
+        "angleErrorDegrees": 0.1999999999999944
+      }
+    },
+    {
+      "offset": 3.7,
+      "angle": 1.7,
+      "before": {
+        "positionErrorPx": 0.29451813901830803,
+        "angleErrorDegrees": 1.2999999999999952
+      },
+      "after": {
+        "positionErrorPx": 0.048714968658330804,
+        "angleErrorDegrees": 0.2000000000000166
+      }
+    },
+    {
+      "offset": 3.7,
+      "angle": 5.2,
+      "before": {
+        "positionErrorPx": 0.27808758147308765,
+        "angleErrorDegrees": 0.7999999999999954
+      },
+      "after": {
+        "positionErrorPx": 0.035730117844039455,
+        "angleErrorDegrees": 0.20000000000000373
+      }
+    },
+    {
+      "offset": 4.6,
+      "angle": -7.2,
+      "before": {
+        "positionErrorPx": 0.6219124185269038,
+        "angleErrorDegrees": 1.2000000000000028
+      },
+      "after": {
+        "positionErrorPx": 0.13354231761402957,
+        "angleErrorDegrees": 0.20000000000000107
+      }
+    },
+    {
+      "offset": 4.6,
+      "angle": -2.3,
+      "before": {
+        "positionErrorPx": 0.6054818609816834,
+        "angleErrorDegrees": 0.6999999999999953
+      },
+      "after": {
+        "positionErrorPx": 0.10428300288162973,
+        "angleErrorDegrees": 0.1999999999999944
+      }
+    },
+    {
+      "offset": 4.6,
+      "angle": 1.7,
+      "before": {
+        "positionErrorPx": 0.6054818609816834,
+        "angleErrorDegrees": 1.2999999999999952
+      },
+      "after": {
+        "positionErrorPx": 0.10154203760998826,
+        "angleErrorDegrees": 0.2000000000000164
+      }
+    },
+    {
+      "offset": 4.6,
+      "angle": 5.2,
+      "before": {
+        "positionErrorPx": 0.6219124185269038,
+        "angleErrorDegrees": 0.7999999999999954
+      },
+      "after": {
+        "positionErrorPx": 0.11712385858713503,
+        "angleErrorDegrees": 0.20000000000000373
+      }
+    },
+    {
+      "offset": -3.4,
+      "angle": -7.2,
+      "before": {
+        "positionErrorPx": 0.5780875814730848,
+        "angleErrorDegrees": 1.1999999999999993
+      },
+      "after": {
+        "positionErrorPx": 0.17422500716570255,
+        "angleErrorDegrees": 0.20000000000000462
+      }
+    },
+    {
+      "offset": -3.4,
+      "angle": -2.3,
+      "before": {
+        "positionErrorPx": 0.594518139018291,
+        "angleErrorDegrees": 0.6999999999999953
+      },
+      "after": {
+        "positionErrorPx": 0.0966687755365001,
+        "angleErrorDegrees": 0.19999999999999263
+      }
+    },
+    {
+      "offset": -3.4,
+      "angle": 1.7,
+      "before": {
+        "positionErrorPx": 0.594518139018291,
+        "angleErrorDegrees": 1.2999999999999952
+      },
+      "after": {
+        "positionErrorPx": 0.0988006374144419,
+        "angleErrorDegrees": 0.20000000000000284
+      }
+    },
+    {
+      "offset": -3.4,
+      "angle": 5.2,
+      "before": {
+        "positionErrorPx": 0.5780875814730848,
+        "angleErrorDegrees": 0.8000000000000043
+      },
+      "after": {
+        "positionErrorPx": 0.16236723120182717,
+        "angleErrorDegrees": 0.20000000000000373
+      }
+    }
+  ]
+}

@@ -20,6 +20,13 @@ import type { Side } from '../domain/vision';
  * shown as-is rather than silently replaced by some other label.
  */
 const PHASE_LABELS: Record<PhaseName, MessageKey> = {
+  Lifting: 'phases.lifting',
+  Lockout: 'phases.lockout',
+  Lowering: 'phases.lowering',
+  Finish: 'phases.finish',
+  Bottom: 'phases.bottom',
+  Pull: 'phases.pull',
+  Squeeze: 'phases.squeeze',
   Setup: 'phases.setup',
   'First pull': 'phases.firstPull',
   Transition: 'phases.transition',
@@ -30,6 +37,8 @@ const PHASE_LABELS: Record<PhaseName, MessageKey> = {
 };
 
 const CHECK_LABELS: Record<CheckName, MessageKey> = {
+  'Torso consistency': 'checks.torsoConsistency',
+  'Row elbow flexion': 'checks.rowFlexion',
   'Arms through the pull': 'checks.armsThroughPull',
   'Hip extension': 'checks.hipExtension',
   'Knee extension': 'checks.kneeExtension',
@@ -39,6 +48,8 @@ const CHECK_LABELS: Record<CheckName, MessageKey> = {
 };
 
 const CHECK_DETAIL_LABELS: Record<CheckName, MessageKey> = {
+  'Torso consistency': 'strength.checkNote',
+  'Row elbow flexion': 'strength.checkNote',
   'Arms through the pull': 'checkDetail.armsThroughPull',
   'Hip extension': 'checkDetail.hipExtension',
   'Knee extension': 'checkDetail.kneeExtension',
@@ -80,15 +91,17 @@ export const checkName = (name: string): string =>
 
 /** A saved record may predate its detail string; prefer the catalog. */
 export const checkDetail = (name: string, fallback: string): string =>
-  fallback.startsWith('Median elbow flexion')
-    ? t('checkDetail.frontRackSustained')
-    : fallback.startsWith('Median visible elbow angle')
-      ? t('checkDetail.receivingSustained')
-      : fallback.startsWith('Median knee angle')
-        ? t('checkDetail.recoverySustained')
-        : fallback.startsWith('Lowest three-sample median elbow angle')
-          ? t('checkDetail.armsThroughPullSustained')
-          : byName(CHECK_DETAIL_LABELS, name, fallback);
+  fallback.startsWith('Experimental 2D measurement')
+    ? t('strength.checkNote')
+    : fallback.startsWith('Median elbow flexion')
+      ? t('checkDetail.frontRackSustained')
+      : fallback.startsWith('Median visible elbow angle')
+        ? t('checkDetail.receivingSustained')
+        : fallback.startsWith('Median knee angle')
+          ? t('checkDetail.recoverySustained')
+          : fallback.startsWith('Lowest three-sample median elbow angle')
+            ? t('checkDetail.armsThroughPullSustained')
+            : byName(CHECK_DETAIL_LABELS, name, fallback);
 
 export const sideName = (side: string): string =>
   byName(SIDE_LABELS, side, side);
@@ -168,6 +181,9 @@ export const phaseEvidence = (phase: {
  * corrected or extended later without a data migration.
  */
 const MOVEMENT_EN_NAMES: Record<string, string> = {
+  deadlift: 'Deadlift',
+  'romanian-deadlift': 'Romanian Deadlift',
+  'barbell-row': 'Bent-over Barbell Row',
   snatch: 'Snatch',
   'power-snatch': 'Power Snatch',
   'hang-snatch': 'Hang Snatch',
@@ -220,7 +236,7 @@ const ISSUE_TEXT_LABELS: Record<
 
 /** Movement or exercise display name, from the id stored on the record. */
 export const movementName = (id: string | undefined, fallback = ''): string =>
-  id ? (MOVEMENT_EN_NAMES[id] ?? fallback) : fallback;
+  id && id in MOVEMENT_EN_NAMES ? t(`movements.${id}` as MessageKey) : fallback;
 
 export const drillName = (id: string, fallback: string): string =>
   byName(DRILL_LABELS, id, fallback);

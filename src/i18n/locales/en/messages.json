@@ -177,7 +177,14 @@
     "secondPull": "Second pull",
     "turnover": "Turnover",
     "catch": "Catch",
-    "recovery": "Recovery"
+    "recovery": "Recovery",
+    "lifting": "Lifting",
+    "lockout": "Lockout",
+    "lowering": "Lowering",
+    "finish": "Finish",
+    "bottom": "Bottom",
+    "pull": "Pull",
+    "squeeze": "Squeeze"
   },
   "checks": {
     "armsThroughPull": "Arms through the pull",
@@ -185,7 +192,9 @@
     "kneeExtension": "Knee extension",
     "receivingArmExtension": "Receiving arm extension",
     "frontRackFlexion": "Front-rack arm flexion",
-    "standingRecovery": "Standing recovery"
+    "standingRecovery": "Standing recovery",
+    "torsoConsistency": "Torso consistency",
+    "rowFlexion": "Row elbow flexion"
   },
   "checkDetail": {
     "armsThroughPull": "Minimum visible elbow angle over the recognized pull interval. Unrecognized portions of the pull are excluded.",
@@ -525,7 +534,10 @@
     "jerk": "Jerk",
     "clean-and-jerk": "Clean & Jerk",
     "back-squat": "Back Squat",
-    "front-squat": "Front Squat"
+    "front-squat": "Front Squat",
+    "deadlift": "Deadlift",
+    "romanian-deadlift": "Romanian Deadlift",
+    "barbell-row": "Bent-over Barbell Row"
   },
   "movementMeta": {
     "snatchGuide": "Place your phone at hip height, perpendicular to the athlete. Keep the whole athlete and both ends of the bar in frame.",
@@ -619,6 +631,18 @@
     "saved": "Preference saved.",
     "sessionOnly": "Preference applies for this session; storage is unavailable.",
     "hideVector": "Hide reference angle",
-    "phaseNote": "Not every variation includes all seven phases. N/A means the phase does not apply; a dash means the camera evidence did not resolve it. Missing phases do not lower the score."
+    "phaseNote": "Not every variation includes all seven phases. N/A means the phase does not apply; a dash means the camera evidence did not resolve it. Missing phases do not lower the score.",
+    "testAdLoaded": "Google test ad",
+    "testAdUnavailable": "Test ad unavailable — coaching remains available while ads are enabled.",
+    "testAdLoading": "Loading Google test ad…"
+  },
+  "strength": {
+    "unresolved": "This phase was not resolved from the visible movement.",
+    "estimated": "Estimated from the observed hand movement and joint positions.",
+    "checkNote": "Experimental 2D measurement; not a spinal-position, load-safety or coaching assessment.",
+    "hingePractice": "Practice a light hip hinge with a dowel. Review whether the arms stay long and the bar stays close; the camera cannot establish spinal loading.",
+    "rowPractice": "Practice a light supported row and review torso movement. The projected angle does not establish back position or safe loading.",
+    "barWindowNote": "Lifting through lockout, or pull through squeeze only. Lowering is excluded. The dashed path is an illustration, not a calibrated target.",
+    "phaseNote": "Experimental strength analysis. Select this exercise manually. Phase timing and checks use visible 2D movement; no clean/snatch catch is assumed."
   }
 }

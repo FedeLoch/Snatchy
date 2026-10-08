@@ -108,7 +108,9 @@
     "hipExtension": "Extensión de cadera",
     "kneeExtension": "Extensión de rodilla",
     "receivingArmExtension": "Extensión de brazos en recepción",
-    "standingRecovery": "Recuperación de pie"
+    "standingRecovery": "Recuperación de pie",
+    "torsoConsistency": "Consistencia del torso",
+    "rowFlexion": "Flexión del codo en el remo"
   },
   "checksPanel": {
     "belowTarget": "{value}{unit} está por debajo del umbral objetivo de ≥{target}{unit}.",
@@ -349,7 +351,10 @@
     "muscle-clean": "Muscle Clean",
     "power-clean": "Power Clean",
     "power-snatch": "Power Snatch",
-    "snatch": "Snatch"
+    "snatch": "Snatch",
+    "deadlift": "Peso muerto",
+    "romanian-deadlift": "Peso muerto rumano",
+    "barbell-row": "Remo inclinado con barra"
   },
   "phaseEvidence": {
     "catchOverhead": "Brazo extendido por encima del hombro durante tres muestras con las rodillas flexionadas. Posición de recepción estimada.",
@@ -379,7 +384,14 @@
     "secondPull": "Segundo tirón",
     "setup": "Salida",
     "transition": "Transición",
-    "turnover": "Tirón al pecho"
+    "turnover": "Tirón al pecho",
+    "lifting": "Elevación",
+    "lockout": "Extensión final",
+    "lowering": "Descenso",
+    "finish": "Final",
+    "bottom": "Punto inferior",
+    "pull": "Tirón",
+    "squeeze": "Contracción"
   },
   "phasesPanel": {
     "duration": "Duración: {time} s.",
@@ -619,6 +631,18 @@
     "saved": "Preferencia guardada.",
     "sessionOnly": "La preferencia se aplica a esta sesión; el almacenamiento no está disponible.",
     "hideVector": "Ocultar el ángulo de referencia",
-    "phaseNote": "No todas las variantes incluyen las siete fases. N/A significa que no corresponde; un guion indica que no se pudo reconocer. Las fases sin reconocer no reducen la puntuación."
+    "phaseNote": "No todas las variantes incluyen las siete fases. N/A significa que no corresponde; un guion indica que no se pudo reconocer. Las fases sin reconocer no reducen la puntuación.",
+    "testAdLoaded": "Anuncio de prueba de Google",
+    "testAdUnavailable": "Anuncio de prueba no disponible. Los consejos siguen disponibles con los anuncios activados.",
+    "testAdLoading": "Cargando anuncio de prueba de Google…"
+  },
+  "strength": {
+    "unresolved": "No se pudo identificar esta fase a partir del movimiento visible.",
+    "estimated": "Estimación basada en el movimiento de las manos y las posiciones articulares.",
+    "checkNote": "Medición 2D experimental; no evalúa la columna, la seguridad de la carga ni sustituye al entrenador.",
+    "hingePractice": "Practica una bisagra de cadera ligera con un palo. Revisa los brazos extendidos y la proximidad de la barra; la cámara no determina la carga en la columna.",
+    "rowPractice": "Practica un remo ligero con apoyo y revisa el movimiento del torso. El ángulo proyectado no determina la posición de la espalda ni la seguridad de la carga.",
+    "barWindowNote": "Solo elevación hasta extensión final, o tirón hasta contracción. Se excluye el descenso. La línea discontinua es ilustrativa.",
+    "phaseNote": "Análisis de fuerza experimental. Selecciona el ejercicio manualmente. Usa movimiento 2D visible; no supone una recepción de clean o snatch."
   }
 }

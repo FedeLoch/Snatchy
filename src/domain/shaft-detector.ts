@@ -20,11 +20,17 @@ export function detectBarShaft(
   const angle = Math.atan2(dy, dx);
   const radius = Math.min(24, Math.max(6, frame.height * 0.035));
   const read = (x: number, y: number) => {
-    const ix = Math.round(x),
-      iy = Math.round(y);
-    return ix < 0 || iy < 0 || ix >= frame.width || iy >= frame.height
-      ? null
-      : frame.pixels[iy * frame.width + ix];
+    const ix = Math.floor(x),
+      iy = Math.floor(y);
+    if (ix < 0 || iy < 0 || ix + 1 >= frame.width || iy + 1 >= frame.height)
+      return null;
+    const fx = x - ix,
+      fy = y - iy;
+    const at = (px: number, py: number) => frame.pixels[py * frame.width + px];
+    return (
+      (1 - fy) * ((1 - fx) * at(ix, iy) + fx * at(ix + 1, iy)) +
+      fy * ((1 - fx) * at(ix, iy + 1) + fx * at(ix + 1, iy + 1))
+    );
   };
   const candidates: {
     angle: number;
@@ -32,59 +38,71 @@ export function detectBarShaft(
     score: number;
     width: number;
   }[] = [];
-  for (let degrees = -12; degrees <= 12; degrees += 3) {
-    const theta = angle + (degrees * Math.PI) / 180;
-    const tx = Math.cos(theta),
-      ty = Math.sin(theta),
-      nx = -ty,
-      ny = tx;
-    for (let offset = -radius; offset <= radius; offset += 2) {
-      for (const halfWidth of [1, 2, 3, 4]) {
-        let hits = 0,
-          tested = 0,
-          contrast = 0,
-          outsideHits = 0;
-        for (let i = 0; i < 48; i++) {
-          const along = (i / 47 - 0.5) * span * 1.5;
-          // Hands wrap around the shaft; do not require pixels under the grip.
-          if (Math.abs(Math.abs(along) - span / 2) < Math.max(3, span * 0.05))
-            continue;
-          const x = hands.x + nx * offset + tx * along;
-          const y = hands.y + ny * offset + ty * along;
-          const center = read(x, y);
-          const above = read(
-            x + nx * (halfWidth + 2),
-            y + ny * (halfWidth + 2),
-          );
-          const below = read(
-            x - nx * (halfWidth + 2),
-            y - ny * (halfWidth + 2),
-          );
-          if (center === null || above === null || below === null) continue;
-          tested++;
-          const ridge = Math.max(
-            Math.min(center - above, center - below),
-            Math.min(above - center, below - center),
-          );
-          if (ridge >= 0.07) {
-            hits++;
-            contrast += ridge;
-            if (Math.abs(along) > span / 2) outsideHits++;
+  const scan = (
+    baseAngle: number,
+    minAngle: number,
+    maxAngle: number,
+    angleStep: number,
+    minOffset: number,
+    maxOffset: number,
+    offsetStep: number,
+    widths: number[],
+  ) => {
+    for (let degrees = minAngle; degrees <= maxAngle; degrees += angleStep) {
+      const theta = baseAngle + (degrees * Math.PI) / 180;
+      const tx = Math.cos(theta),
+        ty = Math.sin(theta),
+        nx = -ty,
+        ny = tx;
+      for (let offset = minOffset; offset <= maxOffset; offset += offsetStep) {
+        for (const halfWidth of widths) {
+          let hits = 0,
+            tested = 0,
+            contrast = 0,
+            outsideHits = 0;
+          for (let i = 0; i < 48; i++) {
+            const along = (i / 47 - 0.5) * span * 1.5;
+            // Hands wrap around the shaft; do not require pixels under the grip.
+            if (Math.abs(Math.abs(along) - span / 2) < Math.max(3, span * 0.05))
+              continue;
+            const x = hands.x + nx * offset + tx * along;
+            const y = hands.y + ny * offset + ty * along;
+            const center = read(x, y);
+            const above = read(
+              x + nx * (halfWidth + 2),
+              y + ny * (halfWidth + 2),
+            );
+            const below = read(
+              x - nx * (halfWidth + 2),
+              y - ny * (halfWidth + 2),
+            );
+            if (center === null || above === null || below === null) continue;
+            tested++;
+            const ridge = Math.max(
+              Math.min(center - above, center - below),
+              Math.min(above - center, below - center),
+            );
+            if (ridge >= 0.07) {
+              hits++;
+              contrast += ridge;
+              if (Math.abs(along) > span / 2) outsideHits++;
+            }
           }
+          // Support must extend outside the hands, rejecting short clothing edges.
+          if (tested >= 30 && hits / tested >= 0.65 && outsideHits >= 6)
+            candidates.push({
+              angle: theta,
+              offset,
+              width: halfWidth,
+              score: contrast / tested,
+            });
         }
-        // Support must extend outside the hands, rejecting short clothing edges.
-        if (tested >= 30 && hits / tested >= 0.65 && outsideHits >= 6)
-          candidates.push({
-            angle: theta,
-            offset,
-            width: halfWidth,
-            score: contrast / tested,
-          });
       }
     }
-  }
+  };
+  scan(angle, -12, 12, 3, -radius, radius, 2, [1, 2, 3, 4]);
   candidates.sort((a, b) => b.score - a.score);
-  const best = candidates[0];
+  let best = candidates[0];
   if (!best || best.score < 0.09) return null;
   if (
     candidates.some(
@@ -94,6 +112,19 @@ export function detectBarShaft(
     )
   )
     return null;
+  // Refine only an unambiguous supported ridge; never manufacture missing pixels.
+  scan(
+    best.angle,
+    -1.5,
+    1.5,
+    0.5,
+    Math.max(-radius, best.offset - 2),
+    Math.min(radius, best.offset + 2),
+    0.25,
+    [best.width],
+  );
+  candidates.sort((a, b) => b.score - a.score);
+  best = candidates[0];
   const tx = Math.cos(best.angle),
     ty = Math.sin(best.angle);
   const x = hands.x - ty * best.offset,

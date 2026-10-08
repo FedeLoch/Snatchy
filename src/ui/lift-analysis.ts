@@ -1,6 +1,10 @@
 import { coachingCard } from './coaching';
 import { estimateWristBar, wristMetrics } from '../domain/wrist-bar';
-import { exerciseById } from '../domain/exercises';
+import {
+  exerciseById,
+  expectedChecks,
+  strengthExercise,
+} from '../domain/exercises';
 import { estimatePhases } from '../domain/lift-phases';
 import { getBarPathModel } from '../domain/bar-models';
 import { barMetrics } from '../domain/bar-track';
@@ -18,7 +22,7 @@ import {
 
 export function movementPhases(a: VisionAnalysis, canSeek: boolean): string {
   const lift = a.lift ?? estimatePhases(a);
-  return `<section class="real-phases analysis-card" aria-label="${e(t('phasesPanel.title'))}"><div class="section-title"><h2>${e(t('phasesPanel.title'))}</h2><span class="micro">${e(t('phasesPanel.coverageCount', { resolved: formatNumber(lift.phases.filter((p) => p.applicable !== false && p.start !== null).length), total: formatNumber(lift.phases.filter((p) => p.applicable !== false).length) }))}</span></div><div class="timeline measured-timeline">${lift.phases.map((p) => `<button data-cv-phase="${e(p.name)}" ${p.start === null ? '' : `data-cv-time="${p.start}"`} ${p.start === null || !canSeek ? 'disabled' : ''} aria-pressed="false"><span class="phase-line ${p.start === null ? 'unresolved' : ''}"></span><b>${p.applicable === false ? e(t('phasesPanel.notApplicable')) : p.start === null ? '—' : `${e(formatNumber(p.start, 2))} s`}</b><span>${e(phaseName(p.name))}${p.estimated ? `<small class="phase-estimate">${e(t('phasesPanel.timingEstimate'))}</small>` : ''}</span></button>`).join('')}</div><p class="footnote">${e(t('coaching.phaseNote'))}</p><details><summary>${e(t('phasesPanel.evidenceSummary'))}</summary><dl class="phase-evidence">${lift.phases.map((p) => `<div><dt>${e(phaseName(p.name))} · ${p.applicable === false ? e(t('phasesPanel.notApplicableLong')) : p.start === null ? e(t('phasesPanel.unresolved')) : `${e(formatNumber(p.start, 2))} s`}</dt><dd>${e(phaseEvidence(p))}${p.end !== null && p.start !== null ? ` ${e(t('phasesPanel.duration', { time: formatNumber(p.end - p.start, 2) }))}` : ''}${p.coverage !== null ? ` ${e(t('phasesPanel.usablePoseFrames', { percent: formatNumber(p.coverage * 100, 0) }))}` : ''}</dd></div>`).join('')}</dl></details></section>`;
+  return `<section class="real-phases analysis-card" aria-label="${e(t('phasesPanel.title'))}"><div class="section-title"><h2>${e(t('phasesPanel.title'))}</h2><span class="micro">${e(t('phasesPanel.coverageCount', { resolved: formatNumber(lift.phases.filter((p) => p.applicable !== false && p.start !== null).length), total: formatNumber(lift.phases.filter((p) => p.applicable !== false).length) }))}</span></div><div class="timeline measured-timeline">${lift.phases.map((p) => `<button data-cv-phase="${e(p.name)}" ${p.start === null ? '' : `data-cv-time="${p.start}"`} ${p.start === null || !canSeek ? 'disabled' : ''} aria-pressed="false"><span class="phase-line ${p.start === null ? 'unresolved' : ''}"></span><b>${p.applicable === false ? e(t('phasesPanel.notApplicable')) : p.start === null ? '—' : `${e(formatNumber(p.start, 2))} s`}</b><span>${e(phaseName(p.name))}${p.estimated ? `<small class="phase-estimate">${e(t('phasesPanel.timingEstimate'))}</small>` : ''}</span></button>`).join('')}</div><p class="footnote">${e(t(strengthExercise(a.exercise?.id ?? undefined) ? 'strength.phaseNote' : 'coaching.phaseNote'))}</p><details><summary>${e(t('phasesPanel.evidenceSummary'))}</summary><dl class="phase-evidence">${lift.phases.map((p) => `<div><dt>${e(phaseName(p.name))} · ${p.applicable === false ? e(t('phasesPanel.notApplicableLong')) : p.start === null ? e(t('phasesPanel.unresolved')) : `${e(formatNumber(p.start, 2))} s`}</dt><dd>${e(phaseEvidence(p))}${p.end !== null && p.start !== null ? ` ${e(t('phasesPanel.duration', { time: formatNumber(p.end - p.start, 2) }))}` : ''}${p.coverage !== null ? ` ${e(t('phasesPanel.usablePoseFrames', { percent: formatNumber(p.coverage * 100, 0) }))}` : ''}</dd></div>`).join('')}</dl></details></section>`;
 }
 
 export function techniqueScore(
@@ -29,7 +33,9 @@ export function techniqueScore(
   const missing = lift.phases
     .filter((p) => p.start === null && p.applicable !== false)
     .map((p) => p.name);
-  const partial = lift.score !== null && lift.checks.length < 5;
+  const partial =
+    lift.score !== null &&
+    lift.checks.length < expectedChecks(a.exercise?.id ?? undefined);
   const deltaHtml = comparison
     ? comparison.isFirstRecord
       ? ''
@@ -37,7 +43,7 @@ export function techniqueScore(
         ? `<div class="score-comparison"><span class="improvement-delta ${comparison.overallDeltaPct > 0 ? 'up' : 'down'}" title="${comparison.overallDeltaPct > 0 ? '+' : ''}${comparison.overallDeltaPct.toFixed(1)}%">${icon(comparison.overallDeltaPct > 0 ? 'arrowUp' : 'arrowDown')}${comparison.overallDeltaPct > 0 ? '+' : ''}${comparison.overallDeltaPct.toFixed(1)}%</span></div>`
         : ''
     : '';
-  return `<aside class="measured-score" aria-label="${e(t('checksPanel.experimentalAria'))}"><div class="score" data-measured-score>${lift.score === null || lift.score === undefined ? '—' : formatNumber(lift.score)}${partial ? '<sup class="partial-score-mark" aria-hidden="true">*</sup>' : ''}<small>/ 100</small></div><span class="micro">${e(t('checksPanel.experimentalTitle'))}</span>${partial ? `<p class="footnote">${e(t('vision.partialAnalysis'))} · ${lift.checks.length}/5</p>` : ''}<p class="footnote">${lift.score === null || lift.score === undefined ? e(t('checksPanel.notEnoughEvidence')) : e(t('checksPanel.metCount', { met: formatNumber(lift.checks.filter((c) => c.passed).length), total: formatNumber(lift.checks.length) }))}</p>${deltaHtml}${
+  return `<aside class="measured-score" aria-label="${e(t('checksPanel.experimentalAria'))}"><div class="score" data-measured-score>${lift.score === null || lift.score === undefined ? '—' : formatNumber(lift.score)}${partial ? '<sup class="partial-score-mark" aria-hidden="true">*</sup>' : ''}<small>/ 100</small></div><span class="micro">${e(t('checksPanel.experimentalTitle'))}</span>${partial ? `<p class="footnote">${e(t('vision.partialAnalysis'))} · ${lift.checks.length}/${expectedChecks(a.exercise?.id ?? undefined)}</p>` : ''}<p class="footnote">${lift.score === null || lift.score === undefined ? e(t('checksPanel.notEnoughEvidence')) : e(t('checksPanel.metCount', { met: formatNumber(lift.checks.filter((c) => c.passed).length), total: formatNumber(lift.checks.length) }))}</p>${deltaHtml}${
     partial || missing.length > 0 || lift.phases.some((p) => p.estimated)
       ? `<details class="partial-score-note"><summary aria-label="${e(t('checksPanel.coverageAria'))}" title="${e(t('checksPanel.coverageAria'))}"><span class="partial-badge-text" aria-hidden="true">ⓘ</span></summary><div class="partial-score-popover"><p>${e(
           t('checksPanel.partialCounts', {
@@ -116,8 +122,12 @@ export function barPanel(a: VisionAnalysis): string {
   const phases = a.lift?.phases ?? [];
   const pullStart =
     phases.find((p) => p.name === 'First pull' && p.applicable !== false)
-      ?.start ?? phases.find((p) => p.name === 'Second pull')?.start;
-  const catchTime = phases.find((p) => p.name === 'Catch')?.start;
+      ?.start ??
+    phases.find((p) => p.name === 'Second pull')?.start ??
+    phases.find((p) => p.name === 'Lifting' || p.name === 'Pull')?.start;
+  const catchTime = phases.find(
+    (p) => p.name === 'Catch' || p.name === 'Lockout' || p.name === 'Squeeze',
+  )?.start;
   const hasWindow =
     pullStart != null && catchTime != null && catchTime > pullStart;
   const inPull = <T extends { time: number }>(points: T[]) =>
@@ -211,7 +221,7 @@ export function barPanel(a: VisionAnalysis): string {
     hasPath
       ? `<svg class="measured-bar-path" viewBox="${minDisplayX.toFixed(1)} 15 ${(maxDisplayX - minDisplayX).toFixed(1)} 355" role="img" aria-label="${e(t(isManual || wristTrack?.method === 'bar-shaft' ? 'barPanel.pathAria' : 'barPanel.wristPathAria', { movement: model.exerciseName }))}"><path class="figure-silhouette" d="${model.silhouette.legs}" fill="none" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/><path class="figure-silhouette" d="${model.silhouette.arms}" fill="none" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><circle class="figure-silhouette-fill" cx="${model.silhouette.head[0]}" cy="${model.silhouette.head[1]}" r="13"/><path class="figure-axis" d="M194 30V354" stroke-dasharray="3 5" stroke-width="1.2"/><path class="figure-reference figure-reference-fill" d="${model.corridorPath}" fill-opacity="0.12" stroke-opacity="0.3" stroke-width="1" stroke-dasharray="2 3"/><path class="figure-reference" d="${model.refTracePath}" fill="none" stroke-width="2.2" stroke-dasharray="4 4" stroke-linecap="round"/><circle class="figure-reference-fill" cx="${model.refPoints[model.refPoints.length - 1][0]}" cy="${model.refPoints[model.refPoints.length - 1][1]}" r="3.5"/><path class="figure-accent" d="${measuredSvgPath}" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${startDot}${endDot}</svg><div class="bar-path-legend"><span class="legend-badge"><span class="legend-indicator legend-corridor-indicator"></span> ${e(t('barPanel.expectedTrace'))}</span><span class="legend-badge"><span class="legend-indicator legend-user-indicator"></span> ${e(isManual || wristTrack?.method === 'bar-shaft' ? t('barPanel.yourBarPath') : t('barPanel.yourWristPath'))}</span></div>`
       : `<div class="bar-path-empty">${e(t(hasWindow ? 'barPanel.bothWristsRequired' : 'barPanel.pullWindowUnavailable'))}</div>`
-  }<p class="footnote">${e(t('barPanel.pullWindowNote'))}</p><dl class="bar-metrics">${
+  }<p class="footnote">${e(t(strengthExercise(a.exercise?.id ?? undefined) ? 'strength.barWindowNote' : 'barPanel.pullWindowNote'))}</p><dl class="bar-metrics">${
     isManual && manualMetrics
       ? `<div><dt>${e(t('barPanel.horizontalDeviation'))}</dt><dd><span class="bar-value">${e(formatNumber(manualMetrics.horizontalCm, 1))}</span><small>cm</small></dd></div><div><dt>${e(t('barPanel.verticalRise'))}</dt><dd><span class="bar-value">${e(formatNumber(manualMetrics.verticalM, 2))}</span><small>m</small></dd></div><div><dt>${e(t('barPanel.peakVelocity'))}</dt><dd><span class="bar-value">${manualMetrics.peakVelocity !== null && manualMetrics.peakVelocity !== undefined ? e(formatNumber(manualMetrics.peakVelocity, 2)) : '—'}</span><small>m/s</small></dd></div>`
       : wristMetricsResult

@@ -22,9 +22,12 @@ describe('movement registry', () => {
         'clean',
         'power-clean',
         'hang-clean',
+        'deadlift',
+        'romanian-deadlift',
+        'barbell-row',
       ]),
     );
-    expect(movements).toHaveLength(15);
+    expect(movements).toHaveLength(18);
     expect(requireMovement('snatch').drills).toHaveLength(3);
   });
   it('rejects unknown and planned movements', () => {

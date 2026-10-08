@@ -108,7 +108,9 @@
     "hipExtension": "Extension de hanche",
     "kneeExtension": "Extension de genou",
     "receivingArmExtension": "Extension des bras à la réception",
-    "standingRecovery": "Récupération debout"
+    "standingRecovery": "Récupération debout",
+    "torsoConsistency": "Constance du buste",
+    "rowFlexion": "Flexion du coude au rowing"
   },
   "checksPanel": {
     "belowTarget": "{value} {unit} est inférieur au seuil objectif de ≥{target} {unit}.",
@@ -349,7 +351,10 @@
     "muscle-clean": "Épaulé muscle",
     "power-clean": "Épaulé power",
     "power-snatch": "Tir balancé power",
-    "snatch": "Tir balancé"
+    "snatch": "Tir balancé",
+    "deadlift": "Soulevé de terre",
+    "romanian-deadlift": "Soulevé de terre roumain",
+    "barbell-row": "Rowing barre penché"
   },
   "phaseEvidence": {
     "catchOverhead": "Bras tendu au-dessus de l'épaule pendant trois échantillons, genoux fléchis. Position de réception estimée.",
@@ -379,7 +384,14 @@
     "secondPull": "Deuxième traction",
     "setup": "Position de départ",
     "transition": "Transition",
-    "turnover": "Retournement"
+    "turnover": "Retournement",
+    "lifting": "Montée",
+    "lockout": "Extension finale",
+    "lowering": "Descente",
+    "finish": "Fin",
+    "bottom": "Position basse",
+    "pull": "Traction",
+    "squeeze": "Contraction"
   },
   "phasesPanel": {
     "duration": "Durée : {time} s.",
@@ -619,6 +631,18 @@
     "saved": "Préférence enregistrée.",
     "sessionOnly": "La préférence s’applique à cette session ; le stockage est indisponible.",
     "hideVector": "Masquer l’angle de référence",
-    "phaseNote": "Toutes les variantes ne comprennent pas les sept phases. N/A signifie que la phase ne s’applique pas ; un tiret indique une détection incertaine. Les phases non reconnues ne réduisent pas le score."
+    "phaseNote": "Toutes les variantes ne comprennent pas les sept phases. N/A signifie que la phase ne s’applique pas ; un tiret indique une détection incertaine. Les phases non reconnues ne réduisent pas le score.",
+    "testAdLoaded": "Annonce de test Google",
+    "testAdUnavailable": "Annonce de test indisponible. Les conseils restent disponibles avec les annonces activées.",
+    "testAdLoading": "Chargement de l’annonce de test Google…"
+  },
+  "strength": {
+    "unresolved": "Cette phase ne peut pas être identifiée à partir du mouvement visible.",
+    "estimated": "Estimation à partir du mouvement des mains et des positions articulaires.",
+    "checkNote": "Mesure 2D expérimentale ; ne juge pas la colonne, la sécurité de la charge ni la technique globale.",
+    "hingePractice": "Travaillez une charnière de hanche légère avec un bâton. Observez les bras allongés et la proximité de la barre ; la caméra ne mesure pas la charge sur la colonne.",
+    "rowPractice": "Travaillez un rowing léger avec appui et observez le buste. Cet angle projeté ne détermine pas la position du dos ni la sécurité de la charge.",
+    "barWindowNote": "Montée jusqu’à l’extension finale, ou traction jusqu’à la contraction uniquement. La descente est exclue. Le tracé pointillé est illustratif.",
+    "phaseNote": "Analyse de force expérimentale. Sélectionnez le mouvement manuellement. Les mesures sont en 2D ; aucune réception de clean ou snatch n’est supposée."
   }
 }

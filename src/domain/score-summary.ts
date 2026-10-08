@@ -1,7 +1,11 @@
+import { expectedChecks } from './exercises';
 import type { VisionAnalysis } from './vision';
 export function partialScore(a: VisionAnalysis): boolean {
   // Phase boundaries describe timing, not the availability of the five checks.
-  return !!a.lift && a.lift.checks.length < 5;
+  return (
+    !!a.lift &&
+    a.lift.checks.length < expectedChecks(a.exercise?.id ?? undefined)
+  );
 }
 /**
  * The score band, as a stable identifier rather than a sentence. Returning the

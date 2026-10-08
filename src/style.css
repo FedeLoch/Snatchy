@@ -3040,3 +3040,11 @@ body:has(.sponsor-slot) .history-undo {
 .coaching-preview .tag {
   font: inherit;
 }
+
+/* Keep the native test banner below the navigation instead of covering it. */
+html:has(.sponsor-slot) .app-nav {
+  bottom: var(--native-ad-height, 0px);
+}
+html:has(.sponsor-slot) main {
+  padding-bottom: calc(160px + var(--native-ad-height, 0px));
+}

@@ -1,7 +1,7 @@
-import { exerciseById } from '../domain/exercises';
+import { exerciseById, strengthExercise } from '../domain/exercises';
 import {
   CHECK_NAMES,
-  PHASE_NAMES,
+  phaseNamesFor,
   type CheckName,
 } from '../domain/lift-phases';
 import type { VisionRecord, VisionAnalysis } from '../domain/vision';
@@ -153,7 +153,8 @@ export function isVisionRecord(value: unknown): value is VisionRecord {
       lift.version !== 1 ||
       lift.method !== 'pose-heuristic' ||
       !Array.isArray(lift.phases) ||
-      lift.phases.length !== 7 ||
+      lift.phases.length !==
+        phaseNamesFor(a.exercise?.id ?? undefined).length ||
       !Array.isArray(lift.checks)
     )
       return false;
@@ -161,7 +162,7 @@ export function isVisionRecord(value: unknown): value is VisionRecord {
     for (const [index, phase] of lift.phases.entries()) {
       if (
         !phase ||
-        phase.name !== PHASE_NAMES[index] ||
+        phase.name !== phaseNamesFor(a.exercise?.id ?? undefined)[index] ||
         typeof phase.evidence !== 'string' ||
         (phase.estimated !== undefined &&
           typeof phase.estimated !== 'boolean') ||
@@ -234,24 +235,41 @@ export function isVisionRecord(value: unknown): value is VisionRecord {
       return false;
     // Keyed off the same constants the analysis writes, so a rename cannot
     // silently start rejecting every saved record.
-    const supports: Record<CheckName, boolean> = {
-      [CHECK_NAMES[0]]:
-        lift.phases[1].start !== null ||
-        (exerciseById(a.exercise?.id ?? '')?.start === 'high-hang' &&
-          lift.phases[3].start !== null),
-      [CHECK_NAMES[1]]:
-        lift.phases[3].start !== null || lift.phases[4].start !== null,
-      [CHECK_NAMES[2]]:
-        lift.phases[3].start !== null || lift.phases[4].start !== null,
-      [CHECK_NAMES[3]]:
-        lift.phases[5].start !== null &&
-        exerciseById(a.exercise?.id ?? '')?.family === 'clean',
-      [CHECK_NAMES[4]]:
-        lift.phases[5].start !== null &&
-        exerciseById(a.exercise?.id ?? 'snatch')?.family !== 'clean',
-      [CHECK_NAMES[5]]: lift.phases[6].start !== null,
-    };
-    if (lift.checks.some((c) => supports[c.name] !== true)) return false;
+    if (strengthExercise(a.exercise?.id ?? undefined)) {
+      const row = a.exercise?.id === 'barbell-row';
+      const allowed = row
+        ? ['Torso consistency', 'Row elbow flexion']
+        : a.exercise?.id === 'deadlift'
+          ? ['Arms through the pull', 'Hip extension', 'Knee extension']
+          : ['Arms through the pull', 'Hip extension'];
+      const terminal = lift.phases.find(
+        (p) => p.name === (row ? 'Squeeze' : 'Lockout'),
+      );
+      if (
+        lift.checks.some((c) => !allowed.includes(c.name)) ||
+        (lift.checks.length && terminal?.start == null)
+      )
+        return false;
+    } else {
+      const supports: Partial<Record<CheckName, boolean>> = {
+        [CHECK_NAMES[0]]:
+          lift.phases[1].start !== null ||
+          (exerciseById(a.exercise?.id ?? '')?.start === 'high-hang' &&
+            lift.phases[3].start !== null),
+        [CHECK_NAMES[1]]:
+          lift.phases[3].start !== null || lift.phases[4].start !== null,
+        [CHECK_NAMES[2]]:
+          lift.phases[3].start !== null || lift.phases[4].start !== null,
+        [CHECK_NAMES[3]]:
+          lift.phases[5].start !== null &&
+          exerciseById(a.exercise?.id ?? '')?.family === 'clean',
+        [CHECK_NAMES[4]]:
+          lift.phases[5].start !== null &&
+          exerciseById(a.exercise?.id ?? 'snatch')?.family !== 'clean',
+        [CHECK_NAMES[5]]: lift.phases[6].start !== null,
+      };
+      if (lift.checks.some((c) => supports[c.name] !== true)) return false;
+    }
   }
   if (a.automaticBar !== undefined) {
     const b = a.automaticBar;

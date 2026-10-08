@@ -5,9 +5,9 @@ export interface BarPathModel {
   /** The exercise id this model describes, so the UI can localise its name. */
   exerciseId: string;
   exerciseName: string;
-  family: 'snatch' | 'clean';
+  family: 'snatch' | 'clean' | 'hinge' | 'row';
   start: 'floor' | 'hang' | 'high-hang';
-  receiving: 'squat' | 'power' | 'muscle';
+  receiving: 'squat' | 'power' | 'muscle' | 'none';
   startY: number;
   topY: number;
   refPoints: Point[];
@@ -30,6 +30,40 @@ export function getBarPathModel(exerciseId?: string): BarPathModel {
   const receiving = ex?.receiving ?? 'squat';
   const name = ex?.name ?? 'Snatch';
 
+  if (family === 'hinge' || family === 'row') {
+    const startY = start === 'floor' ? 324 : 290,
+      topY = 220;
+    const refPoints: Point[] = [
+      [218, startY],
+      [218, topY],
+    ];
+    return {
+      exerciseId: ex!.id,
+      exerciseName: name,
+      family,
+      start,
+      receiving,
+      startY,
+      topY,
+      refPoints,
+      refTracePath: `M218,${startY}L218,${topY}`,
+      corridorPath: `M209,${startY}L209,${topY}L227,${topY}L227,${startY}Z`,
+      silhouette:
+        family === 'row'
+          ? {
+              legs: 'M192,180L160,240L188,300L176,350',
+              arms: 'M192,180L230,200L218,220',
+              head: [192, 148],
+              bar: [218, 220],
+            }
+          : {
+              legs: 'M182,155L182,245L182,300L182,350',
+              arms: 'M182,155L218,220',
+              head: [182, 124],
+              bar: [218, 220],
+            },
+    };
+  }
   const startY = start === 'high-hang' ? 215 : start === 'hang' ? 255 : 324;
   const topY = family === 'clean' ? (receiving === 'squat' ? 168 : 145) : 46;
 

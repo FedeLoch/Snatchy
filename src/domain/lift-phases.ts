@@ -1,5 +1,9 @@
+import {
+  estimateStrengthPhases,
+  strengthPhaseNames,
+} from './strength-analysis';
 import { sustainedMinimum } from './pose-quality';
-import { exerciseById } from './exercises';
+import { exerciseById, strengthExercise } from './exercises';
 import { anglesAt, SIDES, visible, type VisionAnalysis } from './vision';
 import { source } from '../i18n';
 /**
@@ -25,9 +29,21 @@ export const CHECK_NAMES = [
   'Front-rack arm flexion',
   'Receiving arm extension',
   'Standing recovery',
+  'Torso consistency',
+  'Row elbow flexion',
 ] as const;
 
-export type PhaseName = (typeof PHASE_NAMES)[number];
+export type PhaseName =
+  | (typeof PHASE_NAMES)[number]
+  | 'Lifting'
+  | 'Lockout'
+  | 'Lowering'
+  | 'Finish'
+  | 'Bottom'
+  | 'Pull'
+  | 'Squeeze';
+export const phaseNamesFor = (id?: string): readonly PhaseName[] =>
+  strengthExercise(id) ? strengthPhaseNames(id) : PHASE_NAMES;
 export type CheckName = (typeof CHECK_NAMES)[number];
 
 export interface MeasuredPhase {
@@ -65,6 +81,8 @@ export interface LiftPhases {
   score: number | null;
 }
 export function estimatePhases(a: VisionAnalysis): LiftPhases {
+  if (strengthExercise(a.exercise?.id ?? undefined))
+    return estimateStrengthPhases(a);
   const phases: MeasuredPhase[] = PHASE_NAMES.map((name) => ({
     name,
     start: null,
@@ -341,7 +359,7 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
   // Preserve independently recognizable phases; do not invent a missing knee rebend.
   for (
     let i = pull + 1;
-    !highHang && pull >= 0 && extension >= 0 && i < extension - 2;
+    !highHang && pull >= 0 && extension >= 0 && i < extension - 1;
     i++
   ) {
     if (
@@ -357,8 +375,11 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
       data[i].knee! - data[dip].knee! >= 6 &&
       data[extension].knee! - data[dip].knee! >= 10
     ) {
-      set(2, i, 'phaseEvidence.transition');
-      set(3, dip, 'phaseEvidence.secondPull');
+      // At 15 fps a fast rebend can occupy a single interval before the
+      // extension sample. Keep it, but disclose limited timing resolution.
+      const brief = extension - i <= 2;
+      set(2, i, 'phaseEvidence.transition', brief);
+      set(3, dip, 'phaseEvidence.secondPull', brief);
       break;
     }
   }

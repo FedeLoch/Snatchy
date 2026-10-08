@@ -1,3 +1,5 @@
+import { strengthExercise } from './exercises';
+import { strengthWindows } from './strength-analysis';
 import { anglesAt } from './vision';
 import {
   analyzePoseSamples,
@@ -11,6 +13,7 @@ export interface RepWindow {
 }
 /** Candidate low-to-overhead repetitions, not exercise classification. Times stay in source coordinates. */
 export function detectRepetitions(a: VisionAnalysis): RepWindow[] {
+  if (strengthExercise(a.exercise?.id ?? undefined)) return strengthWindows(a);
   const [, , wrist, hip] = SIDES[a.side];
   const [shoulder] = SIDES[a.side];
   const rows = a.frames.map((f) => {

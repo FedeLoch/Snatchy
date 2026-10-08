@@ -3,11 +3,32 @@ import { source } from '../i18n';
 export interface Exercise {
   id: string;
   name: string;
-  family: 'snatch' | 'clean';
+  family: 'snatch' | 'clean' | 'hinge' | 'row';
   start: 'floor' | 'hang' | 'high-hang';
-  receiving: 'squat' | 'power' | 'muscle';
+  receiving: 'squat' | 'power' | 'muscle' | 'none';
 }
 export const exercises: readonly Exercise[] = [
+  {
+    id: 'deadlift',
+    name: 'Deadlift',
+    family: 'hinge',
+    start: 'floor',
+    receiving: 'none',
+  },
+  {
+    id: 'romanian-deadlift',
+    name: 'Romanian Deadlift',
+    family: 'hinge',
+    start: 'hang',
+    receiving: 'none',
+  },
+  {
+    id: 'barbell-row',
+    name: 'Bent-over Barbell Row',
+    family: 'row',
+    start: 'hang',
+    receiving: 'none',
+  },
   {
     id: 'snatch',
     name: 'Snatch',
@@ -200,4 +221,12 @@ export function detectExercise(a: VisionAnalysis): ExerciseSelection {
         : 'exerciseReason.suggestedRack',
     ),
   };
+}
+
+export function strengthExercise(id?: string): boolean {
+  const family = exerciseById(id)?.family;
+  return family === 'hinge' || family === 'row';
+}
+export function expectedChecks(id?: string): number {
+  return id === 'deadlift' ? 3 : strengthExercise(id) ? 2 : 5;
 }

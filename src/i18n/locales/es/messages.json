@@ -89,7 +89,7 @@
     "titleIdle": "Un levantamiento.",
     "titleIdleAccent": "Otra perspectiva.",
     "titleReady": "Listo cuando tú quieras.",
-    "poseModel": "Modelo de postura",
+    "poseModel": "Modelo",
     "poseLite": "Lite — más rápido (predeterminado)",
     "poseFull": "Full — más detallado, más lento",
     "poseModelNote": "Ambos modelos analizan el vídeo en este dispositivo. Full requiere más procesamiento; no garantiza mayor precisión."

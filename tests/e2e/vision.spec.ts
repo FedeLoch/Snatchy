@@ -23,10 +23,10 @@ for (const model of ['lite', 'full']) {
     await page
       .locator('#import')
       .setInputFiles(resolve('tests/fixtures/person.mp4'));
-    await expect(page.getByLabel('Pose model', { exact: true })).toHaveValue(
+    await expect(page.getByLabel('Model', { exact: true })).toHaveValue(
       'lite',
     );
-    await page.getByLabel('Pose model', { exact: true }).selectOption(model);
+    await page.getByLabel('Model', { exact: true }).selectOption(model);
     await page
       .getByRole('button', { name: 'Analyze this video', exact: true })
       .click();

@@ -114,7 +114,7 @@
     "privacyNoteFirst": "Private by design. Your video stays on this device.",
     "privacyNoteSecond": "Automatic rep selection · up to 250 MB",
     "openingVideo": "Opening your video…",
-    "poseModel": "Pose model",
+    "poseModel": "Model",
     "poseLite": "Lite — faster (default)",
     "poseFull": "Full — more detailed, slower",
     "poseModelNote": "Both models analyze your video on this device. Full uses more processing power; better accuracy is not guaranteed."

@@ -88,7 +88,11 @@
     "sideView": "Vista lateral / cuerpo entero / a la altura de la cadera",
     "titleIdle": "Un levantamiento.",
     "titleIdleAccent": "Otra perspectiva.",
-    "titleReady": "Listo cuando tú quieras."
+    "titleReady": "Listo cuando tú quieras.",
+    "poseModel": "Modelo de postura",
+    "poseLite": "Lite — más rápido (predeterminado)",
+    "poseFull": "Full — más detallado, más lento",
+    "poseModelNote": "Ambos modelos analizan el vídeo en este dispositivo. Full requiere más procesamiento; no garantiza mayor precisión."
   },
   "checkDetail": {
     "armsThroughPull": "Ángulo mínimo visible del codo en el intervalo de tirón reconocido. Las partes no reconocidas del tirón se excluyen.",
@@ -110,7 +114,10 @@
     "receivingArmExtension": "Extensión de brazos en recepción",
     "standingRecovery": "Recuperación de pie",
     "torsoConsistency": "Consistencia del torso",
-    "rowFlexion": "Flexión del codo en el remo"
+    "rowFlexion": "Flexión del codo en el remo",
+    "topArmFlexion": "Flexión de brazos arriba",
+    "hangingArmExtension": "Extensión de brazos colgado",
+    "squatKneeFlexion": "Flexión de rodilla en sentadilla"
   },
   "checksPanel": {
     "belowTarget": "{value}{unit} está por debajo del umbral objetivo de ≥{target}{unit}.",
@@ -354,7 +361,9 @@
     "snatch": "Snatch",
     "deadlift": "Peso muerto",
     "romanian-deadlift": "Peso muerto rumano",
-    "barbell-row": "Remo inclinado con barra"
+    "barbell-row": "Remo inclinado con barra",
+    "pull-up": "Dominada prona",
+    "chin-up": "Dominada supina"
   },
   "phaseEvidence": {
     "catchOverhead": "Brazo extendido por encima del hombro durante tres muestras con las rodillas flexionadas. Posición de recepción estimada.",
@@ -391,7 +400,8 @@
     "finish": "Final",
     "bottom": "Punto inferior",
     "pull": "Tirón",
-    "squeeze": "Contracción"
+    "squeeze": "Contracción",
+    "top": "Arriba"
   },
   "phasesPanel": {
     "duration": "Duración: {time} s.",
@@ -643,6 +653,9 @@
     "hingePractice": "Practica una bisagra de cadera ligera con un palo. Revisa los brazos extendidos y la proximidad de la barra; la cámara no determina la carga en la columna.",
     "rowPractice": "Practica un remo ligero con apoyo y revisa el movimiento del torso. El ángulo proyectado no determina la posición de la espalda ni la seguridad de la carga.",
     "barWindowNote": "Solo elevación hasta extensión final, o tirón hasta contracción. Se excluye el descenso. La línea discontinua es ilustrativa.",
-    "phaseNote": "Análisis de fuerza experimental. Selecciona el ejercicio manualmente. Usa movimiento 2D visible; no supone una recepción de clean o snatch."
+    "phaseNote": "Análisis de fuerza experimental. Selecciona el ejercicio manualmente. Usa movimiento 2D visible; no supone una recepción de clean o snatch.",
+    "pullPractice": "Practica repeticiones asistidas con subida y bajada controladas. Estas mediciones no verifican el agarre ni que el mentón supere la barra.",
+    "squatPractice": "Practica sentadillas controladas sin carga. El ángulo de rodilla es un objetivo experimental, no confirma profundidad reglamentaria ni seguridad de la carga.",
+    "bodyOnly": "La trayectoria de la barra no está disponible para este ejercicio. Las fases usan movimiento corporal y ángulos articulares."
   }
 }

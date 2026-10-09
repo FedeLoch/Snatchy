@@ -88,7 +88,11 @@
     "sideView": "Vue de profil / corps entier / hauteur de hanche",
     "titleIdle": "Un mouvement.",
     "titleIdleAccent": "Un regard neuf.",
-    "titleReady": "Prêt quand vous l'êtes."
+    "titleReady": "Prêt quand vous l'êtes.",
+    "poseModel": "Modèle de posture",
+    "poseLite": "Lite — plus rapide (par défaut)",
+    "poseFull": "Full — plus détaillé, plus lent",
+    "poseModelNote": "Les deux modèles analysent la vidéo sur cet appareil. Full demande plus de calcul ; une meilleure précision n’est pas garantie."
   },
   "checkDetail": {
     "armsThroughPull": "Angle de coude visible minimal sur l'intervalle de traction reconnu. Les portions non reconnues de la traction sont exclues.",
@@ -110,7 +114,10 @@
     "receivingArmExtension": "Extension des bras à la réception",
     "standingRecovery": "Récupération debout",
     "torsoConsistency": "Constance du buste",
-    "rowFlexion": "Flexion du coude au rowing"
+    "rowFlexion": "Flexion du coude au rowing",
+    "topArmFlexion": "Flexion des bras en haut",
+    "hangingArmExtension": "Extension des bras suspendus",
+    "squatKneeFlexion": "Flexion du genou en squat"
   },
   "checksPanel": {
     "belowTarget": "{value} {unit} est inférieur au seuil objectif de ≥{target} {unit}.",
@@ -354,7 +361,9 @@
     "snatch": "Tir balancé",
     "deadlift": "Soulevé de terre",
     "romanian-deadlift": "Soulevé de terre roumain",
-    "barbell-row": "Rowing barre penché"
+    "barbell-row": "Rowing barre penché",
+    "pull-up": "Traction pronation",
+    "chin-up": "Traction supination"
   },
   "phaseEvidence": {
     "catchOverhead": "Bras tendu au-dessus de l'épaule pendant trois échantillons, genoux fléchis. Position de réception estimée.",
@@ -391,7 +400,8 @@
     "finish": "Fin",
     "bottom": "Position basse",
     "pull": "Traction",
-    "squeeze": "Contraction"
+    "squeeze": "Contraction",
+    "top": "Sommet"
   },
   "phasesPanel": {
     "duration": "Durée : {time} s.",
@@ -643,6 +653,9 @@
     "hingePractice": "Travaillez une charnière de hanche légère avec un bâton. Observez les bras allongés et la proximité de la barre ; la caméra ne mesure pas la charge sur la colonne.",
     "rowPractice": "Travaillez un rowing léger avec appui et observez le buste. Cet angle projeté ne détermine pas la position du dos ni la sécurité de la charge.",
     "barWindowNote": "Montée jusqu’à l’extension finale, ou traction jusqu’à la contraction uniquement. La descente est exclue. Le tracé pointillé est illustratif.",
-    "phaseNote": "Analyse de force expérimentale. Sélectionnez le mouvement manuellement. Les mesures sont en 2D ; aucune réception de clean ou snatch n’est supposée."
+    "phaseNote": "Analyse de force expérimentale. Sélectionnez le mouvement manuellement. Les mesures sont en 2D ; aucune réception de clean ou snatch n’est supposée.",
+    "pullPractice": "Pratiquez des répétitions assistées avec une montée et une descente contrôlées. Ces mesures ne vérifient ni la prise ni le passage du menton au-dessus de la barre.",
+    "squatPractice": "Pratiquez des squats contrôlés au poids du corps. L’angle du genou est un objectif expérimental, sans confirmer la profondeur réglementaire ni la sécurité de la charge.",
+    "bodyOnly": "La trajectoire de barre n’est pas disponible pour cet exercice. Les phases utilisent le mouvement du corps et les angles articulaires."
   }
 }

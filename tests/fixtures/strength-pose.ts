@@ -1,5 +1,12 @@
 import { liftFrames } from './lift-pose';
 export function strengthFrames(id: string) {
+  if (id === 'back-squat') {
+    const knees = Array.from(
+      { length: 25 },
+      (_, i) => 175 - (i <= 12 ? i / 12 : (24 - i) / 12) * 95,
+    );
+    return liftFrames(knees);
+  }
   const ascending = liftFrames().slice(0, 13);
   const steps =
     id === 'romanian-deadlift'
@@ -8,6 +15,25 @@ export function strengthFrames(id: string) {
   return steps.map((f, i) => {
     const frame = structuredClone(f);
     frame.time = i / 15;
+    if (id === 'pull-up' || id === 'chin-up') {
+      const progress = i <= 12 ? i / 12 : (24 - i) / 12;
+      for (const [s, e, w, h, k, a] of [
+        [11, 13, 15, 23, 25, 27],
+        [12, 14, 16, 24, 26, 28],
+      ]) {
+        const y = 0.5 - progress * 0.25;
+        frame.landmarks[s] = { x: 0.5, y, visibility: 1 };
+        frame.landmarks[e] = {
+          x: 0.5 + progress * 0.15,
+          y: (y + 0.1) / 2,
+          visibility: 1,
+        };
+        frame.landmarks[w] = { x: 0.5, y: 0.1, visibility: 1 };
+        frame.landmarks[h] = { x: 0.5, y: y + 0.2, visibility: 1 };
+        frame.landmarks[k] = { x: 0.5, y: y + 0.35, visibility: 1 };
+        frame.landmarks[a] = { x: 0.5, y: y + 0.48, visibility: 1 };
+      }
+    }
     if (id === 'barbell-row') {
       const progress = i <= 12 ? i / 12 : (24 - i) / 12;
       for (const [s, e, w, h, k, a] of [

@@ -27,7 +27,7 @@ describe('movement registry', () => {
         'barbell-row',
       ]),
     );
-    expect(movements).toHaveLength(18);
+    expect(movements).toHaveLength(20);
     expect(requireMovement('snatch').drills).toHaveLength(3);
   });
   it('rejects unknown and planned movements', () => {

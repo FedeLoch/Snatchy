@@ -2,7 +2,9 @@ import { anglesAt, SIDES, visible, type VisionAnalysis } from './vision';
 import type { LiftPhases, PhaseName, MovementCheck } from './lift-phases';
 import { source } from '../i18n';
 export function strengthPhaseNames(id?: string): readonly PhaseName[] {
-  return id === 'romanian-deadlift'
+  if (id === 'pull-up' || id === 'chin-up')
+    return ['Setup', 'Pull', 'Top', 'Lowering', 'Finish'];
+  return id === 'romanian-deadlift' || id === 'back-squat'
     ? ['Setup', 'Lowering', 'Bottom', 'Lifting', 'Lockout']
     : id === 'barbell-row'
       ? ['Setup', 'Pull', 'Squeeze', 'Lowering', 'Finish']
@@ -10,10 +12,13 @@ export function strengthPhaseNames(id?: string): readonly PhaseName[] {
 }
 function rows(a: VisionAnalysis) {
   const [s, , w, h] = SIDES[a.side];
+  const bodyPull = a.exercise?.id === 'pull-up' || a.exercise?.id === 'chin-up';
+  const squat = a.exercise?.id === 'back-squat';
   return a.frames.map((f) => ({
     time: f.time,
     valid: f.people === 1 && [s, w, h].every((i) => visible(f.landmarks[i])),
-    wrist: f.landmarks[w]?.y ?? 0,
+    // Track the moving body for fixed-bar pulls and squats.
+    wrist: f.landmarks[squat ? h : bodyPull ? s : w]?.y ?? 0,
     hipY: f.landmarks[h]?.y ?? 0,
     shoulderY: f.landmarks[s]?.y ?? 0,
     ...anglesAt(f, a.side, a.width, a.height),
@@ -24,7 +29,8 @@ export function strengthWindows(
   a: VisionAnalysis,
 ): { start: number; end: number }[] {
   const data = rows(a),
-    rdl = a.exercise?.id === 'romanian-deadlift';
+    rdl =
+      a.exercise?.id === 'romanian-deadlift' || a.exercise?.id === 'back-squat';
   const torso = data
     .filter((r) => r.valid)
     .map((r) => Math.abs(r.hipY - r.shoulderY))
@@ -75,7 +81,7 @@ export function strengthWindows(
 }
 export function estimateStrengthPhases(a: VisionAnalysis): LiftPhases {
   const id = a.exercise?.id,
-    rdl = id === 'romanian-deadlift',
+    rdl = id === 'romanian-deadlift' || id === 'back-squat',
     row = id === 'barbell-row';
   const result: LiftPhases = {
     version: 1,
@@ -166,7 +172,23 @@ export function estimateStrengthPhases(a: VisionAnalysis): LiftPhases {
       detail: source('strength.checkNote'),
     });
   };
-  if (row) {
+  if (id === 'pull-up' || id === 'chin-up') {
+    add(
+      'Top arm flexion',
+      d[extreme].elbow === null ? null : 180 - d[extreme].elbow!,
+      90,
+      d[extreme].time,
+    );
+    add('Hanging arm extension', d[0].elbow, 160, d[0].time);
+  } else if (id === 'back-squat') {
+    add(
+      'Squat knee flexion',
+      d[extreme].knee === null ? null : 180 - d[extreme].knee!,
+      90,
+      d[extreme].time,
+    );
+    add('Knee extension', d[top].knee, 165, d[top].time);
+  } else if (row) {
     const hips = d
       .slice(0, extreme + 1)
       .map((r) => r.hip)

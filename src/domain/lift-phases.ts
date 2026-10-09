@@ -31,6 +31,9 @@ export const CHECK_NAMES = [
   'Standing recovery',
   'Torso consistency',
   'Row elbow flexion',
+  'Top arm flexion',
+  'Hanging arm extension',
+  'Squat knee flexion',
 ] as const;
 
 export type PhaseName =
@@ -41,7 +44,8 @@ export type PhaseName =
   | 'Finish'
   | 'Bottom'
   | 'Pull'
-  | 'Squeeze';
+  | 'Squeeze'
+  | 'Top';
 export const phaseNamesFor = (id?: string): readonly PhaseName[] =>
   strengthExercise(id) ? strengthPhaseNames(id) : PHASE_NAMES;
 export type CheckName = (typeof CHECK_NAMES)[number];

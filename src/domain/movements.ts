@@ -2,7 +2,7 @@ import { exercises } from './exercises';
 import { snatch } from '../data/snatch';
 import type { Movement } from './types';
 // Future movements are catalog entries, not partly implemented experiences.
-const planned = ['Jerk', 'Clean & Jerk', 'Back Squat', 'Front Squat'].map(
+const planned = ['Jerk', 'Clean & Jerk', 'Front Squat'].map(
   (name): Movement => ({
     id: name.toLowerCase().replaceAll(' & ', '-and-').replaceAll(' ', '-'),
     name,

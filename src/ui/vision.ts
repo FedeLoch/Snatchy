@@ -232,7 +232,10 @@ export function bindVisionPlayback(
     const hand = barTrack
       ? barTrack.points.find((p) => Math.abs(p.time - f.time) < 0.001)
       : handBarPoint(f, a.width, a.height);
-    if (hand)
+    if (
+      hand &&
+      !['pull-up', 'chin-up', 'back-squat'].includes(a.exercise?.id ?? '')
+    )
       overlay.innerHTML += `<g class="${a.shaftBar ? 'shaft-bar-estimate' : 'hand-bar-estimate'}"><line class="figure-reference" x1="${hand.left.x}" y1="${hand.left.y}" x2="${hand.right.x}" y2="${hand.right.y}" stroke-width="${thickness * 2}"/><circle class="figure-reference-fill" cx="${hand.x}" cy="${hand.y}" r="${thickness * 3}"/></g>`;
     const guide =
       !rawOverlay && reference ? referenceVector(a, f, reference) : null;

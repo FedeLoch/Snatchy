@@ -49,7 +49,7 @@ test('home → capture exposes the movement catalog', async ({ page }) => {
   ).toBeVisible();
   await page.getByRole('link', { name: 'Analyze a lift', exact: true }).click();
   await expect(page.getByLabel('Movement')).toHaveValue('auto');
-  await expect(page.getByLabel('Movement').locator('option')).toHaveCount(15);
+  await expect(page.getByLabel('Movement').locator('option')).toHaveCount(18);
   await expect(
     page.getByRole('button', { name: 'Record a video' }),
   ).toBeVisible();

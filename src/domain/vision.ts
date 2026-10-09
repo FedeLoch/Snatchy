@@ -54,7 +54,7 @@ export interface VisionAnalysis {
   version: 1;
   kind: 'measured-pose';
   simulated: false;
-  engine: 'MediaPipe Pose Landmarker Lite';
+  engine: 'MediaPipe Pose Landmarker Lite' | 'MediaPipe Pose Landmarker Full';
   duration: number;
   width: number;
   height: number;
@@ -348,6 +348,15 @@ export function analyzePoseSamples(
       points: shaftPoints,
     };
 
+  if (
+    ['pull-up', 'chin-up', 'back-squat'].includes(analysis.exercise?.id ?? '')
+  ) {
+    delete analysis.wristBar;
+    delete analysis.shaftBar;
+    analysis.events = analysis.events.filter(
+      (event) => event.kind !== 'hypothesis' && event.id !== 'overhead',
+    );
+  }
   analysis.body = bodyMeasurements(analysis);
   analysis.lift = estimatePhases(analysis);
   return analysis;

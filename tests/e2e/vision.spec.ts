@@ -2,89 +2,104 @@ import { test, expect } from '@playwright/test';
 import { resolve } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 test.setTimeout(120000);
-test('real local model detects a person, overlays actual frames, and saves measured summaries', async ({
-  page,
-}) => {
-  const outbound: string[] = [];
-  page.on('request', (request) => {
-    if (
-      !request.url().startsWith('http://127.0.0.1:4173') &&
-      !request.url().startsWith('blob:') &&
-      !request.url().startsWith('data:')
-    )
-      outbound.push(request.url());
-  });
-  await page.goto('/#capture');
-  await page
-    .locator('#import')
-    .setInputFiles(resolve('tests/fixtures/person.mp4'));
-  await page
-    .getByRole('button', { name: 'Analyze this video', exact: true })
-    .click();
-  await expect(
-    page.locator('#cv-video, #capture-error:not(:empty)'),
-  ).toHaveCount(1, { timeout: 90000 });
-  await expect(page.locator('#capture-error')).toHaveCount(0);
-  await expect(
-    page.getByRole('heading', { name: 'More evidence needed.', exact: true }),
-  ).toBeVisible();
-  await expect(page.getByLabel('Your analyzed lift video')).toBeVisible();
-  // Metadata initialization sets the start time. Wait for it before seeking.
-  await expect
-    .poll(() =>
-      page
-        .locator('#cv-video')
-        .evaluate((v) => (v as HTMLVideoElement).readyState),
-    )
-    .toBeGreaterThanOrEqual(1);
-  // The model can legitimately miss its first sample. Inspect a later decoded frame.
-  await page.locator('#cv-video').evaluate((element) => {
-    (element as HTMLVideoElement).currentTime = 0.5;
-  });
-  await expect
-    .poll(() => page.locator('#cv-overlay circle').count())
-    .toBeGreaterThan(0);
-  await expect(page.getByText('No technique score assigned')).toBeVisible();
-  await expect(
-    page.locator(
-      '.score:not([data-measured-score]), #pose-frame, [data-motion-time]',
-    ),
-  ).toHaveCount(0);
-  await expect(page.locator('.live-angles')).toContainText('°');
-  await page.getByRole('button', { name: 'Playback speed: 1×' }).click();
-  expect(
+for (const model of ['lite', 'full']) {
+  test(`real local ${model} model detects a person, overlays actual frames, and saves measured summaries`, async ({
+    page,
+  }) => {
+    const outbound: string[] = [];
+    const models: string[] = [];
+    page.on('request', (r) => {
+      if (r.url().endsWith('.task')) models.push(r.url());
+    });
+    page.on('request', (request) => {
+      if (
+        !request.url().startsWith('http://127.0.0.1:4173') &&
+        !request.url().startsWith('blob:') &&
+        !request.url().startsWith('data:')
+      )
+        outbound.push(request.url());
+    });
+    await page.goto('/#capture');
     await page
-      .locator('#cv-video')
-      .evaluate((v) => (v as HTMLVideoElement).playbackRate),
-  ).toBe(0.5);
-  await page.getByRole('button', { name: 'Tracked pose on' }).click();
-  await expect(page.locator('#cv-overlay .tracked-pose circle')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Tracked pose off' }).click();
-  await expect
-    .poll(() => page.locator('#cv-overlay circle').count())
-    .toBeGreaterThan(0);
-  expect(outbound).toEqual([]);
-  expect(
-    (
-      await new AxeBuilder({ page })
-        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
-        .analyze()
-    ).violations,
-  ).toEqual([]);
-  await page.reload();
-  await expect(page.getByText('Saved measurement summary')).toBeVisible();
-  await expect(page.locator('#cv-video')).toHaveCount(0);
-  await expect(
-    page.locator('.score:not([data-measured-score]), [data-motion-time]'),
-  ).toHaveCount(0);
-  await page
-    .getByRole('navigation')
-    .getByRole('link', { name: 'History' })
-    .click();
-  await expect(
-    page.getByRole('link', { name: 'Open measured pose analysis' }),
-  ).toHaveCount(1);
-});
+      .locator('#import')
+      .setInputFiles(resolve('tests/fixtures/person.mp4'));
+    await expect(page.getByLabel('Pose model', { exact: true })).toHaveValue(
+      'lite',
+    );
+    await page.getByLabel('Pose model', { exact: true }).selectOption(model);
+    await page
+      .getByRole('button', { name: 'Analyze this video', exact: true })
+      .click();
+    await expect(
+      page.locator('#cv-video, #capture-error:not(:empty)'),
+    ).toHaveCount(1, { timeout: 90000 });
+    await expect(page.locator('#capture-error')).toHaveCount(0);
+    await expect(
+      page.getByRole('heading', { name: 'More evidence needed.', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByLabel('Your analyzed lift video')).toBeVisible();
+    // Metadata initialization sets the start time. Wait for it before seeking.
+    await expect
+      .poll(() =>
+        page
+          .locator('#cv-video')
+          .evaluate((v) => (v as HTMLVideoElement).readyState),
+      )
+      .toBeGreaterThanOrEqual(1);
+    // The model can legitimately miss its first sample. Inspect a later decoded frame.
+    await page.locator('#cv-video').evaluate((element) => {
+      (element as HTMLVideoElement).currentTime = 0.5;
+    });
+    await expect
+      .poll(() => page.locator('#cv-overlay circle').count())
+      .toBeGreaterThan(0);
+    await expect(page.getByText('No technique score assigned')).toBeVisible();
+    await expect(
+      page.locator(
+        '.score:not([data-measured-score]), #pose-frame, [data-motion-time]',
+      ),
+    ).toHaveCount(0);
+    await expect(page.locator('.live-angles')).toContainText('°');
+    await page.getByRole('button', { name: 'Playback speed: 1×' }).click();
+    expect(
+      await page
+        .locator('#cv-video')
+        .evaluate((v) => (v as HTMLVideoElement).playbackRate),
+    ).toBe(0.5);
+    await page.getByRole('button', { name: 'Tracked pose on' }).click();
+    await expect(page.locator('#cv-overlay .tracked-pose circle')).toHaveCount(
+      0,
+    );
+    await page.getByRole('button', { name: 'Tracked pose off' }).click();
+    await expect
+      .poll(() => page.locator('#cv-overlay circle').count())
+      .toBeGreaterThan(0);
+    expect(outbound).toEqual([]);
+    expect(models).toEqual([
+      `http://127.0.0.1:4173/models/pose_landmarker_${model}.task`,
+    ]);
+    expect(
+      (
+        await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+          .analyze()
+      ).violations,
+    ).toEqual([]);
+    await page.reload();
+    await expect(page.getByText('Saved measurement summary')).toBeVisible();
+    await expect(page.locator('#cv-video')).toHaveCount(0);
+    await expect(
+      page.locator('.score:not([data-measured-score]), [data-motion-time]'),
+    ).toHaveCount(0);
+    await page
+      .getByRole('navigation')
+      .getByRole('link', { name: 'History' })
+      .click();
+    await expect(
+      page.getByRole('link', { name: 'Open measured pose analysis' }),
+    ).toHaveCount(1);
+  });
+}
 test('blank video receives no pose, technique score or invented observations', async ({
   page,
 }) => {

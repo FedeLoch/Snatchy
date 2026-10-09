@@ -11,6 +11,7 @@ self.onmessage = async (
     bitmap?: ImageBitmap;
     time?: number;
     origin?: string;
+    model?: 'lite' | 'full';
   }>,
 ) => {
   const { id, type, bitmap, time, origin } = event.data;
@@ -22,7 +23,7 @@ self.onmessage = async (
       );
       detector = await PoseLandmarker.createFromOptions(files, {
         baseOptions: {
-          modelAssetPath: `${origin}/models/pose_landmarker_lite.task`,
+          modelAssetPath: `${origin}/models/pose_landmarker_${event.data.model === 'full' ? 'full' : 'lite'}.task`,
           delegate: 'CPU',
         },
         runningMode: 'VIDEO',

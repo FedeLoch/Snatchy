@@ -24,7 +24,8 @@ export function isVisionRecord(value: unknown): value is VisionRecord {
     a.kind !== 'measured-pose' ||
     a.version !== 1 ||
     a.simulated !== false ||
-    a.engine !== 'MediaPipe Pose Landmarker Lite' ||
+    (a.engine !== 'MediaPipe Pose Landmarker Lite' &&
+      a.engine !== 'MediaPipe Pose Landmarker Full') ||
     !['tracked', 'insufficient'].includes(a.status) ||
     !['left', 'right'].includes(a.side)
   )
@@ -237,13 +238,19 @@ export function isVisionRecord(value: unknown): value is VisionRecord {
     // silently start rejecting every saved record.
     if (strengthExercise(a.exercise?.id ?? undefined)) {
       const row = a.exercise?.id === 'barbell-row';
-      const allowed = row
-        ? ['Torso consistency', 'Row elbow flexion']
-        : a.exercise?.id === 'deadlift'
-          ? ['Arms through the pull', 'Hip extension', 'Knee extension']
-          : ['Arms through the pull', 'Hip extension'];
+      const bodyPull =
+        a.exercise?.id === 'pull-up' || a.exercise?.id === 'chin-up';
+      const allowed = bodyPull
+        ? ['Top arm flexion', 'Hanging arm extension']
+        : a.exercise?.id === 'back-squat'
+          ? ['Squat knee flexion', 'Knee extension']
+          : row
+            ? ['Torso consistency', 'Row elbow flexion']
+            : a.exercise?.id === 'deadlift'
+              ? ['Arms through the pull', 'Hip extension', 'Knee extension']
+              : ['Arms through the pull', 'Hip extension'];
       const terminal = lift.phases.find(
-        (p) => p.name === (row ? 'Squeeze' : 'Lockout'),
+        (p) => p.name === (bodyPull ? 'Top' : row ? 'Squeeze' : 'Lockout'),
       );
       if (
         lift.checks.some((c) => !allowed.includes(c.name)) ||

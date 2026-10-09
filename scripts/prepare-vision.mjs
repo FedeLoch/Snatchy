@@ -16,3 +16,6 @@ if (
 )
   throw new Error('Pose model integrity check failed.');
 console.log('Local vision runtime ready; model checksum verified.');
+
+const fullModel = await readFile(new URL('public/models/pose_landmarker_full.task', root));
+if (createHash('sha256').update(fullModel).digest('hex') !== '5134a3aad27a58b93da0088d431f366da362b44e3ccfbe3462b3827a839011b1') throw new Error('Full pose model integrity check failed.');

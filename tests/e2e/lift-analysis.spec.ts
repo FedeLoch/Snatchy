@@ -423,6 +423,9 @@ for (const exercise of [
   'deadlift',
   'romanian-deadlift',
   'barbell-row',
+  'pull-up',
+  'chin-up',
+  'back-squat',
 ] as const) {
   test(`${exercise} upload uses its own phases and retains the score`, async ({
     page,

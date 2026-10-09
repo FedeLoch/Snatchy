@@ -20,6 +20,7 @@ import type { Side } from '../domain/vision';
  * shown as-is rather than silently replaced by some other label.
  */
 const PHASE_LABELS: Record<PhaseName, MessageKey> = {
+  Top: 'phases.top',
   Lifting: 'phases.lifting',
   Lockout: 'phases.lockout',
   Lowering: 'phases.lowering',
@@ -37,6 +38,9 @@ const PHASE_LABELS: Record<PhaseName, MessageKey> = {
 };
 
 const CHECK_LABELS: Record<CheckName, MessageKey> = {
+  'Top arm flexion': 'checks.topArmFlexion',
+  'Hanging arm extension': 'checks.hangingArmExtension',
+  'Squat knee flexion': 'checks.squatKneeFlexion',
   'Torso consistency': 'checks.torsoConsistency',
   'Row elbow flexion': 'checks.rowFlexion',
   'Arms through the pull': 'checks.armsThroughPull',
@@ -48,6 +52,9 @@ const CHECK_LABELS: Record<CheckName, MessageKey> = {
 };
 
 const CHECK_DETAIL_LABELS: Record<CheckName, MessageKey> = {
+  'Top arm flexion': 'strength.checkNote',
+  'Hanging arm extension': 'strength.checkNote',
+  'Squat knee flexion': 'strength.checkNote',
   'Torso consistency': 'strength.checkNote',
   'Row elbow flexion': 'strength.checkNote',
   'Arms through the pull': 'checkDetail.armsThroughPull',
@@ -181,6 +188,8 @@ export const phaseEvidence = (phase: {
  * corrected or extended later without a data migration.
  */
 const MOVEMENT_EN_NAMES: Record<string, string> = {
+  'pull-up': 'Pull-up',
+  'chin-up': 'Chin-up',
   deadlift: 'Deadlift',
   'romanian-deadlift': 'Romanian Deadlift',
   'barbell-row': 'Bent-over Barbell Row',

@@ -113,7 +113,11 @@
     "importFromGallery": "Import from gallery",
     "privacyNoteFirst": "Private by design. Your video stays on this device.",
     "privacyNoteSecond": "Automatic rep selection · up to 250 MB",
-    "openingVideo": "Opening your video…"
+    "openingVideo": "Opening your video…",
+    "poseModel": "Pose model",
+    "poseLite": "Lite — faster (default)",
+    "poseFull": "Full — more detailed, slower",
+    "poseModelNote": "Both models analyze your video on this device. Full uses more processing power; better accuracy is not guaranteed."
   },
   "result": {
     "analyzeAnotherLift": "Analyze another lift",
@@ -184,7 +188,8 @@
     "finish": "Finish",
     "bottom": "Bottom",
     "pull": "Pull",
-    "squeeze": "Squeeze"
+    "squeeze": "Squeeze",
+    "top": "Top"
   },
   "checks": {
     "armsThroughPull": "Arms through the pull",
@@ -194,7 +199,10 @@
     "frontRackFlexion": "Front-rack arm flexion",
     "standingRecovery": "Standing recovery",
     "torsoConsistency": "Torso consistency",
-    "rowFlexion": "Row elbow flexion"
+    "rowFlexion": "Row elbow flexion",
+    "topArmFlexion": "Top arm flexion",
+    "hangingArmExtension": "Hanging arm extension",
+    "squatKneeFlexion": "Squat knee flexion"
   },
   "checkDetail": {
     "armsThroughPull": "Minimum visible elbow angle over the recognized pull interval. Unrecognized portions of the pull are excluded.",
@@ -537,7 +545,9 @@
     "front-squat": "Front Squat",
     "deadlift": "Deadlift",
     "romanian-deadlift": "Romanian Deadlift",
-    "barbell-row": "Bent-over Barbell Row"
+    "barbell-row": "Bent-over Barbell Row",
+    "pull-up": "Pull-up",
+    "chin-up": "Chin-up"
   },
   "movementMeta": {
     "snatchGuide": "Place your phone at hip height, perpendicular to the athlete. Keep the whole athlete and both ends of the bar in frame.",
@@ -643,6 +653,9 @@
     "hingePractice": "Practice a light hip hinge with a dowel. Review whether the arms stay long and the bar stays close; the camera cannot establish spinal loading.",
     "rowPractice": "Practice a light supported row and review torso movement. The projected angle does not establish back position or safe loading.",
     "barWindowNote": "Lifting through lockout, or pull through squeeze only. Lowering is excluded. The dashed path is an illustration, not a calibrated target.",
-    "phaseNote": "Experimental strength analysis. Select this exercise manually. Phase timing and checks use visible 2D movement; no clean/snatch catch is assumed."
+    "phaseNote": "Experimental strength analysis. Select this exercise manually. Phase timing and checks use visible 2D movement; no clean/snatch catch is assumed.",
+    "pullPractice": "Use assisted repetitions to practice a controlled rise and return. Grip orientation and chin clearance are not verified by these checks.",
+    "squatPractice": "Practice controlled bodyweight squats. The knee-angle check is an experimental range-of-motion target, not a confirmation of competition depth or safe loading.",
+    "bodyOnly": "Bar-path analysis is not supported for this exercise. Body movement and joint angles are used for the phase estimates."
   }
 }

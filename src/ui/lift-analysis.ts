@@ -119,6 +119,8 @@ export function techniqueFeedback(
 }
 
 export function barPanel(a: VisionAnalysis): string {
+  if (['pull-up', 'chin-up', 'back-squat'].includes(a.exercise?.id ?? ''))
+    return `<section class="bar-section"><h2>${e(t('barPanel.title'))}</h2><p class="footnote">${e(t('strength.bodyOnly'))}</p></section>`;
   const phases = a.lift?.phases ?? [];
   const pullStart =
     phases.find((p) => p.name === 'First pull' && p.applicable !== false)

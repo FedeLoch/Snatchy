@@ -5,7 +5,7 @@ export interface BarPathModel {
   /** The exercise id this model describes, so the UI can localise its name. */
   exerciseId: string;
   exerciseName: string;
-  family: 'snatch' | 'clean' | 'hinge' | 'row';
+  family: 'snatch' | 'clean' | 'hinge' | 'row' | 'squat' | 'vertical-pull';
   start: 'floor' | 'hang' | 'high-hang';
   receiving: 'squat' | 'power' | 'muscle' | 'none';
   startY: number;

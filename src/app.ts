@@ -72,6 +72,7 @@ function selectedAnalysis(record: VisionRecord) {
   );
 }
 let exerciseChoice = 'auto';
+let poseModel: 'lite' | 'full' = 'lite';
 let suppressFocus = false;
 let noticeTimer: ReturnType<typeof setTimeout> | undefined;
 let removedUntil = 0;
@@ -250,7 +251,7 @@ function route() {
     draw(views.home(records, warning, visionRows(visionRecords.slice(0, 3))));
   else if (page === 'history')
     draw(views.history(records, warning, visionRows(visionRecords)));
-  else draw(views.capture(movement, pendingVideo, exerciseChoice));
+  else draw(views.capture(movement, pendingVideo, exerciseChoice, poseModel));
 }
 function renderResult() {
   if (!active) return;
@@ -388,6 +389,7 @@ async function analyzeUpload() {
     const analysis = await analyzeVideo(source, {
       signal: controller.signal,
       exerciseId: exerciseChoice,
+      poseModel,
       onProgress: (progress, label) => {
         const bar = root.querySelector<HTMLProgressElement>('progress');
         if (bar) bar.value = progress;
@@ -414,7 +416,7 @@ async function analyzeUpload() {
     warning = saveVisionHistory(storage, visionRecords);
     work = null;
     if (warning) {
-      draw(views.capture(movement, null, exerciseChoice));
+      draw(views.capture(movement, null, exerciseChoice, poseModel));
       root.querySelector('#capture-error')!.textContent = td(warning);
       return;
     }
@@ -422,7 +424,7 @@ async function analyzeUpload() {
   } catch (error) {
     if (controller.signal.aborted) return;
     work = null;
-    draw(views.capture(movement, pendingVideo, exerciseChoice));
+    draw(views.capture(movement, pendingVideo, exerciseChoice, poseModel));
     root.querySelector('#capture-error')!.textContent =
       error instanceof Error ? td(error.message) : t('errors.analysisFailed');
   }
@@ -450,7 +452,8 @@ async function importFile(file: File) {
     }
     releaseVideo(pendingVideo);
     pendingVideo = source;
-    draw(views.capture(movement, pendingVideo, exerciseChoice));
+    poseModel = 'lite';
+    draw(views.capture(movement, pendingVideo, exerciseChoice, poseModel));
   } catch (error) {
     if (controller.signal.aborted) return;
     document.querySelector('#capture-error')!.textContent =
@@ -679,6 +682,8 @@ root.addEventListener('change', (event) => {
       t('settings.languageChanged', { language: languageEndonym(language) }),
     );
   }
+  if (input.id === 'pose-model')
+    poseModel = input.value === 'full' ? 'full' : 'lite';
   if (input.id === 'movement') {
     exerciseChoice = input.value;
     if (input.value !== 'auto') movement = requireMovement(input.value);
@@ -699,6 +704,7 @@ root.addEventListener('change', (event) => {
       previous.sampleRate,
       input.value,
     );
+    updated.engine = previous.engine;
     updated.interval = previous.interval;
     if (record.analysis.repetitions?.length)
       record.analysis.repetitions[selectedReps.get(record.id) ?? 0] = updated;

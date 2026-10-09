@@ -198,3 +198,13 @@ Select **Deadlift**, **Romanian Deadlift**, or **Bent-over Barbell Row** manuall
 These exercises have their own five-phase timelines, repetition windows, measured bar-path view, saved scores, and feedback. Deadlift checks arm, hip, and knee extension; Romanian deadlift checks arm and hip extension; rows check torso consistency and elbow flexion. Scores use only available checks, with partial coverage indicated when checks are missing. These are experimental 2D heuristics, not a validated coaching or spinal-safety assessment. Record a clear side view with the whole body visible and include the return portion of each repetition.
 
 Validation includes synthetic pose regressions and browser upload/history tests. Real deadlift, Romanian deadlift, and row footage still needs validation before claiming measurement accuracy for these exercises. Rebuild the APK using the Android instructions above to include them.
+
+### Choose a pose model per video
+
+After importing or recording a clip, select **Lite** (default, faster) or **Full** (more processing, potentially more detailed poses) before pressing Analyze. Every new clip defaults to Lite; retries keep the chosen model. Both model files are bundled locally, including in the APK, so pose analysis needs no server or model download. Full does not guarantee better accuracy on every lift. Saved analysis records retain the model used; changing an exercise does not rerun pose inference.
+
+### Pull-ups, chin-ups and back squats
+
+Select these exercises manually before analysis (Lite and Full both work). Pull-ups and chin-ups use shoulder motion with Setup → Pull → Top → Lowering → Finish phases and experimental hanging-arm extension / top-arm flexion checks. Grip orientation and chin-over-bar clearance are not verified; select the variant yourself. Back squats use hip motion with Setup → Lowering → Bottom → Lifting → Lockout phases and experimental knee-flexion / standing-extension checks. These checks do not verify competition squat depth or spinal safety.
+
+Repetition detection requires a visible return to the start. Static footage does not earn a score, and unavailable angles remain unscored. The bar-path panel explains that tracking is unsupported for these exercises; no wrist-based bar trace is drawn. Joint measurements, phase selection, feedback and saved scores remain available. Synthetic regressions and browser tests cover these paths; real footage validation is still needed.

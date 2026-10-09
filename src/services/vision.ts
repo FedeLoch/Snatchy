@@ -88,6 +88,7 @@ export async function analyzeVideo(
   options: {
     signal: AbortSignal;
     exerciseId?: string;
+    poseModel?: 'lite' | 'full';
     onProgress: (progress: number, label: string) => void;
   },
 ): Promise<VisionAnalysis> {
@@ -145,7 +146,11 @@ export async function analyzeVideo(
   }
   try {
     onProgress(0, 'vision.loadingModel');
-    await request({ type: 'init', origin: location.origin });
+    await request({
+      type: 'init',
+      origin: location.origin,
+      model: options.poseModel ?? 'lite',
+    });
     await mediaEvent(video, 'loadeddata', signal, () => {
       video.src = source.url;
       video.load();
@@ -196,7 +201,12 @@ export async function analyzeVideo(
       SAMPLE_RATE,
       options.exerciseId ?? 'auto',
     );
+    analysis.engine =
+      options.poseModel === 'full'
+        ? 'MediaPipe Pose Landmarker Full'
+        : 'MediaPipe Pose Landmarker Lite';
     analysis.repetitions = analyzeRepetitions(analysis);
+    for (const rep of analysis.repetitions) rep.engine = analysis.engine;
     onProgress(1, 'status.analysisComplete');
     return analysis;
   } finally {

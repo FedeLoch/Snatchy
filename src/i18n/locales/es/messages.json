@@ -510,7 +510,8 @@
     "supportTitle": "Mantén Snatchy en marcha",
     "systemOption": "Sistema ({language})",
     "title": "Ajustes",
-    "version": "Versión {version}"
+    "version": "Versión {version}",
+    "privacyPolicy": "Política de privacidad"
   },
   "severity": {
     "minor": "leve",
@@ -657,7 +658,12 @@
     "phaseNote": "No todas las variantes incluyen las siete fases. «Inicio colgado» marca las fases del suelo a la rodilla que omite un levantamiento desde encima de las rodillas; un guion indica que la cámara no permitió resolver la fase. Las fases que faltan no bajan la puntuación.",
     "testAdLoaded": "Anuncio de prueba de Google",
     "testAdUnavailable": "Anuncio de prueba no disponible. Los consejos siguen disponibles con los anuncios activados.",
-    "testAdLoading": "Cargando anuncio de prueba de Google…"
+    "testAdLoading": "Cargando anuncio de prueba de Google…",
+    "adLoaded": "Publicidad",
+    "adUnavailable": "Anuncio no disponible: el coaching sigue disponible mientras los anuncios estén activados.",
+    "adLoading": "Cargando anuncio…",
+    "adPrivacy": "Opciones de privacidad de anuncios",
+    "adsNoteLive": "Activado de forma predeterminada. Desactivar los anuncios también desactiva las sugerencias de coaching y los ángulos de referencia. Las mediciones y puntuaciones siguen disponibles. Los anuncios no son personalizados y los sirve Google AdMob; en el EEE y el Reino Unido se te pide consentimiento primero. Tus vídeos y datos de pose nunca se comparten."
   },
   "strength": {
     "unresolved": "No se pudo identificar esta fase a partir del movimiento visible.",

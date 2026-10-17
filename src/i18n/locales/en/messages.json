@@ -43,7 +43,8 @@
     "supportDonate": "Buy me a coffee",
     "footer": "Built by",
     "creator": "Fede Lochbaum",
-    "donate": "Buy me a coffee"
+    "donate": "Buy me a coffee",
+    "privacyPolicy": "Privacy policy"
   },
   "home": {
     "eyebrow": "Built for the moments between sets",
@@ -657,7 +658,12 @@
     "phaseNote": "Not every variation includes all seven phases. “Hang start” marks the floor-to-knee phases a lift from above the knees skips; a dash means the camera evidence did not resolve the phase. Missing phases do not lower the score.",
     "testAdLoaded": "Google test ad",
     "testAdUnavailable": "Test ad unavailable — coaching remains available while ads are enabled.",
-    "testAdLoading": "Loading Google test ad…"
+    "testAdLoading": "Loading Google test ad…",
+    "adLoaded": "Advertisement",
+    "adUnavailable": "Ad unavailable — coaching remains available while ads are enabled.",
+    "adLoading": "Loading ad…",
+    "adPrivacy": "Ad privacy choices",
+    "adsNoteLive": "Enabled by default. Turning ads off also disables coaching suggestions and reference angles. Measurements and scores remain available. Ads are non-personalised and served by Google AdMob; in the EEA and UK you are asked for consent first. Your videos and pose data are never shared."
   },
   "strength": {
     "unresolved": "This phase was not resolved from the visible movement.",

@@ -23,9 +23,7 @@ for (const model of ['lite', 'full']) {
     await page
       .locator('#import')
       .setInputFiles(resolve('tests/fixtures/person.mp4'));
-    await expect(page.getByLabel('Model', { exact: true })).toHaveValue(
-      'lite',
-    );
+    await expect(page.getByLabel('Model', { exact: true })).toHaveValue('lite');
     await page.getByLabel('Model', { exact: true }).selectOption(model);
     await page
       .getByRole('button', { name: 'Analyze this video', exact: true })
@@ -88,7 +86,9 @@ for (const model of ['lite', 'full']) {
     ).toEqual([]);
     await page.reload();
     // The video is gone after reload; the skeleton saved on the device replays.
-    await expect(page.getByText('Saved skeleton', { exact: true })).toBeVisible();
+    await expect(
+      page.getByText('Saved skeleton', { exact: true }),
+    ).toBeVisible();
     await expect(page.locator('#cv-video')).toHaveCount(0);
     await page.locator('#sk-scrub').fill('0.5');
     await expect

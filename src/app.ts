@@ -1,4 +1,4 @@
-import { syncNativeAds } from './services/native-ads';
+import { showAdPrivacyOptions, syncNativeAds } from './services/native-ads';
 import { setFeature } from './services/features';
 import { analyzePoseSamples } from './domain/vision';
 import { exerciseById } from './domain/exercises';
@@ -567,6 +567,8 @@ root.addEventListener('click', (event) => {
     id = target.dataset.id ?? '';
   if (action === 'ad-settings') {
     go('settings');
+  } else if (action === 'ad-privacy') {
+    void showAdPrivacyOptions().catch(() => undefined);
   } else if (action === 'progress-exercise') {
     progressExercise = id;
     const y = window.scrollY;

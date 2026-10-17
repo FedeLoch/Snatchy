@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Snatchy privacy policy</title>
+    <meta
+      name="description"
+      content="How Snatchy handles your videos, pose data and advertising."
+    />
+    <style>
+      :root {
+        --bg: #f4f6f9;
+        --text: #141b24;
+        --muted: #4f5d6c;
+        --line: #d3dbe3;
+        --accent: #1d5c7d;
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0d1117;
+          --text: #e8edf3;
+          --muted: #a3b0c0;
+          --line: #2b333e;
+          --accent: #7caec7;
+        }
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          16px/1.6 system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+      }
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 32px 16px 64px;
+      }
+      h1 {
+        font-size: 2rem;
+        line-height: 1.2;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 1.15rem;
+        margin: 32px 0 8px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+      }
+      p,
+      li {
+        color: var(--muted);
+      }
+      strong {
+        color: var(--text);
+      }
+      a {
+        color: var(--accent);
+      }
+      .back {
+        display: inline-block;
+        margin-bottom: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <a class="back" href="/#settings">← Back to Snatchy</a>
+      <h1>Privacy policy</h1>
+      <p>Effective 17 October 2026 · Snatchy for Android and web</p>
+
+      <h2>In short</h2>
+      <p>
+        <strong
+          >Snatchy analyses your lifts on your own device. Your videos and the
+          body-pose data measured from them are never uploaded by Snatchy, and
+          there is no account or Snatchy server.</strong
+        >
+        The only third party is Google AdMob, which shows optional ads and is
+        described below.
+      </p>
+
+      <h2>What Snatchy processes on your device</h2>
+      <ul>
+        <li>
+          <strong>Videos you record or import.</strong> They are read on the
+          device to measure body and hand positions. Snatchy does not copy or
+          store the video file; it is available only while the app is open.
+        </li>
+        <li>
+          <strong>Pose data.</strong> Body, hand and 3D joint positions for each
+          analysed frame, plus the detected bar position. They are stored on the
+          device so you can replay a saved lift as a skeleton and re-analyse it.
+          They contain no images.
+        </li>
+        <li>
+          <strong>Analysis summaries.</strong> Exercise, phases, measured
+          checks, scores and the hand/bar path of up to ten recent lifts, used
+          for your history and progress chart.
+        </li>
+        <li>
+          <strong>Preferences.</strong> Language, theme and whether optional ads
+          are enabled.
+        </li>
+      </ul>
+      <p>
+        All of this stays in the app's private storage on your device (browser
+        or WebView local storage and IndexedDB). Snatchy does not sell, share or
+        transfer it.
+      </p>
+
+      <h2>Advertising (Google AdMob)</h2>
+      <p>
+        When optional ads are enabled, the Android app shows a banner served by
+        Google AdMob. Snatchy requests <strong>non-personalised</strong> ads
+        only. To deliver and measure ads and prevent fraud, Google may collect
+        information such as your device's advertising ID, IP address,
+        approximate location, device and app information, and ad interactions.
+        In the European Economic Area, the UK and Switzerland you are asked for
+        consent before any ad is requested, and you can change your choice at
+        any time under <em>Settings → Ad privacy choices</em>. You can turn ads
+        off entirely under <em>Settings → Optional advertising</em>; coaching
+        suggestions are then disabled, while measurements and scores remain.
+      </p>
+      <p>
+        Google's use of this data is described in
+        <a href="https://policies.google.com/technologies/partner-sites"
+          >How Google uses information from sites or apps that use its
+          services</a
+        >
+        and the
+        <a href="https://policies.google.com/privacy">Google Privacy Policy</a>.
+        Snatchy never passes your videos, pose data or results to Google or any
+        other party.
+      </p>
+
+      <h2>Permissions</h2>
+      <p>
+        Snatchy uses internet access only to load ads. Recording a video opens
+        your device's camera app; importing opens the system file picker, which
+        gives Snatchy access only to the file you choose.
+      </p>
+
+      <h2>Deleting your data</h2>
+      <p>
+        Remove a lift from <em>History</em> to delete its summary and saved pose
+        data. Clearing the app's storage or uninstalling removes everything
+        Snatchy stored. Because Snatchy has no server, there is nothing else to
+        delete.
+      </p>
+
+      <h2>Children</h2>
+      <p>
+        Snatchy is not directed at children under 13 and does not knowingly
+        process their data.
+      </p>
+
+      <h2>Not medical or coaching advice</h2>
+      <p>
+        Snatchy's phases, checks and scores are experimental estimates from 2D
+        and 3D pose models. They can be wrong, are not a substitute for a
+        qualified coach or medical professional, and you train at your own risk.
+      </p>
+
+      <h2>Changes and contact</h2>
+      <p>
+        Changes to this policy are published on this page with a new effective
+        date. Questions or deletion requests:
+        <a href="https://github.com/FedeLoch/Snatchy/issues"
+          >github.com/FedeLoch/Snatchy/issues</a
+        >.
+      </p>
+    </main>
+  </body>
+</html>

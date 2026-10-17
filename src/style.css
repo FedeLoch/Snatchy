@@ -2288,14 +2288,27 @@ dialog blockquote {
 }
 
 .measured-timeline {
-  gap: 7px;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 14px 7px;
+}
+/* Seven columns do not fit a phone: wrap into two readable rows. */
+@media (max-width: 600px) {
+  .measured-timeline {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 .measured-timeline button {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 .measured-timeline button b {
+  display: block;
   font-size: 13px;
-  white-space: nowrap;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 .measured-timeline button:disabled {
   opacity: 0.6;
@@ -3166,4 +3179,13 @@ html:has(.sponsor-slot) main {
   width: auto;
   min-width: 88px;
   margin: 0;
+}
+
+/* A phase the variation skips (hang start), distinct from one not detected. */
+.phase-line.skipped {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--line-strong) 0 6px,
+    transparent 6px 10px
+  );
 }

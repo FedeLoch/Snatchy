@@ -215,16 +215,16 @@ test('auto-detects cleans and recalculates the selected variant without uploadin
   ).toContainText('Front-rack arm flexion');
   await page.locator('#result-exercise').selectOption('high-hang-clean');
   await expect(page.locator('[data-cv-phase="First pull"]')).toContainText(
-    'N/A',
+    'Hang start',
   );
   await expect(page.locator('[data-cv-phase="Transition"]')).toContainText(
-    'N/A',
+    'Hang start',
   );
   await expect(page.locator('#result-exercise')).toBeFocused();
   await page.reload();
   await expect(page.locator('#result-exercise')).toHaveValue('high-hang-clean');
   await expect(page.locator('[data-cv-phase="First pull"]')).toContainText(
-    'N/A',
+    'Hang start',
   );
 });
 

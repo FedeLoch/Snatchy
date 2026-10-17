@@ -462,8 +462,17 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
       set(3, upperPull, 'phaseEvidence.secondPullEstimated', true);
   }
   // Hand height supplies an independent upper-pull cue when a rebend or
-  // hip-angle change is obscured. Require a sustained hip-level crossing
+  // hip-angle change is obscured. The second pull starts once the bar is past
+  // mid-thigh; the wrists stay below the hip joint until full extension, so
+  // a hip-level threshold alone misses it. Require a sustained crossing
   // followed by further upward motion; never divide the clip into fixed slots.
+  const upperThigh = (x: (typeof data)[number]) =>
+    visible(x.kneePoint) && x.kneePoint.y > x.hipPoint.y
+      ? Math.max(
+          x.hipPoint.y + 0.03 * motionScale,
+          (x.hipPoint.y + x.kneePoint.y) / 2,
+        )
+      : x.hipPoint.y + 0.03 * motionScale;
   if (
     phases[3].start === null &&
     !highHang &&
@@ -477,10 +486,15 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
         continuous(pull, i) &&
         sustained(
           i,
-          (x) =>
-            x.wrist.y <= x.hipPoint.y + 0.03 * motionScale &&
-            x.wrist.y > x.shoulder.y,
+          (x) => x.wrist.y <= upperThigh(x) && x.wrist.y > x.shoulder.y,
         ) &&
+        // Rising hands alone are not a pull: the hips must be opening or
+        // still travelling, which a frozen (mis-tracked) lower body is not.
+        ((v.hip !== null &&
+          data[pull].hip !== null &&
+          v.hip >= data[pull].hip! + 5) ||
+          (i >= step &&
+            Math.abs(v.hipPoint.y - data[i - step].hipPoint.y) > 0.002)) &&
         data[extension].wrist.y < v.wrist.y - 0.015 * motionScale,
     );
     if (upper >= 0) set(3, upper, 'phaseEvidence.handUpperPull', true);

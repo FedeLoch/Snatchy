@@ -510,7 +510,8 @@
     "supportTitle": "Soutenez Snatchy",
     "systemOption": "Système ({language})",
     "title": "Réglages",
-    "version": "Version {version}"
+    "version": "Version {version}",
+    "privacyPolicy": "Politique de confidentialité"
   },
   "severity": {
     "minor": "mineur",
@@ -657,7 +658,12 @@
     "phaseNote": "Toutes les variantes n’incluent pas les sept phases. « Départ suspendu » indique les phases du sol au genou qu’un mouvement partant au-dessus des genoux saute ; un tiret signifie que la caméra n’a pas permis de résoudre la phase. Les phases manquantes ne baissent pas le score.",
     "testAdLoaded": "Annonce de test Google",
     "testAdUnavailable": "Annonce de test indisponible. Les conseils restent disponibles avec les annonces activées.",
-    "testAdLoading": "Chargement de l’annonce de test Google…"
+    "testAdLoading": "Chargement de l’annonce de test Google…",
+    "adLoaded": "Publicité",
+    "adUnavailable": "Publicité indisponible — le coaching reste disponible tant que les publicités sont activées.",
+    "adLoading": "Chargement de la publicité…",
+    "adPrivacy": "Choix de confidentialité des annonces",
+    "adsNoteLive": "Activé par défaut. Désactiver les publicités désactive aussi les suggestions de coaching et les angles de référence. Les mesures et les scores restent disponibles. Les annonces ne sont pas personnalisées et sont diffusées par Google AdMob ; dans l’EEE et au Royaume-Uni, votre consentement est demandé d’abord. Vos vidéos et données de pose ne sont jamais partagées."
   },
   "strength": {
     "unresolved": "Cette phase ne peut pas être identifiée à partir du mouvement visible.",

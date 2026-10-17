@@ -1,5 +1,16 @@
 apply plugin: 'com.android.application'
 
+// Release settings live in android/release.properties (git-ignored; see
+// release.properties.example and docs/PUBLISHING.md). Without that file the
+// app still builds, signed for debugging and with Google's test AdMob app.
+def releaseProps = new Properties()
+def releasePropsFile = rootProject.file('release.properties')
+if (releasePropsFile.exists()) releasePropsFile.withInputStream { releaseProps.load(it) }
+// One version for web and Android: package.json. versionCode is derived as
+// major*10000 + minor*100 + patch, so every version bump uploads cleanly.
+def appVersion = new groovy.json.JsonSlurper().parse(rootProject.file('../package.json')).version
+def (major, minor, patch) = appVersion.tokenize('.').collect { it.replaceAll(/\D.*/, '') as int }
+
 android {
     namespace = "com.snatchy.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +18,11 @@ android {
         applicationId "com.snatchy.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode major * 10000 + minor * 100 + patch
+        versionName appVersion
+        manifestPlaceholders = [
+            admobAppId: releaseProps.getProperty('admobAppId', 'ca-app-pub-3940256099942544~3347511713')
+        ]
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +30,19 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (releaseProps.getProperty('storeFile')) {
+                storeFile rootProject.file(releaseProps.getProperty('storeFile'))
+                storePassword releaseProps.getProperty('storePassword')
+                keyAlias releaseProps.getProperty('keyAlias')
+                keyPassword releaseProps.getProperty('keyPassword')
+            }
+        }
+    }
     buildTypes {
         release {
+            if (releaseProps.getProperty('storeFile')) signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

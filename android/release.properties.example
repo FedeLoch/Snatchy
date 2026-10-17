@@ -1,0 +1,11 @@
+# Copy to android/release.properties (git-ignored) and fill in.
+# Upload key created with:
+#   keytool -genkeypair -v -keystore snatchy-upload.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000
+# Paths are relative to the android/ folder. Keep the .jks file and these
+# passwords backed up outside the repository.
+storeFile=snatchy-upload.jks
+storePassword=
+keyAlias=upload
+keyPassword=
+# AdMob > Apps > App settings > App ID (contains "~").
+admobAppId=ca-app-pub-0000000000000000~0000000000

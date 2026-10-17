@@ -6,6 +6,9 @@ const state = vi.hoisted(() => ({
   showBanner: vi.fn(),
   removeBanner: vi.fn(),
   addListener: vi.fn(),
+  requestConsentInfo: vi.fn(),
+  showConsentForm: vi.fn(),
+  showPrivacyOptionsForm: vi.fn(),
 }));
 vi.mock('@capacitor/core', () => ({
   Capacitor: { getPlatform: () => state.platform },
@@ -15,6 +18,7 @@ vi.mock('../../src/services/features', () => ({
 }));
 vi.mock('@capacitor-community/admob', () => ({
   AdMob: state,
+  AdmobConsentStatus: { REQUIRED: 'REQUIRED' },
   BannerAdSize: { BANNER: 'BANNER' },
   BannerAdPosition: { BOTTOM_CENTER: 'BOTTOM_CENTER' },
   BannerAdPluginEvents: {
@@ -32,6 +36,11 @@ beforeEach(() => {
   state.showBanner.mockResolvedValue(undefined);
   state.removeBanner.mockResolvedValue(undefined);
   state.addListener.mockResolvedValue({ remove: vi.fn() });
+  state.requestConsentInfo.mockResolvedValue({
+    status: 'NOT_REQUIRED',
+    canRequestAds: true,
+    privacyOptionsRequirementStatus: 'NOT_REQUIRED',
+  });
   document.body.innerHTML = '<div class="sponsor-slot"><span></span></div>';
 });
 it('does not initialize ads on the web or when initially disabled', async () => {
@@ -89,4 +98,42 @@ it('contains SDK failure without changing the coaching preference', async () => 
   expect(document.querySelector('.sponsor-slot')?.textContent).toContain(
     'unavailable',
   );
+});
+
+it('asks for consent before any ad request and respects a refusal', async () => {
+  state.requestConsentInfo.mockResolvedValue({
+    status: 'REQUIRED',
+    isConsentFormAvailable: true,
+    canRequestAds: false,
+    privacyOptionsRequirementStatus: 'REQUIRED',
+  });
+  state.showConsentForm.mockResolvedValue({
+    status: 'REQUIRED',
+    canRequestAds: false,
+    privacyOptionsRequirementStatus: 'REQUIRED',
+  });
+  const { syncNativeAds, adPrivacyOptionsRequired } =
+    await import('../../src/services/native-ads');
+  await syncNativeAds();
+  expect(state.showConsentForm).toHaveBeenCalled();
+  expect(state.initialize).not.toHaveBeenCalled();
+  expect(state.showBanner).not.toHaveBeenCalled();
+  expect(adPrivacyOptionsRequired()).toBe(true);
+  // A later attempt does not register the banner listeners twice.
+  await syncNativeAds();
+  expect(state.addListener).toHaveBeenCalledTimes(3);
+});
+
+it('serves live ads only with a valid production unit id', async () => {
+  const { adConfig, DEMO_BANNER_ID } =
+    await import('../../src/services/native-ads');
+  expect(adConfig(undefined)).toEqual({
+    bannerId: DEMO_BANNER_ID,
+    testing: true,
+  });
+  expect(adConfig('not-an-id').testing).toBe(true);
+  expect(adConfig('ca-app-pub-123/456')).toEqual({
+    bannerId: 'ca-app-pub-123/456',
+    testing: false,
+  });
 });

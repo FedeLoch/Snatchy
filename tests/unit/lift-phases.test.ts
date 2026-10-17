@@ -155,3 +155,16 @@ it('recognizes a short rebend immediately before extension as estimated timing',
   expect(lift.phases[2].estimated).toBe(true);
   expect(lift.phases[4].start).toBe(12 / 15);
 });
+it('ends the pull where the extension plateau starts, not where it ends', () => {
+  const knees = [
+    110, 110, 110, 120, 130, 145, 160, 155, 145, 140, 145, 160, 172, 174, 176,
+    120, 95, 85, 85, 95, 115, 140, 165, 175, 175, 175,
+  ];
+  const frames = liftFrames(knees, { 12: 174, 13: 174, 14: 174 });
+  const a = analyzePoseSamples(frames, 1000, 1000, 26 / 15);
+  const turnover = a.lift!.phases.find((p) => p.name === 'Turnover')!;
+  expect(turnover.start).toBeCloseTo(12 / 15);
+  // The arms check stops before the extension sample.
+  const arms = a.lift!.checks.find((c) => c.name === 'Arms through the pull');
+  expect(arms!.time).toBeLessThan(12 / 15);
+});

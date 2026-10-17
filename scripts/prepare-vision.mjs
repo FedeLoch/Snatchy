@@ -19,3 +19,6 @@ console.log('Local vision runtime ready; model checksum verified.');
 
 const fullModel = await readFile(new URL('public/models/pose_landmarker_full.task', root));
 if (createHash('sha256').update(fullModel).digest('hex') !== '5134a3aad27a58b93da0088d431f366da362b44e3ccfbe3462b3827a839011b1') throw new Error('Full pose model integrity check failed.');
+
+const handModel = await readFile(new URL('public/models/hand_landmarker.task', root));
+if (createHash('sha256').update(handModel).digest('hex') !== 'fbc2a30080c3c557093b5ddfc334698132eb341044ccee322ccf8bcf3607cde1') throw new Error('Hand model integrity check failed.');

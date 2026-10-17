@@ -1,6 +1,9 @@
 import type { Landmark, PoseSample } from '../../src/domain/vision';
 const point = (x: number, y: number): Landmark => ({ x, y, visibility: 0.99 });
-export function liftFrames(kneeOverride?: number[]): PoseSample[] {
+export function liftFrames(
+  kneeOverride?: number[],
+  hipOverride: Record<number, number> = {},
+): PoseSample[] {
   const knees = kneeOverride ?? [
     110, 110, 110, 120, 130, 145, 160, 155, 145, 140, 145, 160, 175, 170, 150,
     120, 95, 85, 85, 95, 115, 140, 165, 175, 175, 175,
@@ -8,7 +11,8 @@ export function liftFrames(kneeOverride?: number[]): PoseSample[] {
   return knees.map((knee, i) => {
     const angle = ((180 - knee) * Math.PI) / 180;
     const h = point(0.5 + Math.sin(angle) * 0.18, 0.7 - Math.cos(angle) * 0.18);
-    const hipAngle = ((i === 12 ? 175 : 145) * Math.PI) / 180;
+    const hipAngle =
+      ((hipOverride[i] ?? (i === 12 ? 175 : 145)) * Math.PI) / 180;
     const dir = Math.atan2(0.7 - h.y, 0.5 - h.x) - hipAngle;
     const s = point(h.x + Math.cos(dir) * 0.2, h.y + Math.sin(dir) * 0.2);
     const wrist = point(

@@ -4,7 +4,14 @@ import {
 } from './strength-analysis';
 import { sustainedMinimum } from './pose-quality';
 import { exerciseById, strengthExercise } from './exercises';
-import { anglesAt, SIDES, visible, type VisionAnalysis } from './vision';
+import {
+  anglesAt,
+  BASE_SAMPLE_RATE,
+  SIDES,
+  stride,
+  visible,
+  type VisionAnalysis,
+} from './vision';
 import { source } from '../i18n';
 /**
  * Phase and check names are persisted and validated against these exact
@@ -49,6 +56,8 @@ export type PhaseName =
 export const phaseNamesFor = (id?: string): readonly PhaseName[] =>
   strengthExercise(id) ? strengthPhaseNames(id) : PHASE_NAMES;
 export type CheckName = (typeof CHECK_NAMES)[number];
+/** Combined hip+knee degrees within which a sample counts as extended. */
+const EXTENSION_PLATEAU = 10;
 
 export interface MeasuredPhase {
   name: PhaseName;
@@ -142,7 +151,8 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
         visible(v.shoulder) &&
         visible(v.hipPoint),
     );
-  if (data.length < 12) return result;
+  const step = stride(a.sampleRate);
+  if (data.length < 12 * step) return result;
   // Scale image-plane travel thresholds to the athlete, so a more distant
   // camera does not turn the same visible motion into a static pose.
   const torso = data
@@ -161,7 +171,9 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
   const continuous = (start: number, end: number) =>
     data
       .slice(start + 1, end + 1)
-      .every((v, i) => v.time - data[start + i].time <= 3.1 / a.sampleRate) &&
+      .every(
+        (v, i) => v.time - data[start + i].time <= (3.1 * step) / a.sampleRate,
+      ) &&
     !a.frames.some(
       (f) =>
         f.people > 1 && f.time > data[start].time && f.time < data[end].time,
@@ -170,9 +182,9 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     i: number,
     predicate: (v: (typeof data)[number]) => boolean,
   ) =>
-    i + 2 < data.length &&
-    continuous(i, i + 2) &&
-    data.slice(i, i + 3).every(predicate);
+    i + 2 * step < data.length &&
+    continuous(i, i + 2 * step) &&
+    data.slice(i, i + 2 * step + 1).every(predicate);
   const overhead = (v: (typeof data)[number]) =>
     clean
       ? v.elbow !== null &&
@@ -247,11 +259,11 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
   );
   // Locate the active ascent into receiving, rather than an earlier setup
   // adjustment. Three-sample velocities reduce single-frame hand jitter.
-  if (catchIndex > 3 && pull >= 0) {
+  if (catchIndex > 3 * step && pull >= 0) {
     const speed = data.map((_, i) =>
-      i > 0 && i + 1 < data.length && continuous(i - 1, i + 1)
-        ? (data[i - 1].wrist.y - data[i + 1].wrist.y) /
-          (data[i + 1].time - data[i - 1].time)
+      i >= step && i + step < data.length && continuous(i - step, i + step)
+        ? (data[i - step].wrist.y - data[i + step].wrist.y) /
+          (data[i + step].time - data[i - step].time)
         : 0,
     );
     let peak = pull;
@@ -293,6 +305,10 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     const limit = catchIndex >= 0 ? catchIndex : data.length;
     for (let i = pull + 1; i < limit; i++) {
       if (!continuous(pull, i)) break;
+      // Once the hands pass the shoulders the athlete is pulling under or
+      // already holding the bar; a later standing pose (e.g. a power
+      // position before an overhead squat) is not the end of the pull.
+      if (data[i].wrist.y < data[i].shoulder.y) break;
       if (
         data[i].hip === null ||
         data[i].knee === null ||
@@ -319,12 +335,45 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
         ))
     )
       extension = -1;
+    // Hips and knees often stay extended for a few samples while the arms
+    // start the pull-under. The pull ends where the joints stop opening on
+    // that plateau, not at its last (marginally larger) sample.
+    if (extension >= 0) {
+      const sum = (i: number) =>
+        data[i].hip === null || data[i].knee === null
+          ? null
+          : data[i].hip! + data[i].knee!;
+      const peak = sum(extension)!;
+      for (let i = pull + 1; i < extension; i++) {
+        // One 15 Hz step ahead in time, so uneven spacing (skipped repeated
+        // frames) does not change what counts as still opening.
+        const ahead = data.findIndex(
+          (v, j) => j > i && v.time >= data[i].time + 0.9 / BASE_SAMPLE_RATE,
+        );
+        const here = sum(i),
+          next = sum(ahead < 0 || ahead > extension ? extension : ahead);
+        if (
+          continuous(pull, i) &&
+          here !== null &&
+          data[i].hip! >= 155 &&
+          data[i].knee! >= 155 &&
+          here >= peak - EXTENSION_PLATEAU &&
+          (next === null || next - here < 3)
+        ) {
+          // A shift of one 15 Hz step is within the base sampling
+          // resolution; only a longer plateau shows the earlier end.
+          if (data[extension].time - data[i].time >= 1.9 / BASE_SAMPLE_RATE)
+            extension = i;
+          break;
+        }
+      }
+    }
   }
   // Oblique views and imperfect lifts may never project to 155 degrees.
   // Recognize a measured drive from relative opening of both joints, with
   // rising hands and a subsequent receiving position. Scoring still uses the
   // original targets, so a short extension is measured rather than omitted.
-  if (extension < 0 && pull >= 0 && catchIndex > pull + 2) {
+  if (extension < 0 && pull >= 0 && catchIndex > pull + 2 * step) {
     for (let i = pull + 1; i < catchIndex; i++) {
       const v = data[i];
       if (!continuous(pull, i)) break;
@@ -363,17 +412,23 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
   // Preserve independently recognizable phases; do not invent a missing knee rebend.
   for (
     let i = pull + 1;
-    !highHang && pull >= 0 && extension >= 0 && i < extension - 1;
+    !highHang && pull >= 0 && extension >= 0 && i < extension - step;
     i++
   ) {
     if (
-      [data[i].knee, data[i - 1].knee, data[i + 1].knee].some((v) => v === null)
+      i < step ||
+      [data[i].knee, data[i - step].knee, data[i + step].knee].some(
+        (v) => v === null,
+      )
     )
       continue;
-    if (data[i].knee! < data[i - 1].knee! || data[i].knee! <= data[i + 1].knee!)
+    if (
+      data[i].knee! < data[i - step].knee! ||
+      data[i].knee! <= data[i + step].knee!
+    )
       continue;
-    let dip = i + 1;
-    for (let j = i + 1; j < extension; j++)
+    let dip = i + step;
+    for (let j = i + step; j < extension; j++)
       if (data[j].knee !== null && data[j].knee! < data[dip].knee!) dip = j;
     if (
       data[i].knee! - data[dip].knee! >= 6 &&
@@ -381,7 +436,7 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     ) {
       // At 15 fps a fast rebend can occupy a single interval before the
       // extension sample. Keep it, but disclose limited timing resolution.
-      const brief = extension - i <= 2;
+      const brief = extension - i <= 2 * step;
       set(2, i, 'phaseEvidence.transition', brief);
       set(3, dip, 'phaseEvidence.secondPull', brief);
       break;
@@ -390,7 +445,7 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
   // A visible knee rebend is not required to identify an upper pull. Use
   // independent hip-level hand position and measured extension, and disclose
   // that this is a timing estimate rather than a confirmed rebend boundary.
-  if (phases[3].start === null && pull >= 0 && extension > pull + 1) {
+  if (phases[3].start === null && pull >= 0 && extension > pull + step) {
     const upperPull = data.findIndex(
       (v, i) =>
         i > pull &&
@@ -413,7 +468,7 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
     phases[3].start === null &&
     !highHang &&
     pull >= 0 &&
-    extension > pull + 2
+    extension > pull + 2 * step
   ) {
     const upper = data.findIndex(
       (v, i) =>
@@ -543,9 +598,15 @@ export function estimatePhases(a: VisionAnalysis): LiftPhases {
         ? -1
         : data.findIndex((v) => v.time === phases[2].start);
   if (pull >= 0 && pullEnd - pull >= 2 && continuous(pull, pullEnd)) {
-    const pullFrames = data
-      .slice(pull, pullEnd + 1)
-      .filter((v) => v.elbow !== null);
+    // The extension sample itself is where the arms start the pull-under,
+    // so prefer the samples before it. A pull too short to give three of
+    // them at this sampling rate keeps the extension sample.
+    const measured = (end: number) =>
+      data.slice(pull, end).filter((v) => v.elbow !== null);
+    let pullFrames = measured(
+      extension >= 0 ? pullEnd - step + 1 : pullEnd + 1,
+    );
+    if (pullFrames.length < 3) pullFrames = measured(pullEnd + 1);
     if (pullFrames.length >= 3) {
       const armFrame = sustainedMinimum(
         pullFrames,

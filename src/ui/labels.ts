@@ -132,6 +132,7 @@ const EVENT_TITLE_KEYS: Record<string, MessageKey> = {
   'Greatest observed elbow flexion': 'eventTitles.elbow',
   'Extended arm above shoulder': 'eventTitles.armAboveShoulder',
   'Possible arm bend before extension': 'eventTitles.armBend',
+  'Wrist bend while receiving': 'eventTitles.wristBend',
 };
 
 export const eventTitle = (title: string): string =>
@@ -148,6 +149,7 @@ const EVENT_DETAIL_KEYS: Record<string, MessageKey> = {
   'elbow-flexion': 'eventDetails.elbow-flexion',
   overhead: 'eventDetails.overhead',
   'possible-early-bend': 'eventDetails.possible-early-bend',
+  'wrist-bend': 'eventDetails.wrist-bend',
 };
 
 export const eventDetail = (

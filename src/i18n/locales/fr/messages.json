@@ -92,7 +92,12 @@
     "poseModel": "Modèle",
     "poseLite": "Lite — plus rapide (par défaut)",
     "poseFull": "Full — plus détaillé, plus lent",
-    "poseModelNote": "Les deux modèles analysent la vidéo sur cet appareil. Full demande plus de calcul ; une meilleure précision n’est pas garantie."
+    "poseModelNote": "Les deux modèles analysent la vidéo sur cet appareil. Full demande plus de calcul ; une meilleure précision n’est pas garantie.",
+    "timing": "Précision temporelle",
+    "timingStandard": "Standard — 15 images/s (par défaut)",
+    "timingPrecise": "Précis — 30 images/s, plus lent",
+    "timingNote": "Précis échantillonne deux fois plus souvent les clips de 30 s maximum pour mieux mesurer les tirages rapides. L’analyse prend environ deux fois plus de temps et n’aide qu’avec une vraie vidéo à 30 i/s ou plus.",
+    "guideAria": "Placement de la caméra : téléphone sur trépied à hauteur de hanche, de profil par rapport à l’athlète et à angle droit avec la barre, avec tout le corps et les deux disques dans le cadre."
   },
   "checkDetail": {
     "armsThroughPull": "Angle de coude visible minimal sur l'intervalle de traction reconnu. Les portions non reconnues de la traction sont exclues.",
@@ -241,14 +246,16 @@
     "extension": "Angle de hanche projeté {angle}°. Il s'agit d'un angle mesuré dans le plan de l'image, pas d'une preuve d'extension complète.",
     "knee-flexion": "Angle de genou projeté {angle}°. Examinez cette image pour localiser la position de réception.",
     "overhead": "Le poignet visible reste au-dessus de l'épaule, coude tendu, pendant trois échantillons. Cela ne suffit pas à vérifier une réception au-dessus de la tête ou un tirage balancé.",
-    "possible-early-bend": "Une flexion du coude a été visible environ {ms} ms avant l'angle de hanche maximal observé. Règle expérimentale ; examinez les images avant de modifier votre technique."
+    "possible-early-bend": "Une flexion du coude a été visible environ {ms} ms avant l'angle de hanche maximal observé. Règle expérimentale ; examinez les images avant de modifier votre technique.",
+    "wrist-bend": "Flexion projetée du poignet de {angle}° entre l'avant-bras et la main pendant la réception, d'après le suivi des mains. L'angle de la caméra influence cette estimation."
   },
   "eventTitles": {
     "armAboveShoulder": "Bras tendu au-dessus de l'épaule",
     "armBend": "Flexion possible des bras avant l'extension",
     "elbow": "Flexion de coude maximale observée",
     "hip": "Extension de hanche maximale observée",
-    "knee": "Flexion de genou la plus profonde observée"
+    "knee": "Flexion de genou la plus profonde observée",
+    "wristBend": "Flexion du poignet à la réception"
   },
   "exerciseReason": {
     "manual": "Sélectionné manuellement. Changez-le si cet enregistrement contient un autre mouvement.",
@@ -605,7 +612,13 @@
     "yourAnalyzedLiftVideo": "Votre vidéo de mouvement analysée",
     "rawOverlay": "Afficher les points bruts",
     "filteredOverlay": "Afficher les points filtrés",
-    "filterNote": "La vue brute sert à comparer. Les mesures excluent les anomalies isolées ; les guides apparaissent avec la vue filtrée."
+    "filterNote": "La vue brute sert à comparer. Les mesures excluent les anomalies isolées ; les guides apparaissent avec la vue filtrée.",
+    "handSamples": "{count} échantillons avec mains suivies",
+    "savedSkeletonTag": "Squelette enregistré",
+    "play": "Lecture",
+    "pause": "Pause",
+    "skeletonScrub": "Position de la relecture du squelette",
+    "skeletonNote": "Relecture du squelette enregistré sur cet appareil. La vidéo n’est pas conservée ; importez de nouveau le clip pour voir les images."
   },
   "coaching": {
     "title": "Conseils techniques",
@@ -657,5 +670,21 @@
     "pullPractice": "Pratiquez des répétitions assistées avec une montée et une descente contrôlées. Ces mesures ne vérifient ni la prise ni le passage du menton au-dessus de la barre.",
     "squatPractice": "Pratiquez des squats contrôlés au poids du corps. L’angle du genou est un objectif expérimental, sans confirmer la profondeur réglementaire ni la sécurité de la charge.",
     "bodyOnly": "La trajectoire de barre n’est pas disponible pour cet exercice. Les phases utilisent le mouvement du corps et les angles articulaires."
+  },
+  "progress": {
+    "title": "Progression",
+    "movementFilter": "Mouvement",
+    "latest": "Dernier",
+    "change": "Depuis le premier",
+    "best": "Meilleur",
+    "points": "pts",
+    "single": "Enregistrez à nouveau ce mouvement pour voir votre progression.",
+    "early": "La comparaison se fait au sein du même mouvement. La tendance récente apparaît après six enregistrements notés.",
+    "trend": "Les trois derniers enregistrements font en moyenne {delta} points par rapport aux trois précédents.",
+    "partialNote": "Les points creux sont des scores partiels avec moins de vérifications disponibles.",
+    "chartAria": "Score de {movement} sur {count} enregistrements, sur une échelle de 0 à 100",
+    "tableCaption": "Scores de {movement} par enregistrement",
+    "date": "Enregistré",
+    "score": "Score"
   }
 }

@@ -2,12 +2,16 @@ import { syncNativeAds } from './services/native-ads';
 import { setFeature } from './services/features';
 import { analyzePoseSamples } from './domain/vision';
 import { exerciseById } from './domain/exercises';
-import { analyzeVideo } from './services/vision';
+import { analyzeVideo, type TimingDetail } from './services/vision';
+import { progressCard } from './ui/progress';
+import { loadPose, prunePoses, savePose } from './services/pose-store';
+import { bindSkeletonControls, SkeletonClock } from './ui/skeleton-clock';
+import { reliablePoseFrames } from './domain/pose-quality';
 import {
   loadVisionHistory,
   saveVisionHistory,
 } from './services/vision-history';
-import type { VisionRecord } from './domain/vision';
+import type { PoseSample, VisionRecord } from './domain/vision';
 import {
   visionRows,
   visionProcessing,
@@ -63,6 +67,24 @@ const storage: StoragePort = {
 };
 const saved = loadHistory(storage);
 let visionRecords = loadVisionHistory(storage);
+void prunePoses(visionRecords.map((r) => r.id));
+/** Records whose saved skeleton was already requested this session. */
+const poseRequested = new Set<string>();
+/** Attach saved pose frames to a summary-only record, so it can replay its
+ * skeleton and be re-analyzed. Each rep gets the frames of its interval. */
+function hydratePose(record: VisionRecord, raw: PoseSample[]) {
+  const a = record.analysis;
+  a.frames = reliablePoseFrames(raw, a.width, a.height, a.sampleRate);
+  for (const rep of a.repetitions ?? []) {
+    const { start, end } = rep.interval ?? { start: 0, end: a.duration };
+    rep.frames = reliablePoseFrames(
+      raw.filter((f) => f.time >= start && f.time <= end),
+      a.width,
+      a.height,
+      a.sampleRate,
+    );
+  }
+}
 const visionVideos = new Map<string, VideoSource>();
 const selectedReps = new Map<string, number>();
 function selectedAnalysis(record: VisionRecord) {
@@ -73,6 +95,8 @@ function selectedAnalysis(record: VisionRecord) {
 }
 let exerciseChoice = 'auto';
 let poseModel: 'lite' | 'full' = 'lite';
+let timing: TimingDetail = 'standard';
+let progressExercise: string | null = null;
 let suppressFocus = false;
 let noticeTimer: ReturnType<typeof setTimeout> | undefined;
 let removedUntil = 0;
@@ -176,6 +200,12 @@ function refreshInPlace(index = 0) {
   )?.focus({ preventScroll: true });
   window.scrollTo(0, y);
 }
+/** Re-render the current screen without moving focus. */
+function rerender() {
+  suppressFocus = true;
+  route();
+  suppressFocus = false;
+}
 function route() {
   const route = location.hash.slice(1) || 'home';
   if (route === 'main') {
@@ -219,7 +249,29 @@ function route() {
         .join('');
       root.querySelector('.analysis-layout')?.before(nav);
     }
-    visionCleanup = bindVisionPlayback(root, analysis);
+    const video = visionVideos.get(record.id) ?? null;
+    if (!video && !analysis.frames.length && !poseRequested.has(record.id)) {
+      poseRequested.add(record.id);
+      void loadPose(record.id).then((raw) => {
+        if (!raw?.length || location.hash !== '#vision/' + record.id) return;
+        hydratePose(record, raw);
+        rerender();
+      });
+    }
+    const stage = root.querySelector<HTMLElement>('#skeleton-stage');
+    if (!video && stage) {
+      const clock = new SkeletonClock(
+        stage,
+        analysis.interval?.start ?? 0,
+        analysis.interval?.end ?? analysis.duration,
+      );
+      const stopPlayback = bindVisionPlayback(root, analysis, clock);
+      const stopControls = bindSkeletonControls(root, clock);
+      visionCleanup = () => {
+        stopControls();
+        stopPlayback();
+      };
+    } else visionCleanup = bindVisionPlayback(root, analysis);
     return;
   }
   if (route.startsWith('result/')) {
@@ -250,8 +302,18 @@ function route() {
   if (page === 'home')
     draw(views.home(records, warning, visionRows(visionRecords.slice(0, 3))));
   else if (page === 'history')
-    draw(views.history(records, warning, visionRows(visionRecords)));
-  else draw(views.capture(movement, pendingVideo, exerciseChoice, poseModel));
+    draw(
+      views.history(
+        records,
+        warning,
+        progressCard(visionRecords, progressExercise) +
+          visionRows(visionRecords),
+      ),
+    );
+  else
+    draw(
+      views.capture(movement, pendingVideo, exerciseChoice, poseModel, timing),
+    );
 }
 function renderResult() {
   if (!active) return;
@@ -390,6 +452,7 @@ async function analyzeUpload() {
       signal: controller.signal,
       exerciseId: exerciseChoice,
       poseModel,
+      timing,
       onProgress: (progress, label) => {
         const bar = root.querySelector<HTMLProgressElement>('progress');
         if (bar) bar.value = progress;
@@ -414,9 +477,11 @@ async function analyzeUpload() {
       }
     }
     warning = saveVisionHistory(storage, visionRecords);
+    const keep = visionRecords.map((r) => r.id);
+    void savePose(record.id, analysis.frames).then(() => prunePoses(keep));
     work = null;
     if (warning) {
-      draw(views.capture(movement, null, exerciseChoice, poseModel));
+      draw(views.capture(movement, null, exerciseChoice, poseModel, timing));
       root.querySelector('#capture-error')!.textContent = td(warning);
       return;
     }
@@ -424,7 +489,9 @@ async function analyzeUpload() {
   } catch (error) {
     if (controller.signal.aborted) return;
     work = null;
-    draw(views.capture(movement, pendingVideo, exerciseChoice, poseModel));
+    draw(
+      views.capture(movement, pendingVideo, exerciseChoice, poseModel, timing),
+    );
     root.querySelector('#capture-error')!.textContent =
       error instanceof Error ? td(error.message) : t('errors.analysisFailed');
   }
@@ -453,7 +520,10 @@ async function importFile(file: File) {
     releaseVideo(pendingVideo);
     pendingVideo = source;
     poseModel = 'lite';
-    draw(views.capture(movement, pendingVideo, exerciseChoice, poseModel));
+    timing = 'standard';
+    draw(
+      views.capture(movement, pendingVideo, exerciseChoice, poseModel, timing),
+    );
   } catch (error) {
     if (controller.signal.aborted) return;
     document.querySelector('#capture-error')!.textContent =
@@ -497,6 +567,18 @@ root.addEventListener('click', (event) => {
     id = target.dataset.id ?? '';
   if (action === 'ad-settings') {
     go('settings');
+  } else if (action === 'progress-exercise') {
+    progressExercise = id;
+    const y = window.scrollY;
+    suppressFocus = true;
+    route();
+    suppressFocus = false;
+    window.scrollTo(0, y);
+    root
+      .querySelector<HTMLElement>(
+        `[data-action="progress-exercise"][data-id="${CSS.escape(id)}"]`,
+      )
+      ?.focus({ preventScroll: true });
   } else if (action === 'select-rep') {
     const rep = Number(target.dataset.rep);
     selectedReps.set(id, rep);
@@ -684,6 +766,8 @@ root.addEventListener('change', (event) => {
   }
   if (input.id === 'pose-model')
     poseModel = input.value === 'full' ? 'full' : 'lite';
+  if (input.id === 'timing-detail')
+    timing = input.value === 'precise' ? 'precise' : 'standard';
   if (input.id === 'movement') {
     exerciseChoice = input.value;
     if (input.value !== 'auto') movement = requireMovement(input.value);

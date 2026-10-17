@@ -1,4 +1,10 @@
-import { anglesAt, SIDES, visible, type VisionAnalysis } from './vision';
+import {
+  anglesAt,
+  SIDES,
+  stride,
+  visible,
+  type VisionAnalysis,
+} from './vision';
 import { source } from '../i18n';
 export interface Exercise {
   id: string;
@@ -157,7 +163,8 @@ export function detectExercise(a: VisionAnalysis): ExerciseSelection {
     // same everywhere. The catalog keys sit alongside for a future surface.
     reason: source('exerciseReason.unresolved'),
   };
-  if (data.length < 12) return unknown;
+  const step = stride(a.sampleRate);
+  if (data.length < 12 * step) return unknown;
   const initial = data[0];
   const moved =
     Math.max(...data.map((v) => v.wrist.y)) -
@@ -165,9 +172,9 @@ export function detectExercise(a: VisionAnalysis): ExerciseSelection {
     0.12;
   if (!moved) return unknown;
   const sustained = (i: number, predicate: (v: typeof initial) => boolean) =>
-    i + 2 < data.length &&
-    data[i + 2].time - data[i].time <= 2.1 / a.sampleRate &&
-    data.slice(i, i + 3).every(predicate);
+    i + 2 * step < data.length &&
+    data[i + 2 * step].time - data[i].time <= (2.1 * step) / a.sampleRate &&
+    data.slice(i, i + 2 * step + 1).every(predicate);
   const overhead = data.findIndex((_, i) =>
     sustained(
       i,
@@ -207,7 +214,7 @@ export function detectExercise(a: VisionAnalysis): ExerciseSelection {
   // continuous three-sample position before receiving, and prefer evidence of
   // the lower start over later positions that every floor pull passes through.
   const starts = new Set<string>();
-  for (let i = 0; i + 2 < receiver; i++) {
+  for (let i = 0; i + 2 * step < receiver; i++) {
     const candidate = position(data[i]);
     if (sustained(i, (v) => position(v) === candidate)) starts.add(candidate);
   }

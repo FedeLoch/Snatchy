@@ -22,6 +22,8 @@ const en = flatten(catalogs.en);
 const SHARED_KEYS = new Set([
   'app.brand',
   'app.volume',
+  'vision.pause',
+  'progress.score',
   'settings.creator',
   'settings.version',
   'capture.eyebrow',

@@ -9,3 +9,6 @@ test-results/
 public/vision/
 
 /pose-benchmark.json
+
+# Private athlete videos used for local precision checks
+validation-clips/

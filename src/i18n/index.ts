@@ -177,3 +177,11 @@ export function formatDateTime(timestamp: number): string {
     minute: '2-digit',
   });
 }
+
+/** Short day-and-month date for chart axes. */
+export function formatDate(timestamp: number): string {
+  return new Date(timestamp).toLocaleDateString(current, {
+    month: 'short',
+    day: 'numeric',
+  });
+}

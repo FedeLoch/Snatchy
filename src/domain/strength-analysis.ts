@@ -1,4 +1,10 @@
-import { anglesAt, SIDES, visible, type VisionAnalysis } from './vision';
+import {
+  anglesAt,
+  SIDES,
+  stride,
+  visible,
+  type VisionAnalysis,
+} from './vision';
 import type { LiftPhases, PhaseName, MovementCheck } from './lift-phases';
 import { source } from '../i18n';
 export function strengthPhaseNames(id?: string): readonly PhaseName[] {
@@ -45,7 +51,11 @@ export function strengthWindows(
     turned = false;
   for (let i = 0; i < data.length; i++) {
     const r = data[i];
-    if (!r.valid || (i > 0 && r.time - data[i - 1].time > 1.6 / a.sampleRate)) {
+    if (
+      !r.valid ||
+      (i > 0 &&
+        r.time - data[i - 1].time > (1.6 * stride(a.sampleRate)) / a.sampleRate)
+    ) {
       base = extreme = -1;
       turned = false;
       continue;
@@ -68,10 +78,15 @@ export function strengthWindows(
       : data[base].wrist - data[extreme].wrist;
     if (
       peak >= travel &&
-      data[extreme].time - data[base].time >= 2 / a.sampleRate
+      data[extreme].time - data[base].time >=
+        (2 * stride(a.sampleRate)) / a.sampleRate
     )
       turned = true;
-    if (turned && excursion <= travel * 0.15 && i - extreme >= 2) {
+    if (
+      turned &&
+      excursion <= travel * 0.15 &&
+      i - extreme >= 2 * stride(a.sampleRate)
+    ) {
       windows.push({ start: data[base].time, end: r.time });
       base = extreme = i;
       turned = false;
@@ -106,9 +121,15 @@ export function estimateStrengthPhases(a: VisionAnalysis): LiftPhases {
     (r) =>
       r.valid && (!window || (r.time >= window.start && r.time <= window.end)),
   );
-  if (candidates.length < 9) return result;
+  if (candidates.length < 9 * stride(a.sampleRate)) return result;
   const d = candidates;
-  if (d.some((r, i) => i > 0 && r.time - d[i - 1].time > 1.6 / a.sampleRate))
+  if (
+    d.some(
+      (r, i) =>
+        i > 0 &&
+        r.time - d[i - 1].time > (1.6 * stride(a.sampleRate)) / a.sampleRate,
+    )
+  )
     return result;
   let extreme = 0;
   for (let i = 1; i < d.length; i++)
@@ -210,7 +231,7 @@ export function estimateStrengthPhases(a: VisionAnalysis): LiftPhases {
     const arms = d
       .slice(rdl ? extreme : onset, top + 1)
       .filter((r) => r.elbow !== null);
-    if (arms.length >= 3) {
+    if (arms.length >= 3 * stride(a.sampleRate)) {
       const sorted = arms.toSorted((x, y) => x.elbow! - y.elbow!);
       const mid = sorted[Math.floor(sorted.length / 2)];
       add('Arms through the pull', mid.elbow, 160, mid.time);

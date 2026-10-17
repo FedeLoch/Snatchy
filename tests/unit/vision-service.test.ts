@@ -80,6 +80,7 @@ it('decodes and samples the source duration, returns measured failure for blank 
     onProgress: progress,
   });
   expect(result.frames).toHaveLength(15);
+  expect(result.sampleRate).toBe(15);
   expect(result.status).toBe('insufficient');
   expect(result.simulated).toBe(false);
   expect(result.frames[14].time).toBeCloseTo(14 / 15);
@@ -227,4 +228,47 @@ it('waits for frame presentation, bounds missing callbacks, and cancels cleanly'
   await vi.advanceTimersByTimeAsync(0);
   controller.abort();
   await assertion;
+});
+
+it('samples short clips at 30 Hz only when precise timing is chosen', async () => {
+  const precise = await analyzeVideo(source, {
+    signal: controller.signal,
+    timing: 'precise',
+    onProgress: vi.fn(),
+  });
+  expect(precise.sampleRate).toBe(30);
+  expect(precise.frames).toHaveLength(30);
+  const long = await analyzeVideo(
+    { ...source, duration: 31 },
+    { signal: controller.signal, timing: 'precise', onProgress: vi.fn() },
+  );
+  expect(long.sampleRate).toBe(15);
+  expect(long.frames).toHaveLength(Math.ceil(31 * 15));
+});
+
+it('skips repeated source frames and analyzes them at the base rate', async () => {
+  // A 15 fps source presents the same frame for two 30 Hz sample times.
+  Object.defineProperty(video, 'requestVideoFrameCallback', {
+    value: vi.fn((fn: VideoFrameRequestCallback) => {
+      queueMicrotask(() =>
+        fn(0, {
+          mediaTime: Math.floor(video.currentTime * 15) / 15,
+        } as VideoFrameCallbackMetadata),
+      );
+      return 1;
+    }),
+    configurable: true,
+  });
+  Object.defineProperty(video, 'cancelVideoFrameCallback', {
+    value: vi.fn(),
+    configurable: true,
+  });
+  const result = await analyzeVideo(source, {
+    signal: controller.signal,
+    timing: 'precise',
+    onProgress: vi.fn(),
+  });
+  expect(result.frames).toHaveLength(15);
+  expect(result.sampleRate).toBe(15);
+  expect(workers[0].terminate).toHaveBeenCalled();
 });

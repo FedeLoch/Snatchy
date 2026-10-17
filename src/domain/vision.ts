@@ -11,6 +11,7 @@ import type { AutomaticBar } from './automatic-bar';
 import { estimatePhases, type LiftPhases } from './lift-phases';
 import type { BarTrack } from './bar-track';
 import { source } from '../i18n';
+import { wristBend } from './hands';
 export interface Landmark {
   x: number;
   y: number;
@@ -24,6 +25,16 @@ export interface PoseSample {
   rawLandmarks?: Landmark[];
   /** Normalized pixel-detected shaft candidate; absent when ambiguous. */
   barShaft?: WristBarPoint;
+  /** Model 3D landmarks in meters around the hips, session-only. Used for
+   * joints whose limbs point toward or away from the camera. */
+  world?: WorldPoint[];
+  /** 21-point hand landmarks per athlete side, session-only. */
+  hands?: Partial<Record<Side, Landmark[]>>;
+}
+export interface WorldPoint {
+  x: number;
+  y: number;
+  z: number;
 }
 export interface FrameAngles {
   elbow: number | null;
@@ -93,6 +104,12 @@ export const SIDES = {
 /** Which side of the athlete was measured. Persisted, so keep the values. */
 export type Side = keyof typeof SIDES;
 export const VISIBILITY = 0.65;
+/** Analysis rules were tuned on 15 Hz samples. At a higher rate they keep the
+ * same time spans by counting this many samples per 15 Hz step, so "three
+ * consecutive samples" still means about 0.13 s rather than half of it. */
+export const BASE_SAMPLE_RATE = 15;
+export const stride = (sampleRate: number): number =>
+  Math.max(1, Math.round(sampleRate / BASE_SAMPLE_RATE));
 export function visible(point: Landmark | undefined): point is Landmark {
   return (
     !!point &&
@@ -126,6 +143,58 @@ export function jointAngle(
     Math.PI
   );
 }
+/** Out-of-plane share of a 3D segment: 0 lies in the image plane, 1 points
+ * straight at or away from the camera. */
+function depthShare(p: WorldPoint, q: WorldPoint): number {
+  const length = Math.hypot(p.x - q.x, p.y - q.y, p.z - q.z);
+  return length < 1e-6 ? 0 : Math.abs(p.z - q.z) / length;
+}
+/** Beyond about 35–40° out of the image plane a projected angle is distorted
+ * enough that the model's 3D estimate is the better measurement. Closer to
+ * the plane, the 2D pixel angle is more precise than noisy depth. Between
+ * these shares the two are blended, so a limb hovering near the boundary
+ * does not flip between measurements from one sample to the next. */
+const BLEND_FROM = 0.35,
+  BLEND_TO = 0.65;
+export function worldAngle(
+  a: WorldPoint,
+  b: WorldPoint,
+  c: WorldPoint,
+): number | null {
+  const u = [a.x - b.x, a.y - b.y, a.z - b.z],
+    v = [c.x - b.x, c.y - b.y, c.z - b.z];
+  const d = Math.hypot(...u) * Math.hypot(...v);
+  if (d < 1e-9) return null;
+  const dot = u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
+  return (Math.acos(Math.max(-1, Math.min(1, dot / d))) * 180) / Math.PI;
+}
+/** Joint angle that stays valid when the camera is not side-on: 2D pixel
+ * angle for limbs near the image plane, 3D model angle for foreshortened
+ * ones. Visibility gating always uses the 2D landmarks. */
+export function measuredAngle(
+  frame: PoseSample,
+  ids: readonly [number, number, number],
+  width: number,
+  height: number,
+): number | null {
+  const [i, j, k] = ids;
+  const flat = jointAngle(
+    frame.landmarks[i],
+    frame.landmarks[j],
+    frame.landmarks[k],
+    width,
+    height,
+  );
+  const w = frame.world;
+  if (flat === null || !w || !w[i] || !w[j] || !w[k]) return flat;
+  const share = Math.max(depthShare(w[i], w[j]), depthShare(w[k], w[j]));
+  if (share <= BLEND_FROM) return flat;
+  const deep = worldAngle(w[i], w[j], w[k]);
+  if (deep === null) return flat;
+  const t = Math.min(1, (share - BLEND_FROM) / (BLEND_TO - BLEND_FROM));
+  const weight = t * t * (3 - 2 * t);
+  return flat + (deep - flat) * weight;
+}
 export function anglesAt(
   frame: PoseSample,
   side: 'left' | 'right',
@@ -133,11 +202,11 @@ export function anglesAt(
   height: number,
 ): FrameAngles {
   if (frame.people !== 1) return { elbow: null, hip: null, knee: null };
-  const [s, e, w, h, k, a] = SIDES[side].map((i) => frame.landmarks[i]);
+  const [s, e, w, h, k, a] = SIDES[side];
   return {
-    elbow: jointAngle(s, e, w, width, height),
-    hip: jointAngle(s, h, k, width, height),
-    knee: jointAngle(h, k, a, width, height),
+    elbow: measuredAngle(frame, [s, e, w], width, height),
+    hip: measuredAngle(frame, [s, h, k], width, height),
+    knee: measuredAngle(frame, [h, k, a], width, height),
   };
 }
 export function nearestSample(
@@ -181,6 +250,7 @@ export function analyzePoseSamples(
   exerciseId = 'snatch',
 ): VisionAnalysis {
   frames = reliablePoseFrames(frames, width, height, sampleRate);
+  const step = stride(sampleRate);
   const side = reliableSide(frames, width, height);
   const values = frames.map((frame) => ({
     frame,
@@ -191,7 +261,7 @@ export function analyzePoseSamples(
   );
   const coverage = frames.length ? usable.length / frames.length : 0;
   const status =
-    coverage >= 0.6 && usable.length >= 12 ? 'tracked' : 'insufficient';
+    coverage >= 0.6 && usable.length >= 12 * step ? 'tracked' : 'insufficient';
   const ranges = {
     elbow: null,
     hip: null,
@@ -234,10 +304,11 @@ export function analyzePoseSamples(
         kind: 'measurement',
       });
     const overhead = usable.find((v, index) => {
-      const consecutive = usable.slice(index, index + 3);
+      const consecutive = usable.slice(index, index + 2 * step + 1);
       return (
-        consecutive.length === 3 &&
-        consecutive[2].frame.time - v.frame.time <= 3 / sampleRate &&
+        consecutive.length === 2 * step + 1 &&
+        consecutive.at(-1)!.frame.time - v.frame.time <=
+          (3 * step) / sampleRate &&
         consecutive.every((x) => {
           const s = x.frame.landmarks[SIDES[side][0]],
             w = x.frame.landmarks[SIDES[side][2]];
@@ -263,10 +334,10 @@ export function analyzePoseSamples(
       overhead.frame.time > hip.maxTime
     ) {
       const early = usable.find((v, index) => {
-        const group = usable.slice(index, index + 3);
+        const group = usable.slice(index, index + 2 * step + 1);
         return (
-          group.length === 3 &&
-          group[2].frame.time - v.frame.time <= 3 / sampleRate &&
+          group.length === 2 * step + 1 &&
+          group.at(-1)!.frame.time - v.frame.time <= (3 * step) / sampleRate &&
           group.every(
             (x) =>
               x.frame.time < hip.maxTime - 0.1 &&
@@ -359,5 +430,37 @@ export function analyzePoseSamples(
   }
   analysis.body = bodyMeasurements(analysis);
   analysis.lift = estimatePhases(analysis);
+  const wrist = receivingWristBend(analysis);
+  if (wrist) {
+    analysis.events.push(wrist);
+    analysis.events.sort((a, b) => a.time - b.time);
+  }
   return analysis;
+}
+
+/** Median projected wrist bend while receiving overhead or in the rack,
+ * measured from the hand model's wrist and middle knuckle. Requires three
+ * hand-tracked samples inside the Catch phase. */
+export function receivingWristBend(a: VisionAnalysis): MotionEvent | null {
+  const p = a.lift?.phases.find((x) => x.name === 'Catch');
+  if (!p || p.start === null || p.end === null) return null;
+  const rows = a.frames
+    .filter((f) => f.people === 1 && f.time >= p.start! && f.time <= p.end!)
+    .map((f) => ({
+      time: f.time,
+      value: wristBend(f, a.side, a.width, a.height),
+    }))
+    .filter((r): r is { time: number; value: number } => r.value !== null);
+  if (rows.length < 3 * stride(a.sampleRate)) return null;
+  const sorted = rows.toSorted((x, y) => x.value - y.value);
+  const mid = sorted[Math.floor(sorted.length / 2)];
+  const angle = Math.round(mid.value);
+  return {
+    id: 'wrist-bend',
+    time: mid.time,
+    title: 'Wrist bend while receiving',
+    detail: `Projected wrist bend ${angle}° between forearm and hand while receiving, from hand tracking. Camera angle affects this estimate.`,
+    values: [angle],
+    kind: 'measurement',
+  };
 }

@@ -79,3 +79,12 @@ it('persists per-rep summaries in a landscape frame with original timestamps', (
     isVisionRecord({ id: 'landscape', createdAt: 1234, analysis: a }),
   ).toBe(true);
 });
+it('closes a repetition when the hands stay up far longer than a receive', () => {
+  const frames = liftFrames();
+  const last = frames.at(-1)!;
+  for (let i = 1; i <= 15 * 40; i++)
+    frames.push({ ...last, time: last.time + i / 15 });
+  const windows = detectRepetitions(analyze(frames));
+  expect(windows).toHaveLength(1);
+  expect(windows[0].end - windows[0].start).toBeLessThan(25);
+});

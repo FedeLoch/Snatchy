@@ -77,6 +77,7 @@ for (const model of ['lite', 'full']) {
     expect(outbound).toEqual([]);
     expect(models).toEqual([
       `http://127.0.0.1:4173/models/pose_landmarker_${model}.task`,
+      'http://127.0.0.1:4173/models/hand_landmarker.task',
     ]);
     expect(
       (
@@ -86,8 +87,20 @@ for (const model of ['lite', 'full']) {
       ).violations,
     ).toEqual([]);
     await page.reload();
-    await expect(page.getByText('Saved measurement summary')).toBeVisible();
+    // The video is gone after reload; the skeleton saved on the device replays.
+    await expect(page.getByText('Saved skeleton', { exact: true })).toBeVisible();
     await expect(page.locator('#cv-video')).toHaveCount(0);
+    await page.locator('#sk-scrub').fill('0.5');
+    await expect
+      .poll(() => page.locator('#cv-overlay circle').count())
+      .toBeGreaterThan(0);
+    expect(
+      (
+        await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+          .analyze()
+      ).violations,
+    ).toEqual([]);
     await expect(
       page.locator('.score:not([data-measured-score]), [data-motion-time]'),
     ).toHaveCount(0);

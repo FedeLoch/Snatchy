@@ -117,7 +117,12 @@
     "poseModel": "Model",
     "poseLite": "Lite — faster (default)",
     "poseFull": "Full — more detailed, slower",
-    "poseModelNote": "Both models analyze your video on this device. Full uses more processing power; better accuracy is not guaranteed."
+    "poseModelNote": "Both models analyze your video on this device. Full uses more processing power; better accuracy is not guaranteed.",
+    "timing": "Timing detail",
+    "timingStandard": "Standard — 15 samples/s (default)",
+    "timingPrecise": "Precise — 30 samples/s, slower",
+    "timingNote": "Precise samples clips up to 30 s twice as often to time fast pulls better. It takes about twice as long and helps only with real 30 fps or faster video.",
+    "guideAria": "Camera setup: phone on a tripod at hip height, facing the lifter side-on at a right angle to the bar, with the whole body and both plates in frame."
   },
   "result": {
     "analyzeAnotherLift": "Analyze another lift",
@@ -367,7 +372,13 @@
     "firstRun": "First runs may take longer. Keep this tab open.",
     "rawOverlay": "Show raw landmarks",
     "filteredOverlay": "Show filtered landmarks",
-    "filterNote": "The raw overlay is for comparison only. Measurements exclude isolated tracking glitches; reference guides appear with the filtered overlay."
+    "filterNote": "The raw overlay is for comparison only. Measurements exclude isolated tracking glitches; reference guides appear with the filtered overlay.",
+    "handSamples": "{count} hand-tracked samples",
+    "savedSkeletonTag": "Saved skeleton",
+    "play": "Play",
+    "pause": "Pause",
+    "skeletonScrub": "Skeleton replay position",
+    "skeletonNote": "Replaying the skeleton saved on this device. The video itself is not stored; import the clip again to see the footage."
   },
   "repetitions": {
     "aria": "Detected repetitions",
@@ -463,14 +474,16 @@
     "knee": "Deepest observed knee flexion",
     "elbow": "Greatest observed elbow flexion",
     "armAboveShoulder": "Extended arm above shoulder",
-    "armBend": "Possible arm bend before extension"
+    "armBend": "Possible arm bend before extension",
+    "wristBend": "Wrist bend while receiving"
   },
   "eventDetails": {
     "extension": "Projected hip angle {angle}°. This is a measured image-plane angle, not proof of full extension.",
     "knee-flexion": "Projected knee angle {angle}°. Inspect this frame to locate the receiving position.",
     "elbow-flexion": "Projected elbow angle {angle}°. Occlusion and camera perspective can affect this estimate.",
     "overhead": "The visible wrist stays above the shoulder with an extended elbow for three samples. This alone does not verify an overhead catch or a Snatch.",
-    "possible-early-bend": "Elbow flexion was visible approximately {ms} ms before the largest observed hip angle. Experimental rule; review the frames before changing technique."
+    "possible-early-bend": "Elbow flexion was visible approximately {ms} ms before the largest observed hip angle. Experimental rule; review the frames before changing technique.",
+    "wrist-bend": "Projected wrist bend {angle}° between forearm and hand while receiving, from hand tracking. Camera angle affects this estimate."
   },
   "barTrack": {
     "close": "Close bar tracking",
@@ -657,5 +670,21 @@
     "pullPractice": "Use assisted repetitions to practice a controlled rise and return. Grip orientation and chin clearance are not verified by these checks.",
     "squatPractice": "Practice controlled bodyweight squats. The knee-angle check is an experimental range-of-motion target, not a confirmation of competition depth or safe loading.",
     "bodyOnly": "Bar-path analysis is not supported for this exercise. Body movement and joint angles are used for the phase estimates."
+  },
+  "progress": {
+    "title": "Progress",
+    "movementFilter": "Movement",
+    "latest": "Latest",
+    "change": "Since first",
+    "best": "Best",
+    "points": "pts",
+    "single": "Record this movement again to see your progress.",
+    "early": "Comparing within the same movement. A recent trend appears after six scored recordings.",
+    "trend": "Last three recordings average {delta} points versus the three before.",
+    "partialNote": "Hollow points are partial scores with fewer available checks.",
+    "chartAria": "{movement} score over {count} recordings, on a 0 to 100 scale",
+    "tableCaption": "{movement} scores by recording",
+    "date": "Recorded",
+    "score": "Score"
   }
 }

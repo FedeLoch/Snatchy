@@ -1,4 +1,11 @@
-import { SIDES, anglesAt, visible, type PoseSample, type Side } from './vision';
+import {
+  SIDES,
+  anglesAt,
+  visible,
+  type Landmark,
+  type PoseSample,
+  type Side,
+} from './vision';
 
 const median = (xs: number[]) =>
   xs.toSorted((a, b) => a - b)[Math.floor(xs.length / 2)];
@@ -112,6 +119,8 @@ export function reliableSide(
 
 /** Representative is an actual sample, not an interpolated angle. A persistent
  * minimum is the lowest three-sample median from uninterrupted observed data.
+ * The window stays three samples at any rate: robustness to one bad sample
+ * depends on the sample count, and a shorter span keeps brief phases measurable.
  */
 export function sustainedMinimum<T extends { time: number }>(
   rows: T[],
@@ -134,4 +143,77 @@ export function sustainedMinimum<T extends { time: number }>(
     if (!best || value(representative)! < value(best)!) best = representative;
   }
   return best;
+}
+
+const TORSO = [11, 12, 23, 24];
+function bodyBox(pose: Landmark[]) {
+  const points = pose.filter((p) => p && (p.visibility ?? 0) >= 0.5);
+  const torso = TORSO.map((i) => pose[i]).filter(
+    (p) => p && (p.visibility ?? 0) >= 0.5,
+  );
+  if (points.length < 4 || !torso.length) return null;
+  const xs = points.map((p) => p.x),
+    ys = points.map((p) => p.y);
+  return {
+    x: torso.reduce((s, p) => s + p.x, 0) / torso.length,
+    y: torso.reduce((s, p) => s + p.y, 0) / torso.length,
+    scale: Math.hypot(
+      Math.max(...xs) - Math.min(...xs),
+      Math.max(...ys) - Math.min(...ys),
+    ),
+    confidence:
+      pose.reduce((s, p) => s + (p?.visibility ?? 0), 0) / pose.length,
+  };
+}
+/** Choose the lifter when the detector returns several bodies, instead of
+ * discarding the frame. Duplicate detections of the same body collapse to the
+ * more confident one. Otherwise the body continuing the previous selection
+ * wins, or on the first frame a clearly larger (closer) body. Anything still
+ * ambiguous returns null so a bystander is never measured as the athlete. */
+export function selectAthlete(
+  poses: Landmark[][],
+  previous: Landmark[] | null,
+): Landmark[] | null {
+  if (poses.length <= 1) return poses[0] ?? null;
+  const boxes = poses
+    .map((pose) => ({ pose, box: bodyBox(pose) }))
+    .filter(
+      (
+        c,
+      ): c is {
+        pose: Landmark[];
+        box: NonNullable<ReturnType<typeof bodyBox>>;
+      } => c.box !== null,
+    );
+  if (!boxes.length) return null;
+  const distinct: typeof boxes = [];
+  for (const c of boxes.toSorted((a, b) => b.box.confidence - a.box.confidence))
+    if (
+      !distinct.some(
+        (d) =>
+          Math.hypot(d.box.x - c.box.x, d.box.y - c.box.y) <
+          Math.max(d.box.scale, c.box.scale) * 0.25,
+      )
+    )
+      distinct.push(c);
+  if (distinct.length === 1) return distinct[0].pose;
+  const last = previous ? bodyBox(previous) : null;
+  if (last) {
+    const ranked = distinct
+      .map((c) => ({
+        ...c,
+        gap: Math.hypot(c.box.x - last.x, c.box.y - last.y),
+      }))
+      .toSorted((a, b) => a.gap - b.gap);
+    if (
+      ranked[0].gap < last.scale * 0.35 &&
+      ranked[1].gap > Math.max(ranked[0].gap * 2, last.scale * 0.2)
+    )
+      return ranked[0].pose;
+    return null;
+  }
+  const bySize = distinct.toSorted((a, b) => b.box.scale - a.box.scale);
+  return bySize[0].box.scale >= bySize[1].box.scale * 1.4
+    ? bySize[0].pose
+    : null;
 }

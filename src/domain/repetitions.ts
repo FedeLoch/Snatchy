@@ -4,9 +4,11 @@ import { anglesAt } from './vision';
 import {
   analyzePoseSamples,
   SIDES,
+  stride,
   visible,
   type VisionAnalysis,
 } from './vision';
+export const MAX_RECEIVE_SECONDS = 20;
 export interface RepWindow {
   start: number;
   end: number;
@@ -16,6 +18,7 @@ export function detectRepetitions(a: VisionAnalysis): RepWindow[] {
   if (strengthExercise(a.exercise?.id ?? undefined)) return strengthWindows(a);
   const [, , wrist, hip] = SIDES[a.side];
   const [shoulder] = SIDES[a.side];
+  const step = stride(a.sampleRate);
   const rows = a.frames.map((f) => {
     const w = f.landmarks[wrist],
       h = f.landmarks[hip],
@@ -54,7 +57,12 @@ export function detectRepetitions(a: VisionAnalysis): RepWindow[] {
     const r = rows[i];
     if (high >= 0) {
       if (r.high) lastHigh = i;
-      if (r.low || r.time - rows[lastHigh].time > 0.4)
+      // A receive, recovery and hold take seconds (longer in slow-motion
+      // footage); hands kept up far longer are not one repetition, so close
+      // the window instead of letting one rep absorb the rest of the clip.
+      if (r.time - rows[high].time > MAX_RECEIVE_SECONDS)
+        finish(rows[high].time + MAX_RECEIVE_SECONDS);
+      else if (r.low || r.time - rows[lastHigh].time > 0.4)
         finish(Math.min(r.time, rows[lastHigh].time + 0.3));
       else continue;
     }
@@ -70,8 +78,8 @@ export function detectRepetitions(a: VisionAnalysis): RepWindow[] {
     }
     if (low >= 0 && onset >= 0 && r.high && rows[low].y! - r.y! > 0.15) {
       highCount++;
-      if (highCount >= 3) {
-        high = i - 2;
+      if (highCount >= 3 * step) {
+        high = i - 3 * step + 1;
         lastHigh = i;
       }
     } else highCount = 0;

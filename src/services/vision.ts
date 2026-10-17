@@ -8,11 +8,32 @@ import {
 import type { VideoSource } from '../domain/types';
 export const MAX_ANALYSIS_SECONDS = 120;
 export const SAMPLE_RATE = 15;
+/** Optional precise timing: a second pull lasts roughly 0.1–0.25 s, only one
+ * to three samples at 15 Hz, and 30 Hz halves the timing step for phases and
+ * checks. It about doubles processing time, so it is opt-in and limited to
+ * short clips. */
+export const PRECISE_SAMPLE_RATE = 30;
+export const PRECISE_MAX_SECONDS = 30;
+export type TimingDetail = 'standard' | 'precise';
+export const sampleRateFor = (
+  duration: number,
+  detail: TimingDetail = 'standard',
+): number =>
+  detail === 'precise' && duration <= PRECISE_MAX_SECONDS
+    ? PRECISE_SAMPLE_RATE
+    : SAMPLE_RATE;
+/** Longest decoded edge sent to the worker. The pose model crops the athlete
+ * from this frame and the hand model crops each hand, so more source pixels
+ * give both models a sharper view than a pre-shrunk 640 px frame. 1920
+ * keeps 1080p phone video at native resolution. */
+export const ANALYSIS_EDGE = 1920;
 interface Reply {
   id: number;
   error?: string;
   people: number;
   landmarks: Landmark[];
+  hands?: PoseSample['hands'];
+  world?: PoseSample['world'];
   barShaft?: PoseSample['barShaft'];
 }
 export function mediaEvent(
@@ -52,23 +73,29 @@ export function mediaEvent(
   });
 }
 /** Wait for the composited frame as well as seek completion where supported.
- * A bounded fallback handles paused/hidden decoders that omit frame callbacks. */
+ * A bounded fallback handles paused/hidden decoders that omit frame callbacks.
+ * Resolves with the presented frame's media timestamp when the browser
+ * reports one, so callers can recognize a repeated source frame. */
 export async function seekVideoFrame(
   video: HTMLVideoElement,
   time: number,
   signal: AbortSignal,
-): Promise<void> {
+): Promise<number | null> {
   if (typeof video.requestVideoFrameCallback !== 'function') {
     await mediaEvent(video, 'seeked', signal, () => {
       video.currentTime = time;
     });
-    return;
+    return null;
   }
+  let mediaTime: number | null = null;
   let finish!: () => void;
   const presented = new Promise<void>((resolve) => {
     finish = resolve;
   });
-  const callback = video.requestVideoFrameCallback(() => finish());
+  const callback = video.requestVideoFrameCallback((_, metadata) => {
+    mediaTime = metadata?.mediaTime ?? null;
+    finish();
+  });
   const timer = setTimeout(finish, 100);
   signal.addEventListener('abort', finish, { once: true });
   try {
@@ -77,6 +104,7 @@ export async function seekVideoFrame(
     });
     await presented;
     signal.throwIfAborted();
+    return mediaTime;
   } finally {
     clearTimeout(timer);
     video.cancelVideoFrameCallback(callback);
@@ -89,6 +117,9 @@ export async function analyzeVideo(
     signal: AbortSignal;
     exerciseId?: string;
     poseModel?: 'lite' | 'full';
+    timing?: TimingDetail;
+    /** Overrides the timing-based sampling rate. */
+    sampleRate?: number;
     onProgress: (progress: number, label: string) => void;
   },
 ): Promise<VisionAnalysis> {
@@ -159,18 +190,30 @@ export async function analyzeVideo(
       height = video.videoHeight;
     if (!width || !height) throw new Error('errors.vision.noDimensions');
     const canvas = document.createElement('canvas');
-    const scale = Math.min(1, 640 / Math.max(width, height));
+    const scale = Math.min(1, ANALYSIS_EDGE / Math.max(width, height));
     canvas.width = Math.round(width * scale);
     canvas.height = Math.round(height * scale);
     const context = canvas.getContext('2d');
     if (!context) throw new Error('errors.noFrameDecoding');
     const frames: PoseSample[] = [];
-    const count = Math.ceil(source.duration * SAMPLE_RATE);
+    const rate =
+      options.sampleRate ?? sampleRateFor(source.duration, options.timing);
+    const count = Math.ceil(source.duration * rate);
+    let lastMediaTime: number | null = null;
+    // Precise timing seeks a quarter interval past each sample time, so a
+    // seek never lands on an ambiguous frame boundary, and skips a repeated
+    // source frame (a lower frame-rate video) instead of analyzing it twice.
+    const precise = rate > SAMPLE_RATE;
+    const offset = precise ? 0.25 / rate : 0;
     for (let index = 0; index < count; index++) {
       signal.throwIfAborted();
-      const target = Math.min(index / SAMPLE_RATE, source.duration - 0.01);
-      if (Math.abs(video.currentTime - target) > 0.001)
-        await seekVideoFrame(video, target, signal);
+      const target = Math.min(index / rate + offset, source.duration - 0.01);
+      if (Math.abs(video.currentTime - target) > 0.001) {
+        const mediaTime = await seekVideoFrame(video, target, signal);
+        if (precise && mediaTime !== null && mediaTime === lastMediaTime)
+          continue;
+        lastMediaTime = mediaTime;
+      } else lastMediaTime = video.currentTime;
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       const bitmap = await createImageBitmap(canvas);
       if (signal.aborted) {
@@ -185,6 +228,8 @@ export async function analyzeVideo(
         time: video.currentTime,
         people: reply.people,
         landmarks: reply.landmarks,
+        ...(reply.hands ? { hands: reply.hands } : {}),
+        ...(reply.world ? { world: reply.world } : {}),
         barShaft: reply.barShaft,
       });
       onProgress(
@@ -193,12 +238,16 @@ export async function analyzeVideo(
       );
     }
     signal.throwIfAborted();
+    // When repeated frames were skipped, the source could not supply the
+    // dense rate; analyze with the base-rate rules its samples actually fit.
+    const analysisRate =
+      rate > SAMPLE_RATE && frames.length < count * 0.75 ? SAMPLE_RATE : rate;
     const analysis = analyzePoseSamples(
       frames,
       width,
       height,
       source.duration,
-      SAMPLE_RATE,
+      analysisRate,
       options.exerciseId ?? 'auto',
     );
     analysis.engine =

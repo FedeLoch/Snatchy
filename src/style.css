@@ -816,6 +816,20 @@ select:disabled {
 .framing .athlete {
   height: 260px;
 }
+.framing .capture-guide {
+  height: auto;
+  max-height: 320px;
+  margin: 0 auto;
+  padding: 12px 8px 4px;
+}
+.guide-torso {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+.guide-inset {
+  fill: var(--panel-2);
+  stroke: var(--line-strong);
+}
 .frame-corner {
   position: absolute;
   width: 21px;
@@ -3047,4 +3061,84 @@ html:has(.sponsor-slot) .app-nav {
 }
 html:has(.sponsor-slot) main {
   padding-bottom: calc(160px + var(--native-ad-height, 0px));
+}
+
+/* Progress card above the recordings list. */
+.progress-card {
+  margin-bottom: 24px;
+}
+.progress-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.progress-stats {
+  margin: 0 0 8px;
+}
+.progress-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 220px;
+  overflow: visible;
+}
+.progress-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.progress-marker {
+  fill: var(--accent);
+  stroke: var(--panel);
+  stroke-width: 2;
+}
+.progress-marker.partial {
+  fill: var(--panel);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.progress-hit {
+  fill: transparent;
+  cursor: default;
+}
+.progress-point:hover .progress-marker {
+  r: 5.5;
+}
+.progress-value {
+  fill: var(--text);
+  font-weight: 600;
+}
+
+/* Saved skeleton replay without footage. */
+.skeleton-stage {
+  position: relative;
+  background: var(--panel-sunken);
+  max-height: 70vh;
+  margin: 0 auto;
+}
+.skeleton-stage #cv-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.skeleton-tag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}
+.skeleton-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+}
+.skeleton-controls input[type='range'] {
+  flex: 1;
+  min-width: 0;
+}
+.skeleton-controls button {
+  width: auto;
+  min-width: 88px;
+  margin: 0;
 }

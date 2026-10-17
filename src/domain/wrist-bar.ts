@@ -1,3 +1,4 @@
+import { gripCenter, handOf } from './hands';
 import { visible, type VisionAnalysis, type PoseSample } from './vision';
 import { barTrace, MOTION } from './snatch-motion';
 
@@ -79,6 +80,21 @@ export function handBarPoint(
   height: number,
 ): WristBarPoint | null {
   if (f.people !== 1) return null;
+  // The dedicated hand model locates the palm more precisely than the pose
+  // model's coarse hand points; use it only when both hands were tracked.
+  const leftHand = handOf(f, 'left'),
+    rightHand = handOf(f, 'right');
+  if (leftHand && rightHand) {
+    const left = gripCenter(leftHand, width, height),
+      right = gripCenter(rightHand, width, height);
+    return {
+      time: f.time,
+      left,
+      right,
+      x: (left.x + right.x) / 2,
+      y: (left.y + right.y) / 2,
+    };
+  }
   const center = (ids: number[]) => {
     const points = ids.map((i) => f.landmarks[i]);
     if (!points.every(visible)) return null;

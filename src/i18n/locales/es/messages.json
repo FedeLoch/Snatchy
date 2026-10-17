@@ -92,7 +92,12 @@
     "poseModel": "Modelo",
     "poseLite": "Lite — más rápido (predeterminado)",
     "poseFull": "Full — más detallado, más lento",
-    "poseModelNote": "Ambos modelos analizan el vídeo en este dispositivo. Full requiere más procesamiento; no garantiza mayor precisión."
+    "poseModelNote": "Ambos modelos analizan el vídeo en este dispositivo. Full requiere más procesamiento; no garantiza mayor precisión.",
+    "timing": "Detalle temporal",
+    "timingStandard": "Estándar — 15 muestras/s (predeterminado)",
+    "timingPrecise": "Preciso — 30 muestras/s, más lento",
+    "timingNote": "Preciso analiza clips de hasta 30 s con el doble de muestras para medir mejor los tirones rápidos. Tarda aproximadamente el doble y solo ayuda con vídeo real de 30 fps o más.",
+    "guideAria": "Colocación de la cámara: teléfono en un trípode a la altura de la cadera, de lado al atleta y en ángulo recto con la barra, con todo el cuerpo y ambos discos en el encuadre."
   },
   "checkDetail": {
     "armsThroughPull": "Ángulo mínimo visible del codo en el intervalo de tirón reconocido. Las partes no reconocidas del tirón se excluyen.",
@@ -241,14 +246,16 @@
     "extension": "Ángulo de cadera proyectado {angle}°. Este es un ángulo medido en el plano de la imagen, no una prueba de extensión completa.",
     "knee-flexion": "Ángulo de rodilla proyectado {angle}°. Revisa este fotograma para localizar la posición de recepción.",
     "overhead": "La muñeca visible permanece por encima del hombro con el codo extendido durante tres muestras. Esto por sí solo no confirma una recepción por encima de la cabeza ni un snatch.",
-    "possible-early-bend": "Se observó flexión del codo aproximadamente {ms} ms antes del mayor ángulo de cadera detectado. Regla experimental; revisa los fotogramas antes de cambiar tu técnica."
+    "possible-early-bend": "Se observó flexión del codo aproximadamente {ms} ms antes del mayor ángulo de cadera detectado. Regla experimental; revisa los fotogramas antes de cambiar tu técnica.",
+    "wrist-bend": "Flexión proyectada de la muñeca de {angle}° entre antebrazo y mano durante la recepción, según el seguimiento de manos. El ángulo de cámara afecta esta estimación."
   },
   "eventTitles": {
     "armAboveShoulder": "Brazo extendido por encima del hombro",
     "armBend": "Posible flexión del brazo antes de la extensión",
     "elbow": "Mayor flexión de codo observada",
     "hip": "Mayor extensión de cadera observada",
-    "knee": "Mayor flexión de rodilla observada"
+    "knee": "Mayor flexión de rodilla observada",
+    "wristBend": "Flexión de muñeca en la recepción"
   },
   "exerciseReason": {
     "manual": "Seleccionado manualmente. Cámbialo si esta grabación contiene otro ejercicio.",
@@ -605,7 +612,13 @@
     "yourAnalyzedLiftVideo": "Tu vídeo de levantamiento analizado",
     "rawOverlay": "Mostrar puntos originales",
     "filteredOverlay": "Mostrar puntos filtrados",
-    "filterNote": "La vista original sirve para comparar. Las mediciones excluyen errores aislados; las guías aparecen con la vista filtrada."
+    "filterNote": "La vista original sirve para comparar. Las mediciones excluyen errores aislados; las guías aparecen con la vista filtrada.",
+    "handSamples": "{count} muestras con manos detectadas",
+    "savedSkeletonTag": "Esqueleto guardado",
+    "play": "Reproducir",
+    "pause": "Pausa",
+    "skeletonScrub": "Posición de la reproducción del esqueleto",
+    "skeletonNote": "Reproduciendo el esqueleto guardado en este dispositivo. El vídeo no se guarda; importa el clip de nuevo para ver la grabación."
   },
   "coaching": {
     "title": "Asesoramiento",
@@ -657,5 +670,21 @@
     "pullPractice": "Practica repeticiones asistidas con subida y bajada controladas. Estas mediciones no verifican el agarre ni que el mentón supere la barra.",
     "squatPractice": "Practica sentadillas controladas sin carga. El ángulo de rodilla es un objetivo experimental, no confirma profundidad reglamentaria ni seguridad de la carga.",
     "bodyOnly": "La trayectoria de la barra no está disponible para este ejercicio. Las fases usan movimiento corporal y ángulos articulares."
+  },
+  "progress": {
+    "title": "Progreso",
+    "movementFilter": "Movimiento",
+    "latest": "Último",
+    "change": "Desde el primero",
+    "best": "Mejor",
+    "points": "pts",
+    "single": "Graba este movimiento otra vez para ver tu progreso.",
+    "early": "Se compara dentro del mismo movimiento. La tendencia reciente aparece con seis grabaciones puntuadas.",
+    "trend": "Las últimas tres grabaciones promedian {delta} puntos frente a las tres anteriores.",
+    "partialNote": "Los puntos huecos son puntuaciones parciales con menos comprobaciones disponibles.",
+    "chartAria": "Puntuación de {movement} en {count} grabaciones, en una escala de 0 a 100",
+    "tableCaption": "Puntuaciones de {movement} por grabación",
+    "date": "Grabado",
+    "score": "Puntuación"
   }
 }

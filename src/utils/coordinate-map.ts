@@ -21,7 +21,8 @@ export function mapFrameToSilhouette(
   dataRange: DataRange,
   horizontalScaleFactor = 2.0,
 ): { x: number; y: number } {
-  const horizScale = (target.corridorHalfWidth * horizontalScaleFactor) / source.width;
+  const horizScale =
+    (target.corridorHalfWidth * horizontalScaleFactor) / source.width;
   const svgX = target.centerX + (x - source.width / 2) * horizScale;
 
   const ySpan = Math.max(1, dataRange.maxY - dataRange.minY);

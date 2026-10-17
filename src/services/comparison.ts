@@ -14,7 +14,10 @@ export interface ExerciseComparison {
   isFirstRecord: boolean;
 }
 
-function findPreviousRecord(records: LiftRecord[], currentRecord: LiftRecord): LiftRecord | null {
+function findPreviousRecord(
+  records: LiftRecord[],
+  currentRecord: LiftRecord,
+): LiftRecord | null {
   const previous = records
     .filter(
       (r) =>
@@ -49,7 +52,9 @@ export function compareWithPrevious(
   const currentScore = currentRecord.analysis.score;
   const previousScore = previous.analysis.score;
   const overallDeltaPct =
-    previousScore > 0 ? ((currentScore - previousScore) / previousScore) * 100 : null;
+    previousScore > 0
+      ? ((currentScore - previousScore) / previousScore) * 100
+      : null;
 
   const currentLift = getLiftPhases(currentRecord);
   const previousLift = getLiftPhases(previous);
@@ -60,7 +65,8 @@ export function compareWithPrevious(
     for (const check of currentLift.checks) {
       const prevCheck = previousLift.checks.find((c) => c.name === check.name);
       if (prevCheck && prevCheck.value > 0) {
-        const deltaPct = ((check.value - prevCheck.value) / prevCheck.value) * 100;
+        const deltaPct =
+          ((check.value - prevCheck.value) / prevCheck.value) * 100;
         checkDeltas.push({ name: check.name, deltaPct });
       } else {
         checkDeltas.push({ name: check.name, deltaPct: null });

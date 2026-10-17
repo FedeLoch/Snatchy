@@ -94,9 +94,9 @@
     "poseFull": "Full — plus détaillé, plus lent",
     "poseModelNote": "Les deux modèles analysent la vidéo sur cet appareil. Full demande plus de calcul ; une meilleure précision n’est pas garantie.",
     "timing": "Précision temporelle",
-    "timingStandard": "Standard — 15 images/s (par défaut)",
-    "timingPrecise": "Précis — 30 images/s, plus lent",
-    "timingNote": "Précis échantillonne deux fois plus souvent les clips de 30 s maximum pour mieux mesurer les tirages rapides. L’analyse prend environ deux fois plus de temps et n’aide qu’avec une vraie vidéo à 30 i/s ou plus.",
+    "timingStandard": "Standard (par défaut)",
+    "timingPrecise": "Précis — plus lent",
+    "timingNote": "Standard prend 15 images par seconde. Précis en prend 30 pour les clips de 30 s maximum afin de mieux mesurer les tirages rapides ; l’analyse prend environ deux fois plus de temps et n’aide qu’avec une vraie vidéo à 30 i/s ou plus.",
     "guideAria": "Placement de la caméra : téléphone sur trépied à hauteur de hanche, de profil par rapport à l’athlète et à angle droit avec la barre, avec tout le corps et les deux disques dans le cadre."
   },
   "checkDetail": {

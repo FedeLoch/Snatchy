@@ -119,9 +119,9 @@
     "poseFull": "Full — more detailed, slower",
     "poseModelNote": "Both models analyze your video on this device. Full uses more processing power; better accuracy is not guaranteed.",
     "timing": "Timing detail",
-    "timingStandard": "Standard — 15 samples/s (default)",
-    "timingPrecise": "Precise — 30 samples/s, slower",
-    "timingNote": "Precise samples clips up to 30 s twice as often to time fast pulls better. It takes about twice as long and helps only with real 30 fps or faster video.",
+    "timingStandard": "Standard (default)",
+    "timingPrecise": "Precise — slower",
+    "timingNote": "Standard takes 15 samples per second. Precise takes 30 for clips up to 30 s to time fast pulls better; it takes about twice as long and only helps with real 30 fps or faster video.",
     "guideAria": "Camera setup: phone on a tripod at hip height, facing the lifter side-on at a right angle to the bar, with the whole body and both plates in frame."
   },
   "result": {

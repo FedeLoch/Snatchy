@@ -94,9 +94,9 @@
     "poseFull": "Full — más detallado, más lento",
     "poseModelNote": "Ambos modelos analizan el vídeo en este dispositivo. Full requiere más procesamiento; no garantiza mayor precisión.",
     "timing": "Detalle temporal",
-    "timingStandard": "Estándar — 15 muestras/s (predeterminado)",
-    "timingPrecise": "Preciso — 30 muestras/s, más lento",
-    "timingNote": "Preciso analiza clips de hasta 30 s con el doble de muestras para medir mejor los tirones rápidos. Tarda aproximadamente el doble y solo ayuda con vídeo real de 30 fps o más.",
+    "timingStandard": "Estándar (predeterminado)",
+    "timingPrecise": "Preciso — más lento",
+    "timingNote": "Estándar toma 15 muestras por segundo. Preciso toma 30 en clips de hasta 30 s para medir mejor los tirones rápidos; tarda aproximadamente el doble y solo ayuda con vídeo real de 30 fps o más.",
     "guideAria": "Colocación de la cámara: teléfono en un trípode a la altura de la cadera, de lado al atleta y en ángulo recto con la barra, con todo el cuerpo y ambos discos en el encuadre."
   },
   "checkDetail": {

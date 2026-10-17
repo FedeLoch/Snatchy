@@ -777,6 +777,31 @@ p {
 .movement-field label {
   color: var(--muted);
 }
+/* Consecutive fields read as one settings list: one divider between rows,
+   one width for every control, and each note inside the row it explains. */
+.movement-field + .movement-field {
+  margin-top: 0;
+  border-top: 0;
+}
+.movement-field {
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.movement-field select {
+  flex: 0 0 min(58%, 320px);
+  width: min(58%, 320px);
+}
+.movement-field .field-hint {
+  flex: 1 0 100%;
+  margin: 0;
+  line-height: 1.5;
+}
+@media (max-width: 600px) {
+  .movement-field select {
+    flex-basis: 100%;
+    width: 100%;
+  }
+}
 select {
   color: var(--text);
   border: 1px solid var(--line-strong);

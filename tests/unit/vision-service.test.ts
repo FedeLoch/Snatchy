@@ -272,3 +272,25 @@ it('skips repeated source frames and analyzes them at the base rate', async () =
   expect(result.sampleRate).toBe(15);
   expect(workers[0].terminate).toHaveBeenCalled();
 });
+
+it('does not count time while the app is hidden towards a timeout', async () => {
+  const { patientTimeout } = await import('../../src/services/vision');
+  const fired = vi.fn();
+  let hidden = true;
+  Object.defineProperty(document, 'hidden', {
+    configurable: true,
+    get: () => hidden,
+  });
+  patientTimeout(1000, fired);
+  await vi.advanceTimersByTimeAsync(60000);
+  expect(fired).not.toHaveBeenCalled();
+  hidden = false;
+  await vi.advanceTimersByTimeAsync(900);
+  expect(fired).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(400);
+  expect(fired).toHaveBeenCalledOnce();
+  Object.defineProperty(document, 'hidden', {
+    configurable: true,
+    get: () => false,
+  });
+});

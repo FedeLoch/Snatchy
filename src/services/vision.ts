@@ -36,6 +36,25 @@ interface Reply {
   world?: PoseSample['world'];
   barShaft?: PoseSample['barShaft'];
 }
+/** A timeout that only counts time while the page is visible. Android pauses
+ * the app when the screen locks or another app opens, and work resumes
+ * afterwards, so time spent paused must not count as a stall. A frozen page
+ * runs no timers; the first tick after resuming counts at most one second. */
+export function patientTimeout(ms: number, onTimeout: () => void): () => void {
+  let elapsed = 0,
+    last = Date.now();
+  const tick = setInterval(() => {
+    const now = Date.now();
+    if (typeof document === 'undefined' || !document.hidden)
+      elapsed += Math.min(now - last, 1000);
+    last = now;
+    if (elapsed >= ms) {
+      clearInterval(tick);
+      onTimeout();
+    }
+  }, 250);
+  return () => clearInterval(tick);
+}
 export function mediaEvent(
   video: HTMLVideoElement,
   event: string,
@@ -45,7 +64,7 @@ export function mediaEvent(
   return new Promise((resolve, reject) => {
     signal.throwIfAborted();
     const cleanup = () => {
-      clearTimeout(timer);
+      stopTimer();
       video.removeEventListener(event, done);
       video.removeEventListener('error', failed);
       signal.removeEventListener('abort', aborted);
@@ -62,10 +81,10 @@ export function mediaEvent(
       cleanup();
       reject(new DOMException('Analysis cancelled', 'AbortError'));
     };
-    const timer = setTimeout(() => {
+    const stopTimer = patientTimeout(15000, () => {
       cleanup();
       reject(new Error('errors.vision.decodeTimedOut'));
-    }, 15000);
+    });
     video.addEventListener(event, done, { once: true });
     video.addEventListener('error', failed, { once: true });
     signal.addEventListener('abort', aborted, { once: true });
@@ -111,6 +130,33 @@ export async function seekVideoFrame(
     signal.removeEventListener('abort', finish);
   }
 }
+/** Seek to each sample time. Precise timing seeks a quarter interval past
+ * each sample time, so a seek never lands on an ambiguous frame boundary,
+ * and skips a repeated source frame instead of analyzing it twice. */
+async function* seekedFrames(
+  video: HTMLVideoElement,
+  rate: number,
+  duration: number,
+  count: number,
+  signal: AbortSignal,
+  capture: () => void,
+): AsyncGenerator<number> {
+  const precise = rate > SAMPLE_RATE;
+  const offset = precise ? 0.25 / rate : 0;
+  let lastMediaTime: number | null = null;
+  for (let index = 0; index < count; index++) {
+    signal.throwIfAborted();
+    const target = Math.min(index / rate + offset, duration - 0.01);
+    if (Math.abs(video.currentTime - target) > 0.001) {
+      const mediaTime = await seekVideoFrame(video, target, signal);
+      if (precise && mediaTime !== null && mediaTime === lastMediaTime)
+        continue;
+      lastMediaTime = mediaTime;
+    } else lastMediaTime = video.currentTime;
+    capture();
+    yield video.currentTime;
+  }
+}
 export async function analyzeVideo(
   source: VideoSource,
   options: {
@@ -145,7 +191,7 @@ export async function analyzeVideo(
       signal.throwIfAborted();
       const current = ++id;
       const cleanup = () => {
-        clearTimeout(timer);
+        stopTimer();
         worker.removeEventListener('message', receive);
         worker.removeEventListener('error', fail);
         signal.removeEventListener('abort', abort);
@@ -165,10 +211,10 @@ export async function analyzeVideo(
         cleanup();
         reject(new DOMException('Analysis cancelled', 'AbortError'));
       };
-      const timer = setTimeout(() => {
+      const stopTimer = patientTimeout(45000, () => {
         cleanup();
         reject(new Error('errors.vision.analysisTimedOut'));
-      }, 45000);
+      });
       worker.addEventListener('message', receive);
       worker.addEventListener('error', fail, { once: true });
       signal.addEventListener('abort', abort, { once: true });
@@ -199,33 +245,25 @@ export async function analyzeVideo(
     const rate =
       options.sampleRate ?? sampleRateFor(source.duration, options.timing);
     const count = Math.ceil(source.duration * rate);
-    let lastMediaTime: number | null = null;
-    // Precise timing seeks a quarter interval past each sample time, so a
-    // seek never lands on an ambiguous frame boundary, and skips a repeated
-    // source frame (a lower frame-rate video) instead of analyzing it twice.
-    const precise = rate > SAMPLE_RATE;
-    const offset = precise ? 0.25 / rate : 0;
-    for (let index = 0; index < count; index++) {
-      signal.throwIfAborted();
-      const target = Math.min(index / rate + offset, source.duration - 0.01);
-      if (Math.abs(video.currentTime - target) > 0.001) {
-        const mediaTime = await seekVideoFrame(video, target, signal);
-        if (precise && mediaTime !== null && mediaTime === lastMediaTime)
-          continue;
-        lastMediaTime = mediaTime;
-      } else lastMediaTime = video.currentTime;
+    const capture = () =>
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const sampled = seekedFrames(
+      video,
+      rate,
+      source.duration,
+      count,
+      signal,
+      capture,
+    );
+    for await (const time of sampled) {
       const bitmap = await createImageBitmap(canvas);
       if (signal.aborted) {
         bitmap.close();
         signal.throwIfAborted();
       }
-      const reply = await request(
-        { type: 'frame', bitmap, time: video.currentTime },
-        [bitmap],
-      );
+      const reply = await request({ type: 'frame', bitmap, time }, [bitmap]);
       frames.push({
-        time: video.currentTime,
+        time,
         people: reply.people,
         landmarks: reply.landmarks,
         ...(reply.hands ? { hands: reply.hands } : {}),
@@ -233,8 +271,8 @@ export async function analyzeVideo(
         barShaft: reply.barShaft,
       });
       onProgress(
-        ((index + 1) / count) * 0.8,
-        `Tracking frame ${index + 1} of ${count}`,
+        Math.min(1, time / source.duration) * 0.8,
+        `Tracking frame ${frames.length} of ${count}`,
       );
     }
     signal.throwIfAborted();

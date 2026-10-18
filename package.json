@@ -1,6 +1,6 @@
 {
   "name": "snatchy",
-  "version": "0.2.0",
+  "version": "0.3.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -45,6 +45,7 @@
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.2.0",
+    "@capacitor-community/keep-awake": "^8.0.1",
     "@capacitor/android": "^8.5.2",
     "@capacitor/core": "^8.5.2",
     "@mediapipe/tasks-vision": "1.0.1"

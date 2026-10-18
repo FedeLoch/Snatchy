@@ -619,7 +619,8 @@
     "play": "Lecture",
     "pause": "Pause",
     "skeletonScrub": "Position de la relecture du squelette",
-    "skeletonNote": "Relecture du squelette enregistré sur cet appareil. La vidéo n’est pas conservée ; importez de nouveau le clip pour voir les images."
+    "skeletonNote": "Relecture du squelette enregistré sur cet appareil. La vidéo n’est pas conservée ; importez de nouveau le clip pour voir les images.",
+    "keepOpen": "L’écran reste allumé pendant l’analyse. Si vous changez d’application, l’analyse reprend à votre retour."
   },
   "coaching": {
     "title": "Conseils techniques",

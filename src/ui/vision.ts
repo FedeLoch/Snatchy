@@ -118,7 +118,7 @@ export function visionRows(records: VisionRecord[]): string {
     .join('')}</div>`;
 }
 export function visionProcessing(): string {
-  return `<div class="narrow"><div class="eyebrow">${e(t('vision.eyebrow'))}</div><h1>${e(t('vision.titleLead'))}<br>${e(t('vision.titleAccent'))}<span class="accent">.</span></h1><p>${e(t('vision.lede'))}</p><div class="vision-progress"><progress max="1" value="0" aria-label="${e(t('vision.progressAria'))}"></progress><p id="vision-progress-label" role="status">${e(t('vision.loadingModel'))}</p></div><button class="secondary" data-action="cancel">${e(t('vision.cancel'))} ${icon('close')}</button><p class="footnote">${e(t('vision.firstRun'))}</p></div>`;
+  return `<div class="narrow"><div class="eyebrow">${e(t('vision.eyebrow'))}</div><h1>${e(t('vision.titleLead'))}<br>${e(t('vision.titleAccent'))}<span class="accent">.</span></h1><p>${e(t('vision.lede'))}</p><div class="vision-progress"><progress max="1" value="0" aria-label="${e(t('vision.progressAria'))}"></progress><p id="vision-progress-label" role="status">${e(t('vision.loadingModel'))}</p></div><button class="secondary" data-action="cancel">${e(t('vision.cancel'))} ${icon('close')}</button><p class="footnote">${e(t('vision.keepOpen'))}</p><p class="footnote">${e(t('vision.firstRun'))}</p></div>`;
 }
 function angleChart(a: VisionAnalysis): string {
   const start = a.interval?.start ?? 0;

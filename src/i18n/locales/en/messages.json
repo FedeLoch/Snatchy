@@ -379,7 +379,8 @@
     "play": "Play",
     "pause": "Pause",
     "skeletonScrub": "Skeleton replay position",
-    "skeletonNote": "Replaying the skeleton saved on this device. The video itself is not stored; import the clip again to see the footage."
+    "skeletonNote": "Replaying the skeleton saved on this device. The video itself is not stored; import the clip again to see the footage.",
+    "keepOpen": "The screen stays on while analysing. If you switch apps, analysis continues when you come back."
   },
   "repetitions": {
     "aria": "Detected repetitions",

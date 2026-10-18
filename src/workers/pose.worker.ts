@@ -23,7 +23,63 @@ const HAND_CROP = 256;
 let shaftCanvas: OffscreenCanvas | null = null;
 let handCanvas: OffscreenCanvas | null = null;
 let detector: PoseLandmarker | null = null;
-let hands: HandLandmarker | null = null;
+/** Hand models: one per side follows its hand from frame to frame (video
+ * mode skips palm detection while the hand stays in view), and one searches
+ * a wider crop when the follower finds nothing. They run on the GPU where
+ * available, which roughly halves analysis time; the body pose stays on the
+ * CPU, whose results are the reference for every measurement. */
+interface HandModels {
+  delegate: 'CPU' | 'GPU';
+  search: HandLandmarker;
+  follow: Record<Side, HandLandmarker>;
+}
+let hands: HandModels | null = null;
+let fileset: Awaited<ReturnType<typeof FilesetResolver.forVisionTasks>> | null =
+  null;
+let modelOrigin = '';
+let handModel: Promise<Uint8Array> | null = null;
+async function loadHands(delegate: 'CPU' | 'GPU'): Promise<HandModels> {
+  // One download shared by all three models (and a CPU retry).
+  handModel ??= fetch(`${modelOrigin}/models/hand_landmarker.task`)
+    .then((response) => {
+      if (!response.ok) throw new Error('Hand model unavailable');
+      return response.arrayBuffer();
+    })
+    .then((buffer) => new Uint8Array(buffer));
+  const model = await handModel;
+  const make = (runningMode: 'IMAGE' | 'VIDEO', numHands: number) =>
+    HandLandmarker.createFromOptions(fileset!, {
+      baseOptions: { modelAssetBuffer: model, delegate },
+      runningMode,
+      numHands,
+      minHandDetectionConfidence: 0.4,
+      minHandPresenceConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
+  const [search, left, right] = await Promise.all([
+    make('IMAGE', 2),
+    make('VIDEO', 1),
+    make('VIDEO', 1),
+  ]);
+  return { delegate, search, follow: { left, right } };
+}
+function closeHands() {
+  if (!hands) return;
+  for (const model of [hands.search, hands.follow.left, hands.follow.right])
+    model.close();
+  hands = null;
+}
+/** GPU first, CPU if the GPU path is unavailable; null if neither loads. */
+async function loadBestHands(): Promise<HandModels | null> {
+  for (const delegate of ['GPU', 'CPU'] as const) {
+    try {
+      return await loadHands(delegate);
+    } catch {
+      /* Try the next delegate. */
+    }
+  }
+  return null;
+}
 let previous: Landmark[] | null = null;
 // In a module worker MediaPipe loads its WASM factory with a dynamic import,
 // which only runs once, and the factory global is cleared after each task is
@@ -55,6 +111,7 @@ function canvas2d(
 function trackHands(
   bitmap: ImageBitmap,
   landmarks: Landmark[],
+  time: number,
 ): { landmarks: Landmark[]; hands: Partial<Record<Side, Landmark[]>> } {
   const found: Partial<Record<Side, Landmark[]>> = {};
   if (!hands) return { landmarks, hands: found };
@@ -81,7 +138,10 @@ function trackHands(
         HAND_CROP,
         HAND_CROP,
       );
-      const result = hands.detect(handCanvas);
+      const result =
+        attempt === 0
+          ? hands.follow[side].detectForVideo(handCanvas, time * 1000)
+          : hands.search.detect(handCanvas);
       const candidates = result.landmarks.map((points, i) =>
         mapHand(
           points,
@@ -143,21 +203,11 @@ self.onmessage = async (
       });
       // Hand tracking refines wrists and adds finger landmarks; the body
       // analysis still works if this optional model cannot load.
-      try {
-        hands = await HandLandmarker.createFromOptions(files, {
-          baseOptions: {
-            modelAssetPath: `${origin}/models/hand_landmarker.task`,
-            delegate: 'CPU',
-          },
-          runningMode: 'IMAGE',
-          numHands: 2,
-          minHandDetectionConfidence: 0.4,
-          minHandPresenceConfidence: 0.5,
-          minTrackingConfidence: 0.5,
-        });
-      } catch {
-        hands = null;
-      }
+      fileset = files;
+      modelOrigin = origin ?? '';
+      handModel = null;
+      closeHands();
+      hands = await loadBestHands();
       self.postMessage({ id, ready: true, hands: hands !== null });
     } else {
       if (!detector || !bitmap || time === undefined)
@@ -183,7 +233,16 @@ self.onmessage = async (
       let handLandmarks: Partial<Record<Side, Landmark[]>> | undefined;
       if (athlete) {
         try {
-          const tracked = trackHands(bitmap, athlete);
+          let tracked;
+          try {
+            tracked = trackHands(bitmap, athlete, time);
+          } catch (error) {
+            // A GPU that loaded but fails while running: continue on the CPU.
+            if (hands?.delegate !== 'GPU') throw error;
+            closeHands();
+            hands = await loadHands('CPU').catch(() => null);
+            tracked = trackHands(bitmap, athlete, time);
+          }
           landmarks = tracked.landmarks;
           if (tracked.hands.left || tracked.hands.right)
             handLandmarks = tracked.hands;

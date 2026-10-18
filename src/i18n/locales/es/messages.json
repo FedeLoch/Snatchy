@@ -619,7 +619,8 @@
     "play": "Reproducir",
     "pause": "Pausa",
     "skeletonScrub": "Posición de la reproducción del esqueleto",
-    "skeletonNote": "Reproduciendo el esqueleto guardado en este dispositivo. El vídeo no se guarda; importa el clip de nuevo para ver la grabación."
+    "skeletonNote": "Reproduciendo el esqueleto guardado en este dispositivo. El vídeo no se guarda; importa el clip de nuevo para ver la grabación.",
+    "keepOpen": "La pantalla permanece encendida durante el análisis. Si cambias de app, el análisis continúa al volver."
   },
   "coaching": {
     "title": "Asesoramiento",

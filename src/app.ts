@@ -4,6 +4,7 @@ import { analyzePoseSamples } from './domain/vision';
 import { exerciseById } from './domain/exercises';
 import { analyzeVideo, type TimingDetail } from './services/vision';
 import { progressCard } from './ui/progress';
+import { holdScreenOn } from './services/keep-awake';
 import { loadPose, prunePoses, savePose } from './services/pose-store';
 import { bindSkeletonControls, SkeletonClock } from './ui/skeleton-clock';
 import { reliablePoseFrames } from './domain/pose-quality';
@@ -447,6 +448,7 @@ async function analyzeUpload() {
   const controller = new AbortController();
   work = controller;
   draw(visionProcessing());
+  const releaseScreen = await holdScreenOn();
   try {
     const analysis = await analyzeVideo(source, {
       signal: controller.signal,
@@ -494,6 +496,8 @@ async function analyzeUpload() {
     );
     root.querySelector('#capture-error')!.textContent =
       error instanceof Error ? td(error.message) : t('errors.analysisFailed');
+  } finally {
+    releaseScreen();
   }
 }
 async function importFile(file: File) {

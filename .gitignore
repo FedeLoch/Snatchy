@@ -17,3 +17,6 @@ validation-clips/
 *.jks
 *.keystore
 release.properties
+
+# Firebase CLI cache
+.firebase/

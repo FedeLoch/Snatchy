@@ -43,7 +43,8 @@ The app ships as a Capacitor Android wrapper around the web build. Store text an
 
 - Test on two or three physical phones, including a mid-range one: time a 10 s and a 30 s analysis, check memory with 1080p video, recording through the camera, gallery import of large files, rotation, back button and dark mode.
 - New personal developer accounts must run a closed test with at least 12 testers for 14 consecutive days before applying for production access.
-- Data safety form: no data collected or shared by Snatchy itself; the AdMob SDK collects device or other IDs (advertising ID), approximate location, app interactions and diagnostics for advertising, fraud prevention and analytics; data in transit is encrypted; users can delete data by removing recordings or uninstalling.
+- Advertising ID declaration (App content): **No** — the manifest removes `AD_ID` and the Privacy Sandbox ad permissions, and ads are requested as non-personalised.
+- Data safety form: no data collected or shared by Snatchy itself; the AdMob SDK collects device or other IDs (an app-set identifier, not the advertising ID), approximate location, app interactions and diagnostics for advertising, fraud prevention and analytics; data in transit is encrypted; users can delete data by removing recordings or uninstalling.
+- Play may add `com.android.vending.CHECK_LICENSE` when automatic app protection is on (Release → App integrity); turn that off to keep the permission list minimal.
 - Declare "Contains ads", complete the content rating questionnaire, set the target audience to 13+ (or 18+), and do not target children.
-- Host `privacy.html` at a public URL (for example GitHub Pages or the web deployment of this app) and enter that URL in the Play Console.
-- Publish `app-ads.txt` on the developer website listed in the Play Console.
+- The web app, privacy policy and `app-ads.txt` are hosted on Firebase (project `snatchy-app`): https://snatchy-app.web.app/privacy.html is the privacy policy URL for the Play Console and the AdMob consent message, and https://snatchy-app.web.app is the developer website (it serves `/app-ads.txt`). Redeploy after `npm run build` with `firebase deploy --only hosting`.

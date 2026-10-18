@@ -12,3 +12,8 @@ public/vision/
 
 # Private athlete videos used for local precision checks
 validation-clips/
+
+# Signing keys must never be committed
+*.jks
+*.keystore
+release.properties

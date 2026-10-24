@@ -20,3 +20,6 @@ release.properties
 
 # Firebase CLI cache
 .firebase/
+
+# Built Android packages for upload
+releases/

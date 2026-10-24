@@ -693,5 +693,30 @@
     "tableCaption": "{movement} scores by recording",
     "date": "Recorded",
     "score": "Score"
+  },
+  "onboarding": {
+    "stepOf": "Step {n} of {total}",
+    "welcomeTitle": "Welcome to Snatchy",
+    "welcomeBody": "Film a snatch or clean and see every phase, your joint angles and the bar path. Everything is analyzed on your phone; your videos never leave it.",
+    "filmTitle": "Film from the side",
+    "filmBody": "Put the phone on a tripod or the floor at hip height, side-on to the lifter, with the whole body and both ends of the bar in frame. A steady side view gives the most precise results.",
+    "analyzeTitle": "Analyze a lift",
+    "analyzeBody": "Tap Analyze, record or import a clip, then Analyze this video. The movement is detected automatically. Keep the app open: it takes roughly as long as the clip.",
+    "tileRecord": "Record or import",
+    "tileTrack": "Body and hands tracked",
+    "tileResults": "Phases and checks",
+    "resultsTitle": "Read your results",
+    "resultsBody": "Tap a phase to jump to that moment, open a check to compare your angle with the target, replay the skeleton any time, and follow your progress in History. Scores are experimental guides, not a coach.",
+    "tilePhases": "Jump to each phase",
+    "tileChecks": "Angles vs targets",
+    "tileProgress": "Progress over time",
+    "next": "Next",
+    "back": "Back",
+    "skip": "Skip",
+    "start": "Analyze my first lift",
+    "explore": "Explore first",
+    "settingsTitle": "Quick start",
+    "settingsBody": "A four-step guide to filming and reading your first analysis.",
+    "settingsButton": "Show the quick start guide"
   }
 }

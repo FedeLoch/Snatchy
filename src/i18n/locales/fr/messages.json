@@ -693,5 +693,30 @@
     "tableCaption": "Scores de {movement} par enregistrement",
     "date": "Enregistré",
     "score": "Score"
+  },
+  "onboarding": {
+    "stepOf": "Étape {n} sur {total}",
+    "welcomeTitle": "Bienvenue dans Snatchy",
+    "welcomeBody": "Filmez un arraché ou un épaulé et voyez chaque phase, vos angles articulaires et la trajectoire de la barre. Tout est analysé sur votre téléphone ; vos vidéos n’en sortent jamais.",
+    "filmTitle": "Filmez de profil",
+    "filmBody": "Posez le téléphone sur un trépied ou au sol, à hauteur de hanche, de profil par rapport à l’athlète, avec tout le corps et les deux extrémités de la barre dans le cadre. Une vue de profil stable donne les résultats les plus précis.",
+    "analyzeTitle": "Analysez un mouvement",
+    "analyzeBody": "Touchez Analyser, filmez ou importez un clip, puis Analyser cette vidéo. Le mouvement est détecté automatiquement. Gardez l’application ouverte : l’analyse dure à peu près la longueur du clip.",
+    "tileRecord": "Filmez ou importez",
+    "tileTrack": "Corps et mains suivis",
+    "tileResults": "Phases et vérifications",
+    "resultsTitle": "Lisez vos résultats",
+    "resultsBody": "Touchez une phase pour aller à ce moment, ouvrez une vérification pour comparer votre angle à la cible, rejouez le squelette quand vous voulez et suivez vos progrès dans l’Historique. Les scores sont des repères expérimentaux, pas un entraîneur.",
+    "tilePhases": "Allez à chaque phase",
+    "tileChecks": "Angles et cibles",
+    "tileProgress": "Progrès dans le temps",
+    "next": "Suivant",
+    "back": "Retour",
+    "skip": "Passer",
+    "start": "Analyser mon premier mouvement",
+    "explore": "Explorer d’abord",
+    "settingsTitle": "Démarrage rapide",
+    "settingsBody": "Un guide en quatre étapes pour filmer et comprendre votre première analyse.",
+    "settingsButton": "Afficher le guide de démarrage"
   }
 }

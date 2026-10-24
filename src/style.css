@@ -3189,3 +3189,116 @@ html:has(.sponsor-slot) main {
     transparent 6px 10px
   );
 }
+
+/* Quick-start guide. */
+dialog.onboarding {
+  max-width: 420px;
+  padding: 0 0 22px;
+  overflow: hidden;
+}
+.onboarding-visual {
+  color-scheme: dark;
+  color: var(--text);
+  background: var(--panel);
+  height: 200px;
+  display: grid;
+  place-items: center;
+  padding: 18px 12px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.onboarding-visual .capture-guide,
+.onboarding-art {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  max-height: 200px;
+}
+.onboarding-bar {
+  stroke: var(--figure-bar);
+}
+.onboarding-plate {
+  stroke: var(--figure-plate-edge);
+  fill: none;
+}
+dialog.onboarding .onboarding-count,
+dialog.onboarding h2,
+dialog.onboarding p,
+.onboarding-dots,
+.onboarding-actions {
+  margin-left: 24px;
+  margin-right: 24px;
+}
+dialog.onboarding .onboarding-count {
+  margin-top: 20px;
+  margin-bottom: 0;
+}
+dialog.onboarding h2 {
+  margin-top: 8px;
+  margin-bottom: 10px;
+  font-size: 24px;
+}
+dialog.onboarding p#onboarding-body {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-soft);
+  /* Room for the longest step, so the dialog does not jump between steps. */
+  min-height: 11.4em;
+  margin-bottom: 12px;
+}
+.onboarding-tiles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 340px;
+}
+.onboarding-tiles li {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--text-soft);
+}
+.onboarding-tile-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+.onboarding-tile-icon .icon {
+  width: 24px;
+  height: 24px;
+}
+.onboarding-dots {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+  margin-bottom: 18px;
+}
+.onboarding-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+.onboarding-dots span.active {
+  width: 22px;
+  border-radius: 4px;
+  background: var(--accent);
+}
+.onboarding-actions {
+  display: grid;
+  gap: 10px;
+}
+.onboarding-actions button {
+  margin: 0;
+}

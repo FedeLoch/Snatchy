@@ -11,6 +11,17 @@ export default defineConfig({
     // The specs assert English copy, and the app otherwise follows the system
     // locale, so the runner has to be pinned rather than inherited from CI.
     locale: 'en-US',
+    // The quick-start guide opens on a first visit; other specs start past
+    // it. tests/e2e/onboarding.spec.ts clears this to test the guide itself.
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: 'http://127.0.0.1:4173',
+          localStorage: [{ name: 'snatchy-onboarding-v1', value: 'done' }],
+        },
+      ],
+    },
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },

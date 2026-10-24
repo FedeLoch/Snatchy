@@ -5,6 +5,11 @@ import { exerciseById } from './domain/exercises';
 import { analyzeVideo, type TimingDetail } from './services/vision';
 import { progressCard } from './ui/progress';
 import { holdScreenOn } from './services/keep-awake';
+import {
+  markOnboardingDone,
+  onboardingDone,
+  showOnboarding,
+} from './ui/onboarding';
 import { loadPose, prunePoses, savePose } from './services/pose-store';
 import { bindSkeletonControls, SkeletonClock } from './ui/skeleton-clock';
 import { reliablePoseFrames } from './domain/pose-quality';
@@ -571,6 +576,8 @@ root.addEventListener('click', (event) => {
     id = target.dataset.id ?? '';
   if (action === 'ad-settings') {
     go('settings');
+  } else if (action === 'onboarding') {
+    openOnboarding(target);
   } else if (action === 'ad-privacy') {
     void showAdPrivacyOptions().catch(() => undefined);
   } else if (action === 'progress-exercise') {
@@ -851,6 +858,18 @@ matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
     toggle.innerHTML = icon(next === 'dark' ? 'sun' : 'moon');
   }
 });
+/** Quick-start guide: once on a first visit to the home screen (deep links
+ * to a result are not interrupted), and again on request from Settings. */
+function openOnboarding(trigger?: HTMLElement) {
+  showOnboarding(
+    root,
+    () => markOnboardingDone(storage),
+    (start) => {
+      if (start) go('capture');
+      else trigger?.focus();
+    },
+  );
+}
 window.addEventListener('pagehide', () => {
   dispose();
   releaseVideo(pendingVideo);
@@ -858,3 +877,5 @@ window.addEventListener('pagehide', () => {
   visionVideos.clear();
 });
 route();
+if (!onboardingDone(storage) && ['', '#', '#home'].includes(location.hash))
+  openOnboarding();

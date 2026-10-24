@@ -693,5 +693,30 @@
     "tableCaption": "Puntuaciones de {movement} por grabación",
     "date": "Grabado",
     "score": "Puntuación"
+  },
+  "onboarding": {
+    "stepOf": "Paso {n} de {total}",
+    "welcomeTitle": "Te damos la bienvenida a Snatchy",
+    "welcomeBody": "Graba un snatch o un clean y ve cada fase, los ángulos de tus articulaciones y la trayectoria de la barra. Todo se analiza en tu teléfono; tus vídeos nunca salen de él.",
+    "filmTitle": "Graba de lado",
+    "filmBody": "Coloca el teléfono en un trípode o en el suelo a la altura de la cadera, de lado al atleta, con todo el cuerpo y ambos extremos de la barra en el encuadre. Una vista lateral estable da los resultados más precisos.",
+    "analyzeTitle": "Analiza un levantamiento",
+    "analyzeBody": "Toca Analizar, graba o importa un clip y luego Analizar este vídeo. El movimiento se detecta automáticamente. Mantén la app abierta: tarda aproximadamente lo que dura el clip.",
+    "tileRecord": "Graba o importa",
+    "tileTrack": "Seguimiento de cuerpo y manos",
+    "tileResults": "Fases y comprobaciones",
+    "resultsTitle": "Lee tus resultados",
+    "resultsBody": "Toca una fase para ir a ese momento, abre una comprobación para comparar tu ángulo con el objetivo, repite el esqueleto cuando quieras y sigue tu progreso en Historial. Las puntuaciones son guías experimentales, no un entrenador.",
+    "tilePhases": "Ve a cada fase",
+    "tileChecks": "Ángulos frente a objetivos",
+    "tileProgress": "Progreso en el tiempo",
+    "next": "Siguiente",
+    "back": "Atrás",
+    "skip": "Omitir",
+    "start": "Analizar mi primer levantamiento",
+    "explore": "Explorar primero",
+    "settingsTitle": "Inicio rápido",
+    "settingsBody": "Una guía de cuatro pasos para grabar y entender tu primer análisis.",
+    "settingsButton": "Ver la guía de inicio rápido"
   }
 }

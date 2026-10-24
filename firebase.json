@@ -16,8 +16,17 @@
       {
         "source": "**/*.@(task|wasm)",
         "headers": [
-          { "key": "Cache-Control", "value": "public, max-age=604800" }
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=604800"
+          }
         ]
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "/beta",
+        "destination": "/beta.html"
       }
     ]
   }
